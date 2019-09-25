@@ -14,25 +14,20 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.appbroker.workflow.instance;
+package com.orange.oss.osbcmdb;
 
-import java.util.List;
-
-import reactor.core.publisher.Mono;
-
-import org.springframework.cloud.appbroker.deployer.BackingApplication;
-import org.springframework.cloud.appbroker.deployer.BackingApplications;
-import org.springframework.cloud.appbroker.deployer.BackingService;
-import org.springframework.cloud.appbroker.deployer.BackingServices;
-import org.springframework.cloud.appbroker.deployer.BrokeredService;
-import org.springframework.cloud.appbroker.deployer.BrokeredServices;
-import org.springframework.cloud.appbroker.deployer.TargetSpec;
+import org.springframework.cloud.appbroker.deployer.*;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 import org.springframework.util.CollectionUtils;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 class AppDeploymentInstanceWorkflow {
 
+	@SuppressWarnings("WeakerAccess")
 	final BrokeredServices brokeredServices;
 
 	AppDeploymentInstanceWorkflow(BrokeredServices brokeredServices) {
@@ -40,14 +35,9 @@ class AppDeploymentInstanceWorkflow {
 	}
 
 	Mono<Boolean> accept(ServiceDefinition serviceDefinition, Plan plan) {
-		return getBackingApplicationsForService(serviceDefinition, plan)
-			.map(backingApplications -> !backingApplications.isEmpty())
-			.filter(Boolean::booleanValue) // filter out False to proceed with below, see https://stackoverflow.com/questions/49860558/project-reactor-conditional-execution
-			.switchIfEmpty(
-				getBackingServicesForService(serviceDefinition, plan)
+		return getBackingServicesForService(serviceDefinition, plan)
 				.map(backingServices -> !backingServices.isEmpty())
-				.defaultIfEmpty(false)
-			);
+				.defaultIfEmpty(false);
 	}
 
 	TargetSpec getTargetForService(ServiceDefinition serviceDefinition, Plan plan) {
@@ -101,5 +91,21 @@ class AppDeploymentInstanceWorkflow {
 									   && brokeredService.getPlanName().equals(planName))
 							   .findFirst()
 							   .orElse(null);
+	}
+
+	Mono<List<BackingService>> addGuidToServiceInstanceName(List<BackingService> backingServices, String serviceInstanceId) {
+		return Flux.fromIterable(backingServices).
+				flatMap(backingService -> {
+					backingService.setServiceInstanceName(backingService.getServiceInstanceName() + "-" + serviceInstanceId);
+					return Mono.just(backingService);
+				}).collectList();
+	}
+
+	Mono<List<BackingServiceKey>> setServiceKeyName(BackingServiceKeys backingServiceKeys, String bindingId) {
+		return Flux.fromIterable(backingServiceKeys).
+			flatMap(backingServiceKey -> {
+				backingServiceKey.setName(bindingId);
+				return Mono.just(backingServiceKey);
+			}).collectList();
 	}
 }
