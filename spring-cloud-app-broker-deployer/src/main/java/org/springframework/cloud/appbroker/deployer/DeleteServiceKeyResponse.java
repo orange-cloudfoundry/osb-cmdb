@@ -16,20 +16,37 @@
 
 package org.springframework.cloud.appbroker.deployer;
 
-import java.util.List;
-import java.util.Map;
+public class DeleteServiceKeyResponse {
 
-import reactor.core.publisher.Flux;
+	private final String name;
 
-public interface BackingServicesProvisionService {
+	DeleteServiceKeyResponse(String name) {
+		this.name = name;
+	}
 
-	Flux<String> createServiceInstance(List<BackingService> backingServices);
+	public static DeleteServiceInstanceResponseBuilder builder() {
+		return new DeleteServiceInstanceResponseBuilder();
+	}
 
-	Flux<String> updateServiceInstance(List<BackingService> backingServices);
+	public String getName() {
+		return name;
+	}
 
-	Flux<String> deleteServiceInstance(List<BackingService> backingServices);
+	public static class DeleteServiceInstanceResponseBuilder {
 
-	Flux<Map<String, Object>> createServiceKeys(List<BackingServiceKey> backingServiceKeys);
+		private String name;
 
-	Flux<String> deleteServiceKeys(List<BackingServiceKey> backingServiceKeys);
+		DeleteServiceInstanceResponseBuilder() {
+		}
+
+		public DeleteServiceInstanceResponseBuilder name(String name) {
+			this.name = name;
+			return this;
+		}
+
+		public DeleteServiceKeyResponse build() {
+			return new DeleteServiceKeyResponse(name);
+		}
+
+	}
 }

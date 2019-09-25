@@ -17,6 +17,7 @@
 package org.springframework.cloud.appbroker.deployer.cloudfoundry;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -439,6 +440,7 @@ class CloudFoundryAppDeployerTest {
 		when(operationsServices.deleteInstance(
 			org.cloudfoundry.operations.services.DeleteServiceInstanceRequest.builder()
 																			 .name("service-instance-name")
+																			 .completionTimeout(Duration.ofHours(4))
 																			 .build()))
 			.thenReturn(Mono.empty());
 
@@ -480,6 +482,7 @@ class CloudFoundryAppDeployerTest {
 		when(operationsServices.deleteInstance(
 			org.cloudfoundry.operations.services.DeleteServiceInstanceRequest.builder()
 																			 .name("service-instance-name")
+															 				 .completionTimeout(Duration.ofHours(4))
 																			 .build()))
 			.thenReturn(Mono.empty());
 
@@ -576,6 +579,7 @@ class CloudFoundryAppDeployerTest {
 																			 .serviceInstanceName("service-instance-name")
 																			 .serviceName("db-service")
 																			 .planName("standard")
+																			 .completionTimeout(Duration.ofHours(4))
 																			 .parameters(emptyMap())
 																			 .build()))
 			.thenReturn(Mono.empty());
@@ -644,6 +648,7 @@ class CloudFoundryAppDeployerTest {
 					.serviceInstanceName("service-instance-name")
 					.serviceName("db-service")
 					.planName("standard")
+					.completionTimeout(Duration.ofHours(4))
 					.parameters(emptyMap())
 					.build()))
 			.thenReturn(Mono.empty());
@@ -672,6 +677,7 @@ class CloudFoundryAppDeployerTest {
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
 				.serviceInstanceName("service-instance-name")
 				.parameters(parameters)
+				.completionTimeout(Duration.ofHours(4))
 				.build()))
 			.thenReturn(Mono.empty());
 
@@ -693,6 +699,7 @@ class CloudFoundryAppDeployerTest {
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
 				.serviceInstanceName("service-instance-name")
 				.parameters(emptyMap())
+				.completionTimeout(Duration.ofHours(4))
 				.build()))
 			.thenReturn(Mono.empty());
 

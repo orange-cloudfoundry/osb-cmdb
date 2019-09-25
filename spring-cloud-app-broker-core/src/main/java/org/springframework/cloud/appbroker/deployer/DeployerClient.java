@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.appbroker.deployer;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Mono;
@@ -107,12 +108,39 @@ public class DeployerClient {
 			.map(CreateServiceInstanceResponse::getName);
 	}
 
+	Mono<Map<String, Object>> createServiceKey(BackingServiceKey backingServiceKey) {
+		return appDeployer
+			.createServiceKey(
+				CreateServiceKeyRequest.builder()
+					.serviceInstanceName(backingServiceKey.getServiceInstanceName())
+					.serviceKeyName(backingServiceKey.getName())
+					.parameters(backingServiceKey.getParameters())
+					.properties(backingServiceKey.getProperties())
+					.build())
+			.doOnRequest(l -> log.debug("Creating backing service key {} for service {}",
+				backingServiceKey.getName(),
+				backingServiceKey.getServiceInstanceName()))
+			.doOnSuccess(response -> log.debug("Finished creating backing service key {} for service {}",
+				backingServiceKey.getName(),
+				backingServiceKey.getServiceInstanceName()))
+			.doOnError(exception -> log.error("Error creating backing service key {} for service {} with error '{}'",
+				backingServiceKey.getName(),
+				backingServiceKey.getServiceInstanceName(),
+				exceptionMessageOrToString(exception)))
+			.map(CreateServiceKeyResponse::getCredentials);
+	}
+
+	private String exceptionMessageOrToString(Throwable exception) {
+		return exception.getMessage() == null ? exception.toString() : exception.getMessage();
+	}
+
 	Mono<String> updateServiceInstance(BackingService backingService) {
 		return appDeployer
 			.updateServiceInstance(
 				UpdateServiceInstanceRequest
 					.builder()
 					.serviceInstanceName(backingService.getServiceInstanceName())
+					.plan(backingService.getPlan())
 					.parameters(backingService.getParameters())
 					.properties(backingService.getProperties())
 					.rebindOnUpdate(backingService.isRebindOnUpdate())
@@ -140,5 +168,30 @@ public class DeployerClient {
 				.name(backingService.getServiceInstanceName())
 				.build())
 			.map(DeleteServiceInstanceResponse::getName);
+	}
+
+	Mono<String> deleteServiceKey(BackingServiceKey backingServiceKey) {
+		return appDeployer
+			.deleteServiceKey(
+				DeleteServiceKeyRequest
+					.builder()
+					.serviceInstanceName(backingServiceKey.getServiceInstanceName())
+					.serviceKeyName(backingServiceKey.getName()) /*TODO: inject a strategy*/
+					.properties(backingServiceKey.getProperties())
+					.build())
+			.doOnRequest(l -> log.debug("Deleting backing service key {} for service {}",
+				backingServiceKey.getName(),
+				backingServiceKey.getServiceInstanceName()))
+			.doOnSuccess(response -> log.debug("Finished deleting backing service key {} for service {}",
+				backingServiceKey.getName(),
+				backingServiceKey.getServiceInstanceName()))
+			.doOnError(exception -> log.error("Error deleting backing service key {} for service {} with error '{}'",
+				backingServiceKey.getName(),
+				backingServiceKey.getServiceInstanceName(),
+				exceptionMessageOrToString(exception)))
+			.onErrorReturn(DeleteServiceKeyResponse.builder()
+				.name(backingServiceKey.getName())
+				.build())
+			.map(DeleteServiceKeyResponse::getName);
 	}
 }
