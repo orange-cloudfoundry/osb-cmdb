@@ -24,12 +24,12 @@ OSB API endpoint | eq CF CLI UX
 ------------ | -------------
 GET /v2/catalog | cf marketplace (WIP)
 PUT /v2/service_instances/:instance_id | cf create-space (WIP) ; cf create-service
-GET /v2/service_instances/:instance_id/last_operation | cf service (WIP)
+GET /v2/service_instances/:instance_id/last_operation | cf service
 GET /v2/service_instances/:instance_id | cf service (WIP)
 PATCH /v2/service_instances/:instance_id | cf update-service
 DELETE /v2/service_instances/:instance_id | cf delete-service
 PUT /v2/service_instances/:instance_id/service_bindings/:binding_id | cf create-service-key
 GET /v2/service_instances/:instance_id/service_bindings/:binding_id/last_operation | cf get-service-key (WIP)
-GET /v2/service_instances/:instance_id/service_bindings/:binding_id | cf get-service-key (WIP)
+GET /v2/service_instances/:instance_id/service_bindings/:binding_id | cf get-service-key
 DELETE /v2/service_instances/:instance_id/service_bindings/:binding_id | cf delete-service-key
 
