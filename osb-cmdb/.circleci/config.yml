@@ -1,0 +1,115 @@
+# Java Maven CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-java/ for more details
+#
+version: 2
+jobs:
+  build:
+    working_directory: ~/osb-cmdb-spike
+    docker:
+      - image: circleci/openjdk:8-jdk
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/osb-cmdb-spike
+      - run:
+          name: Build osb-cmdb and create jar
+#          environment:
+#          #Workaround OpenJdk8 regression which crashes JVM. See https://stackoverflow.com/a/53085816
+#          - _JAVA_OPTIONS: "-Djdk.net.URLClassPath.disableClassPathURLCheck=true"
+          command: |
+            ./gradlew :osb-cmdb:assemble
+#            mvn install --settings settings.xml
+#      - run:
+#          name: Save test results
+#          command: |
+#            mkdir -p ~/junit/
+#            find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/junit/ \;
+#          when: always
+      - run:
+          name: save jar artefacts
+          command: |
+            mkdir -p ./artefacts/
+            cp osb-cmdb/build/libs/osb-cmdb.jar ./artefacts/ 
+          when: always
+      - store_artifacts:
+          path: ./artefacts
+#      - store_test_results:
+#          path: ~/junit
+      # run whitesource security scans on the built artefacts
+#      - run: ./whitesource-scan.sh -apiKey $WHITESOURCE_API_KEY -c whitesource_config.properties -project circle-ci_test -d ~/
+      #- run: bash <(curl -s -L https://github.com/whitesource/unified-agent-distribution/raw/master/standAlone/wss_agent.sh) -apiKey $WHITESOURCE_API_KEY -c whitesource_config.properties -project circle-ci_test -d ~/
+  build_n_deploy:
+    working_directory: ~/osb-cmdb-spike
+    docker:
+      - image: circleci/openjdk:8-jdk
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/osb-cmdb-spike
+      - run:
+          name: building artefacts
+          command: ci-bin/package_artefacts.sh
+      - run:
+          name: save jar artefacts
+          command: |
+            mkdir -p ./artefacts/
+            cp osb-cmdb/build/libs/osb-cmdb.jar ./artefacts/
+          when: always
+#      - run:
+#          name: Save test results
+#          command: |
+#            mkdir -p ~/junit/
+#            find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/junit/ \;
+#          when: always
+#      - store_test_results:
+#          path: ~/junit
+      - store_artifacts:
+          path: ./artefacts
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ci-bin/create_github_release.sh
+            - ci-bin/upload_artefact_to_github.sh
+            - artefacts/*
+  release_to_github:
+    working_directory: ~/osb-cmdb-spike
+    docker:
+      - image: circleci/openjdk:8-jdk
+    steps:
+      - attach_workspace:
+          at: ~/osb-cmdb-spike
+      - run:
+          name: create github release
+          command: osb-cmdb/ci-bin/create_github_release.sh github_api_token=$GITHUB_TOKEN owner=$CIRCLE_PROJECT_USERNAME repo=$CIRCLE_PROJECT_REPONAME tag=$CIRCLE_TAG
+      - run:
+          name: upload artefacts to github release
+          command: |
+            for f in ./artefacts/*
+            do
+              echo "Processing $f file..."
+              # take action on each file.
+              osb-cmdb/ci-bin/upload_artefact_to_github.sh github_api_token=$GITHUB_TOKEN owner=$CIRCLE_PROJECT_USERNAME repo=$CIRCLE_PROJECT_REPONAME tag=$CIRCLE_TAG filename=$f
+            done
+workflows:
+  version: 2
+  build-n-deploy:
+    jobs:
+      - build:
+          filters:
+            tags:
+              ignore: /.*/
+      - build_n_deploy:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - release_to_github:
+          requires:
+            - build_n_deploy
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
