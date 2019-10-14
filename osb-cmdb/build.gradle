@@ -49,13 +49,7 @@ dependencies {
 // build the test broker from /src into a jar that the tests can deploy
 test.dependsOn assemble
 
-// omit the version from the test broker jar file
-jar {
-	version = ''
-}
-bootJar {
-	version = ''
-}
+
 
 test {
 	maxParallelForks = Runtime.runtime.availableProcessors() - 1 ?: 1
