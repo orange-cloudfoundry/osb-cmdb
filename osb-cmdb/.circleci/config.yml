@@ -46,7 +46,7 @@ jobs:
           name: save jar artefacts
           command: |
             mkdir -p ./artefacts/
-            cp osb-cmdb/build/libs/osb-cmdb.jar ./artefacts/ 
+            cp osb-cmdb/build/libs/osb-cmdb*.jar ./artefacts/
           when: always
       - store_artifacts:
           path: ./artefacts
