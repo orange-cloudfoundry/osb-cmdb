@@ -8,8 +8,24 @@ jobs:
     working_directory: ~/osb-cmdb-spike
     docker:
       - image: circleci/openjdk:8-jdk
+    environment:
+      # Customize the JVM maximum heap limit
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
     steps:
       - checkout
+      # Download and cache dependencies as advised by the circleci ui when adding gradle project
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run: gradle dependencies
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
+
       - attach_workspace:
           at: ~/osb-cmdb-spike
       - run:
