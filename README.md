@@ -36,8 +36,9 @@ DELETE /v2/service_instances/:instance_id/service_bindings/:binding_id | cf dele
 ### Releasing
 
 For the spike, 
-* manually edit the version in `osb-cmdb/gradle.properties` (e.g 0.1.0)
+* manually edit the version in `osb-cmdb/gradle.properties` (e.g `version=0.1.0`), commit & push
 * git tag v0.1.0 -a -m "0.1.0 release"
 * git push github-orange-osbcmdb-spike  v0.1.0
 * let circle ci build and upload the binaries to github
- 
+* edit the github release to complete release noets
+* manually edit the version in `osb-cmdb/gradle.properties`, commit & push e.g. `version=0.2.0.BUILD-SNAPSHOT` 
