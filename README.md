@@ -33,3 +33,10 @@ GET /v2/service_instances/:instance_id/service_bindings/:binding_id/last_operati
 GET /v2/service_instances/:instance_id/service_bindings/:binding_id | cf get-service-key
 DELETE /v2/service_instances/:instance_id/service_bindings/:binding_id | cf delete-service-key
 
+### Releasing
+
+For the spike, 
+* manually edit the version in `osb-cmdb/gradle.properties` (e.g 0.1.0)
+* git tag v0.1.0 -a -m "0.1.0 release"
+* let circle ci build and upload the binaries to github
+ 
