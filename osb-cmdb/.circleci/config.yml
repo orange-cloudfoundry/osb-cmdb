@@ -65,12 +65,14 @@ jobs:
           at: ~/osb-cmdb-spike
       - run:
           name: building artefacts
-          command: ci-bin/package_artefacts.sh
+          command: |
+            rm -f ./artefacts/*.jar osb-cmdb/build/libs/osb-cmdb*.jar
+            ./gradlew :osb-cmdb:assemble
       - run:
           name: save jar artefacts
           command: |
             mkdir -p ./artefacts/
-            cp osb-cmdb/build/libs/osb-cmdb.jar ./artefacts/
+            cp osb-cmdb/build/libs/osb-cmdb*.jar ./artefacts/
           when: always
 #      - run:
 #          name: Save test results
@@ -85,8 +87,8 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - ci-bin/create_github_release.sh
-            - ci-bin/upload_artefact_to_github.sh
+            - osb-cmdb/ci-bin/create_github_release.sh
+            - osb-cmdb/ci-bin/upload_artefact_to_github.sh
             - artefacts/*
   release_to_github:
     working_directory: ~/osb-cmdb-spike
