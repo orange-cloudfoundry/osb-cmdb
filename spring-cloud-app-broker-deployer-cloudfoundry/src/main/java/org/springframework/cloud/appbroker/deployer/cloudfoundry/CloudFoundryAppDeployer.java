@@ -968,7 +968,7 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
 		return operationsUtils.getOperations(request.getProperties())
 			.flatMap(cfOperations -> rebindServiceInstanceIfNecessary(request, cfOperations)
-				.then(updateServiceInstanceIfNecessary(request, cfOperations)));
+				.then(updateServiceInstance(request, cfOperations)));
 	}
 
 	@Override
@@ -1056,20 +1056,19 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 		return Mono.empty();
 	}
 
-	private Mono<UpdateServiceInstanceResponse> updateServiceInstanceIfNecessary(UpdateServiceInstanceRequest request,
-																				 CloudFoundryOperations cloudFoundryOperations) {
-		// service instances can be updated with a change to the plan, name, or parameters;
-		// of these only parameter changes are supported, so don't update if the
-		// backing service instance has no parameters
-		if (request.getParameters() == null || request.getParameters().isEmpty()) {
-			return Mono.empty();
-		}
+	private Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request,
+																	  CloudFoundryOperations cloudFoundryOperations) {
+		// service instances can be updated with a change to the plan, name, or parameters
+		// or maintenance info
+		// No easy way to filter out some unnecessary update requests.
+		// Relying on CF to quickly apply no-op updates
 
 		final String serviceInstanceName = request.getServiceInstanceName();
 
 		return cloudFoundryOperations.services().updateInstance(
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
 				.serviceInstanceName(serviceInstanceName)
+				.planName(request.getPlan())
 				.parameters(request.getParameters())
 				.build())
 			.then(Mono.just(UpdateServiceInstanceResponse.builder()

@@ -665,7 +665,7 @@ class CloudFoundryAppDeployerTest {
 	}
 
 	@Test
-	void updateServiceInstanceUpdatesWithParameters() {
+	void updateServiceInstanceUpdatesWithParametersUpdatesBackingService() {
 		Map<String, Object> parameters = singletonMap("param1", "value");
 
 		when(operationsServices.updateInstance(
@@ -688,7 +688,7 @@ class CloudFoundryAppDeployerTest {
 	}
 
 	@Test
-	void updateServiceInstanceRebindsWhenRequired() {
+	void updateServiceInstanceRebindsBackingAppWhenRequired() {
 		when(operationsServices.updateInstance(
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
 				.serviceInstanceName("service-instance-name")
@@ -739,11 +739,12 @@ class CloudFoundryAppDeployerTest {
 
 		StepVerifier.create(
 			appDeployer.updateServiceInstance(request))
+			.assertNext(response -> assertThat(response.getName()).isEqualTo("service-instance-name")) // backing service is also updated
 			.verifyComplete();
 	}
 
 	@Test
-	void updateServiceInstanceDoesNothingWithoutParameters() {
+	void updateServiceInstanceWithoutParametersUpdatesBackingService() {
 		when(operationsServices.updateInstance(
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
 				.serviceInstanceName("service-instance-name")
@@ -759,6 +760,30 @@ class CloudFoundryAppDeployerTest {
 
 		StepVerifier.create(
 			appDeployer.updateServiceInstance(request))
+			.assertNext(response -> assertThat(response.getName()).isEqualTo("service-instance-name"))
+			.verifyComplete();
+	}
+
+	@Test
+	void updateServiceInstanceWithPlanUpdatesBackingService() {
+		when(operationsServices.updateInstance(
+			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
+				.serviceInstanceName("service-instance-name")
+				.parameters(emptyMap())
+				.planName("premium")
+				.build()))
+			.thenReturn(Mono.empty());
+
+		UpdateServiceInstanceRequest request =
+			UpdateServiceInstanceRequest.builder()
+				.serviceInstanceName("service-instance-name")
+				.parameters(emptyMap())
+				.plan("premium")
+				.build();
+
+		StepVerifier.create(
+			appDeployer.updateServiceInstance(request))
+			.assertNext(response -> assertThat(response.getName()).isEqualTo("service-instance-name"))
 			.verifyComplete();
 	}
 
