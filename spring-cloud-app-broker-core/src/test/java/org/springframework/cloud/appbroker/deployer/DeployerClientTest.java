@@ -46,6 +46,7 @@ class DeployerClientTest {
 	private static final String APP_PATH = "classpath:/jars/" + APP_ARCHIVE;
 
 	private static final String SERVICE_INSTANCE_NAME = "helloservice";
+	private static final String SERVICE_INSTANCE_PLAN_NAME = "helloplan";
 
 	private DeployerClient deployerClient;
 
@@ -229,6 +230,7 @@ class DeployerClientTest {
 
 		BackingService service = BackingService.builder()
 			.serviceInstanceName(SERVICE_INSTANCE_NAME)
+			.plan(SERVICE_INSTANCE_PLAN_NAME)
 			.build();
 
 		// when
@@ -237,8 +239,10 @@ class DeployerClientTest {
 			.expectNext(SERVICE_INSTANCE_NAME)
 			.verifyComplete();
 
-		verify(appDeployer).updateServiceInstance(argThat(request ->
-			SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName())));
+		verify(appDeployer).updateServiceInstance(
+			argThat(request -> SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName()) &&
+				               SERVICE_INSTANCE_PLAN_NAME.equals(request.getPlan()))
+		);
 	}
 
 	@Test
