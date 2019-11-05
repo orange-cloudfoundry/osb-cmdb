@@ -17,6 +17,7 @@
 package org.springframework.cloud.appbroker.deployer;
 
 import java.util.List;
+import java.util.Map;
 
 import reactor.core.publisher.Flux;
 
@@ -27,4 +28,16 @@ public interface BackingServicesProvisionService {
 	Flux<String> updateServiceInstance(List<BackingService> backingServices);
 
 	Flux<String> deleteServiceInstance(List<BackingService> backingServices);
+
+	/**
+	 * Create service keys
+	 * @return A flux of credentials associated with each created service key
+	 */
+	Flux<Map<String, Object>> createServiceKeys(List<BackingServiceKey> backingServiceKeys);
+
+	/**
+	 * Delete service keys
+	 * @return a Flux of service key names that were deleted
+	 */
+	Flux<String> deleteServiceKeys(List<BackingServiceKey> backingServiceKeys);
 }
