@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.assertj.core.util.Maps;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +47,7 @@ public class DeployerClientTest {
 	private static final String APP_PATH = "classpath:/jars/" + APP_ARCHIVE;
 
 	private static final String SERVICE_INSTANCE_NAME = "helloservice";
+	private static final String SERVICE_KEY_NAME = "hellokey";
 
 	private DeployerClient deployerClient;
 
@@ -213,6 +215,55 @@ public class DeployerClientTest {
 	}
 
 	@Test
+	void shouldCreateServiceKey() {
+		// given
+		when(appDeployer.createServiceKey(any()))
+			.thenReturn(Mono.just(CreateServiceKeyResponse.builder()
+				.name(SERVICE_KEY_NAME)
+				.credentials(Maps.newHashMap("uri", "mysql://user:password@aprovider.com:3306/instance_name?reconnect=true"))
+				.build()));
+
+		BackingServiceKey serviceKey = BackingServiceKey.builder()
+			.serviceInstanceName(SERVICE_INSTANCE_NAME)
+			.serviceKeyName(SERVICE_KEY_NAME)
+			.build();
+
+		// when
+		StepVerifier.create(deployerClient.createServiceKey(serviceKey))
+			// then
+			.expectNext(Maps.newHashMap("uri", "mysql://user:password@aprovider.com:3306/instance_name?reconnect=true"))
+			.verifyComplete();
+
+		verify(appDeployer).createServiceKey(argThat(request ->
+			SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName()) &&
+			SERVICE_KEY_NAME.equals(request.getServiceKeyName())));
+	}
+
+	@Test
+	void shouldDeleteServiceKey() {
+		// given
+		when(appDeployer.deleteServiceKey(any()))
+			.thenReturn(Mono.just(DeleteServiceKeyResponse.builder()
+				.name(SERVICE_KEY_NAME)
+				.build()));
+
+		BackingServiceKey serviceKey = BackingServiceKey.builder()
+			.serviceInstanceName(SERVICE_INSTANCE_NAME)
+			.serviceKeyName(SERVICE_KEY_NAME)
+			.build();
+
+		// when
+		StepVerifier.create(deployerClient.deleteServiceKey(serviceKey))
+			// then
+			.expectNext(SERVICE_KEY_NAME)
+			.verifyComplete();
+
+		verify(appDeployer).deleteServiceKey(argThat(request ->
+			SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName()) &&
+			SERVICE_KEY_NAME.equals(request.getServiceKeyName())));
+	}
+
+	@Test
 	public void shouldUpdateServiceInstance() {
 		given(appDeployer.updateServiceInstance(any()))
 			.willReturn(Mono.just(UpdateServiceInstanceResponse.builder()
@@ -290,6 +341,27 @@ public class DeployerClientTest {
 
 		then(appDeployer).should().deleteServiceInstance(argThat(request ->
 			SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName())));
+	}
+
+	@Test
+	void shouldNotReturnErrorWhenDeletingServiceKeyThatDoesNotExist() {
+		// given
+		when(appDeployer.deleteServiceKey(any()))
+			.thenReturn(Mono.error(new IllegalStateException("service key does not exist")));
+
+		BackingServiceKey serviceKey = BackingServiceKey.builder()
+			.serviceInstanceName(SERVICE_INSTANCE_NAME)
+			.serviceKeyName(SERVICE_KEY_NAME)
+			.build();
+
+		// when
+		StepVerifier.create(deployerClient.deleteServiceKey(serviceKey))
+			// then
+			.expectNext(SERVICE_KEY_NAME)
+			.verifyComplete();
+
+		verify(appDeployer).deleteServiceKey(argThat(request ->
+			SERVICE_KEY_NAME.equals(request.getServiceKeyName())));
 	}
 
 	private ArgumentMatcher<DeployApplicationRequest> matchesRequest(String appName, String appArchive,
