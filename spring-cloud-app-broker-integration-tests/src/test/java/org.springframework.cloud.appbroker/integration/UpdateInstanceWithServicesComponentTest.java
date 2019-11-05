@@ -24,6 +24,8 @@ import org.springframework.cloud.servicebroker.model.instance.OperationState;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.HashMap;
+
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -59,6 +61,9 @@ class UpdateInstanceWithServicesComponentTest extends WiremockComponentTest {
 	void updateAppWithServices() {
 		cloudControllerFixture.stubAppExists(APP_NAME);
 		cloudControllerFixture.stubUpdateApp(APP_NAME);
+		cloudControllerFixture.stubServiceInstanceExists(SERVICE_INSTANCE_NAME); //Cf java client checks existence of a SI before updating it.
+		cloudControllerFixture.stubUpdateServiceInstanceWithParameters(SERVICE_INSTANCE_NAME, new HashMap<>());
+
 
 		// when a service instance is updated
 		given(brokerFixture.serviceInstanceRequest())
