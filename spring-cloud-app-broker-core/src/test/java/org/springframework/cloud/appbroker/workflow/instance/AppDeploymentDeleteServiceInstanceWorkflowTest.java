@@ -47,7 +47,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
-class AppDeploymentDeleteServiceInstanceWorkflowTest {
+public class AppDeploymentDeleteServiceInstanceWorkflowTest {
 
 	@Mock
 	private BackingAppDeploymentService backingAppDeploymentService;
@@ -62,13 +62,15 @@ class AppDeploymentDeleteServiceInstanceWorkflowTest {
 	private BackingServicesProvisionService backingServicesProvisionService;
 
 	private BackingApplications backingApps;
+
 	private BackingServices backingServices;
+
 	private TargetSpec targetSpec;
 
 	private DeleteServiceInstanceWorkflow deleteServiceInstanceWorkflow;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		backingApps = BackingApplications
 			.builder()
 			.backingApplication(BackingApplication
@@ -117,7 +119,7 @@ class AppDeploymentDeleteServiceInstanceWorkflowTest {
 	}
 
 	@Test
-	void deleteServiceInstanceSucceeds() {
+	public void deleteServiceInstanceSucceeds() {
 		DeleteServiceInstanceRequest request = buildRequest("service1", "plan1");
 		DeleteServiceInstanceResponse response = DeleteServiceInstanceResponse.builder().build();
 
@@ -142,7 +144,7 @@ class AppDeploymentDeleteServiceInstanceWorkflowTest {
 	}
 
 	@Test
-	void deleteServiceInstanceWithWithNoAppsDoesNothing() {
+	public void deleteServiceInstanceWithWithNoAppsDoesNothing() {
 		DeleteServiceInstanceRequest request = buildRequest("unsupported-service", "plan1");
 		DeleteServiceInstanceResponse response = DeleteServiceInstanceResponse.builder().build();
 
@@ -180,4 +182,5 @@ class AppDeploymentDeleteServiceInstanceWorkflowTest {
 				.build())
 			.build();
 	}
+
 }

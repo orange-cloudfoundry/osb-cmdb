@@ -28,24 +28,25 @@ import org.springframework.cloud.servicebroker.model.instance.OperationState;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class InMemoryServiceInstanceBindingStateRepositoryTest {
+public class InMemoryServiceInstanceBindingStateRepositoryTest {
 
 	private InMemoryServiceInstanceBindingStateRepository stateRepository;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		this.stateRepository = new InMemoryServiceInstanceBindingStateRepository();
 	}
 
 	@Test
-	void saveAndGet() {
+	public void saveAndGet() {
 		StepVerifier
-				.create(stateRepository.saveState("foo-service", "foo-binding",
-						OperationState.IN_PROGRESS, "bar"))
+			.create(stateRepository.saveState("foo-service", "foo-binding",
+				OperationState.IN_PROGRESS, "bar"))
 			.assertNext(serviceInstanceState -> {
 				assertThat(serviceInstanceState.getOperationState()).isEqualTo(OperationState.IN_PROGRESS);
 				assertThat(serviceInstanceState.getDescription()).isEqualTo("bar");
-				assertThat(serviceInstanceState.getLastUpdated()).isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
+				assertThat(serviceInstanceState.getLastUpdated())
+					.isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
 			})
 			.verifyComplete();
 
@@ -53,20 +54,22 @@ class InMemoryServiceInstanceBindingStateRepositoryTest {
 			.assertNext(serviceInstanceState -> {
 				assertThat(serviceInstanceState.getOperationState()).isEqualTo(OperationState.IN_PROGRESS);
 				assertThat(serviceInstanceState.getDescription()).isEqualTo("bar");
-				assertThat(serviceInstanceState.getLastUpdated()).isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
+				assertThat(serviceInstanceState.getLastUpdated())
+					.isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
 			})
 			.verifyComplete();
 	}
 
 	@Test
-	void saveAndRemove() {
+	public void saveAndRemove() {
 		StepVerifier
-				.create(stateRepository.saveState("foo-service", "foo-binding",
-						OperationState.IN_PROGRESS, "bar"))
+			.create(stateRepository.saveState("foo-service", "foo-binding",
+				OperationState.IN_PROGRESS, "bar"))
 			.assertNext(serviceInstanceState -> {
 				assertThat(serviceInstanceState.getOperationState()).isEqualTo(OperationState.IN_PROGRESS);
 				assertThat(serviceInstanceState.getDescription()).isEqualTo("bar");
-				assertThat(serviceInstanceState.getLastUpdated()).isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
+				assertThat(serviceInstanceState.getLastUpdated())
+					.isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
 			})
 			.verifyComplete();
 
@@ -74,7 +77,8 @@ class InMemoryServiceInstanceBindingStateRepositoryTest {
 			.assertNext(serviceInstanceState -> {
 				assertThat(serviceInstanceState.getOperationState()).isEqualTo(OperationState.IN_PROGRESS);
 				assertThat(serviceInstanceState.getDescription()).isEqualTo("bar");
-				assertThat(serviceInstanceState.getLastUpdated()).isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
+				assertThat(serviceInstanceState.getLastUpdated())
+					.isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
 			})
 			.verifyComplete();
 
@@ -84,14 +88,15 @@ class InMemoryServiceInstanceBindingStateRepositoryTest {
 	}
 
 	@Test
-	void updateState() {
+	public void updateState() {
 		StepVerifier
 			.create(stateRepository.saveState("foo-service", "foo-binding",
 				OperationState.IN_PROGRESS, "bar"))
 			.assertNext(serviceInstanceState -> {
 				assertThat(serviceInstanceState.getOperationState()).isEqualTo(OperationState.IN_PROGRESS);
 				assertThat(serviceInstanceState.getDescription()).isEqualTo("bar");
-				assertThat(serviceInstanceState.getLastUpdated()).isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
+				assertThat(serviceInstanceState.getLastUpdated())
+					.isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
 			})
 			.verifyComplete();
 
@@ -99,7 +104,8 @@ class InMemoryServiceInstanceBindingStateRepositoryTest {
 			.assertNext(serviceInstanceState -> {
 				assertThat(serviceInstanceState.getOperationState()).isEqualTo(OperationState.IN_PROGRESS);
 				assertThat(serviceInstanceState.getDescription()).isEqualTo("bar");
-				assertThat(serviceInstanceState.getLastUpdated()).isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
+				assertThat(serviceInstanceState.getLastUpdated())
+					.isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
 			})
 			.verifyComplete();
 
@@ -109,7 +115,8 @@ class InMemoryServiceInstanceBindingStateRepositoryTest {
 			.assertNext(serviceInstanceState -> {
 				assertThat(serviceInstanceState.getOperationState()).isEqualTo(OperationState.SUCCEEDED);
 				assertThat(serviceInstanceState.getDescription()).isEqualTo("bar");
-				assertThat(serviceInstanceState.getLastUpdated()).isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
+				assertThat(serviceInstanceState.getLastUpdated())
+					.isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
 			})
 			.verifyComplete();
 
@@ -117,34 +124,35 @@ class InMemoryServiceInstanceBindingStateRepositoryTest {
 			.assertNext(serviceInstanceState -> {
 				assertThat(serviceInstanceState.getOperationState()).isEqualTo(OperationState.SUCCEEDED);
 				assertThat(serviceInstanceState.getDescription()).isEqualTo("bar");
-				assertThat(serviceInstanceState.getLastUpdated()).isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
+				assertThat(serviceInstanceState.getLastUpdated())
+					.isEqualToIgnoringSeconds(Calendar.getInstance().getTime());
 			})
 			.verifyComplete();
 	}
 
 	@Test
-	void getWithNullBindingKey() {
+	public void getWithNullBindingKey() {
 		StepVerifier.create(stateRepository.getState(null, null))
 			.expectError(IllegalArgumentException.class)
 			.verify();
 	}
 
 	@Test
-	void getWithUnknownBindingKey() {
+	public void getWithUnknownBindingKey() {
 		StepVerifier.create(stateRepository.getState("foo-service", "foo-binding"))
 			.expectError(IllegalArgumentException.class)
 			.verify();
 	}
 
 	@Test
-	void removeWithUnknownBindingKey() {
+	public void removeWithUnknownBindingKey() {
 		StepVerifier.create(stateRepository.removeState("foo-service", "foo-binding"))
 			.expectError(IllegalArgumentException.class)
 			.verify();
 	}
 
 	@Test
-	void ensureConcurrency() {
+	public void ensureConcurrency() {
 		StepVerifier.create(
 			Flux.range(0, 100_000)
 				.parallel(25)
@@ -160,4 +168,5 @@ class InMemoryServiceInstanceBindingStateRepositoryTest {
 			.expectNextCount(100_000)
 			.verifyComplete();
 	}
+
 }

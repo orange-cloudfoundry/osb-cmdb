@@ -16,21 +16,23 @@
 
 package org.springframework.cloud.appbroker.extensions;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.cloud.appbroker.extensions.support.ConfigurationBeanUtils;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.Test;
+
+import org.springframework.cloud.appbroker.extensions.support.ConfigurationBeanUtils;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ConfigurationBeanUtilsTest {
-	
+public class ConfigurationBeanUtilsTest {
+
 	private final TestProperties targetObject = new TestProperties();
+
 	private final Map<String, Object> properties = new HashMap<>();
 
 	@Test
-	void populateWithCamelCaseProperties() {
+	public void populateWithCamelCaseProperties() {
 		properties.put("stringValue", "value");
 		properties.put("intValue", 41);
 		properties.put("booleanValue", true);
@@ -41,7 +43,7 @@ class ConfigurationBeanUtilsTest {
 	}
 
 	@Test
-	void populateWithKebabCaseProperties() {
+	public void populateWithKebabCaseProperties() {
 		properties.put("string-value", "value");
 		properties.put("int-value", 41);
 		properties.put("boolean-value", true);
@@ -52,14 +54,14 @@ class ConfigurationBeanUtilsTest {
 	}
 
 	@Test
-	void populateWithEmptyProperties() {
+	public void populateWithEmptyProperties() {
 		ConfigurationBeanUtils.populate(targetObject, properties);
 
 		assertValuesNotPopulated(targetObject);
 	}
 
 	@Test
-	void populateWithNullProperties() {
+	public void populateWithNullProperties() {
 		ConfigurationBeanUtils.populate(targetObject, null);
 
 		assertValuesNotPopulated(targetObject);
@@ -79,11 +81,14 @@ class ConfigurationBeanUtilsTest {
 
 	@SuppressWarnings("unused")
 	public static class TestProperties {
+
 		private String stringValue;
+
 		private int intValue;
+
 		private boolean booleanValue;
 
-		String getStringValue() {
+		public String getStringValue() {
 			return stringValue;
 		}
 
@@ -91,7 +96,7 @@ class ConfigurationBeanUtilsTest {
 			this.stringValue = stringValue;
 		}
 
-		int getIntValue() {
+		public int getIntValue() {
 			return intValue;
 		}
 
@@ -99,12 +104,14 @@ class ConfigurationBeanUtilsTest {
 			this.intValue = intValue;
 		}
 
-		boolean isBooleanValue() {
+		public boolean isBooleanValue() {
 			return booleanValue;
 		}
 
 		public void setBooleanValue(boolean booleanValue) {
 			this.booleanValue = booleanValue;
 		}
+
 	}
+
 }

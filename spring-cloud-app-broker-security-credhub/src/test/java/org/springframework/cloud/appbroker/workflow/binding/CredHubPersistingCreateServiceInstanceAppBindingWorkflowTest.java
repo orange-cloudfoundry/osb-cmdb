@@ -25,19 +25,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cloud.servicebroker.model.binding.BindResource;
-import org.springframework.credhub.core.permissionV2.CredHubPermissionV2Operations;
-import org.springframework.credhub.support.CredentialName;
-import org.springframework.credhub.support.ServiceInstanceCredentialName;
 import reactor.test.StepVerifier;
 
+import org.springframework.cloud.servicebroker.model.binding.BindResource;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse.CreateServiceInstanceAppBindingResponseBuilder;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest;
 import org.springframework.cloud.servicebroker.model.binding.VolumeMount;
 import org.springframework.credhub.core.CredHubOperations;
 import org.springframework.credhub.core.credential.CredHubCredentialOperations;
+import org.springframework.credhub.core.permissionV2.CredHubPermissionV2Operations;
 import org.springframework.credhub.support.CredentialDetails;
+import org.springframework.credhub.support.CredentialName;
+import org.springframework.credhub.support.ServiceInstanceCredentialName;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -62,12 +62,13 @@ class CredHubPersistingCreateServiceInstanceAppBindingWorkflowTest {
 	private CredHubPersistingCreateServiceInstanceAppBindingWorkflow workflow;
 
 	@BeforeEach
-	void setUp() {
-		this.workflow = new CredHubPersistingCreateServiceInstanceAppBindingWorkflow(credHubOperations, "test-app-name");
+	public void setUp() {
+		this.workflow = new CredHubPersistingCreateServiceInstanceAppBindingWorkflow(credHubOperations,
+			"test-app-name");
 	}
 
 	@Test
-	void noBindingCredentials() {
+	public void noBindingCredentials() {
 		CreateServiceInstanceBindingRequest request = CreateServiceInstanceBindingRequest
 			.builder()
 			.bindingId("foo-binding-id")
@@ -89,7 +90,8 @@ class CredHubPersistingCreateServiceInstanceAppBindingWorkflowTest {
 		StepVerifier
 			.create(this.workflow.buildResponse(request, responseBuilder))
 			.assertNext(createServiceInstanceAppBindingResponseBuilder -> {
-				CreateServiceInstanceAppBindingResponse response = createServiceInstanceAppBindingResponseBuilder.build();
+				CreateServiceInstanceAppBindingResponse response = createServiceInstanceAppBindingResponseBuilder
+					.build();
 				assertThat(response.isBindingExisted()).isEqualTo(true);
 				assertThat(response.getCredentials()).hasSize(0);
 				assertThat(response.getSyslogDrainUrl()).isEqualTo("https://logs.example.com");
@@ -103,7 +105,7 @@ class CredHubPersistingCreateServiceInstanceAppBindingWorkflowTest {
 
 	@Test
 	@SuppressWarnings("serial")
-	void storeCredentialsInCredHub() {
+	public void storeCredentialsInCredHub() {
 		CredentialName credentialName = ServiceInstanceCredentialName.builder()
 			.serviceBrokerName("test-app-name")
 			.serviceOfferingName("foo-definition-id")
@@ -153,7 +155,8 @@ class CredHubPersistingCreateServiceInstanceAppBindingWorkflowTest {
 		StepVerifier
 			.create(this.workflow.buildResponse(request, responseBuilder))
 			.assertNext(createServiceInstanceAppBindingResponseBuilder -> {
-				CreateServiceInstanceAppBindingResponse response = createServiceInstanceAppBindingResponseBuilder.build();
+				CreateServiceInstanceAppBindingResponse response = createServiceInstanceAppBindingResponseBuilder
+					.build();
 				assertThat(response.isBindingExisted()).isEqualTo(true);
 				assertThat(response.getCredentials()).hasSize(1);
 				assertThat(response.getCredentials().get("credhub-ref")).isEqualTo(credentialName.getName());
@@ -167,4 +170,5 @@ class CredHubPersistingCreateServiceInstanceAppBindingWorkflowTest {
 		verify(this.credHubPermissionOperations, times(2)).addPermissions(any(), any());
 		verifyNoMoreInteractions(this.credHubCredentialOperations);
 	}
+
 }

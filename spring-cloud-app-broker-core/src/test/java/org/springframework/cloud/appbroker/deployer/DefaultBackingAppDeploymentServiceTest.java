@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.appbroker.deployer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,22 +27,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.mockito.Mockito.doReturn;
 
 @ExtendWith(MockitoExtension.class)
-class DefaultBackingAppDeploymentServiceTest {
+public class DefaultBackingAppDeploymentServiceTest {
 
 	@Mock
 	private DeployerClient deployerClient;
 
 	private BackingAppDeploymentService backingAppDeploymentService;
+
 	private BackingApplications backingApps;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		backingAppDeploymentService = new DefaultBackingAppDeploymentService(deployerClient);
 		backingApps = BackingApplications.builder()
 			.backingApplication(BackingApplication.builder()
@@ -55,7 +56,7 @@ class DefaultBackingAppDeploymentServiceTest {
 
 	@Test
 	@SuppressWarnings("UnassignedFluxMonoInstance")
-	void shouldDeployApplications() {
+	public void shouldDeployApplications() {
 		doReturn(Mono.just("app1"))
 			.when(deployerClient).deploy(backingApps.get(0), "instance-id");
 		doReturn(Mono.just("app2"))
@@ -75,7 +76,7 @@ class DefaultBackingAppDeploymentServiceTest {
 
 	@Test
 	@SuppressWarnings("UnassignedFluxMonoInstance")
-	void shouldUndeployApplications() {
+	public void shouldUndeployApplications() {
 		doReturn(Mono.just("deleted1"))
 			.when(deployerClient).undeploy(backingApps.get(0));
 		doReturn(Mono.just("deleted2"))
@@ -92,4 +93,5 @@ class DefaultBackingAppDeploymentServiceTest {
 			.expectNextMatches(expectedValues::remove)
 			.verifyComplete();
 	}
+
 }

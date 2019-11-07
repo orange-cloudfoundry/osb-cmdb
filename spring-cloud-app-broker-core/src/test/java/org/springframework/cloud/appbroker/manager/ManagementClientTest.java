@@ -36,7 +36,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 @ExtendWith(MockitoExtension.class)
-class ManagementClientTest {
+public class ManagementClientTest {
 
 	private ManagementClient managementClient;
 
@@ -46,7 +46,7 @@ class ManagementClientTest {
 	private BackingApplication backingApplication;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		this.managementClient = new ManagementClient(appManager);
 
 		this.backingApplication = BackingApplication.builder()
@@ -56,7 +56,7 @@ class ManagementClientTest {
 	}
 
 	@Test
-	void startApplication() {
+	public void startApplication() {
 		given(appManager.start(any(StartApplicationRequest.class)))
 			.willReturn(Mono.empty());
 
@@ -69,7 +69,7 @@ class ManagementClientTest {
 	}
 
 	@Test
-	void startNullApplication() {
+	public void startNullApplication() {
 		StepVerifier.create(managementClient.start(null))
 			.verifyComplete();
 
@@ -77,7 +77,7 @@ class ManagementClientTest {
 	}
 
 	@Test
-	void stopApplication() {
+	public void stopApplication() {
 		given(appManager.stop(any(StopApplicationRequest.class)))
 			.willReturn(Mono.empty());
 
@@ -90,7 +90,7 @@ class ManagementClientTest {
 	}
 
 	@Test
-	void stopNullApplication() {
+	public void stopNullApplication() {
 		StepVerifier.create(managementClient.stop(null))
 			.verifyComplete();
 
@@ -98,7 +98,7 @@ class ManagementClientTest {
 	}
 
 	@Test
-	void restartApplication() {
+	public void restartApplication() {
 		given(appManager.restart(any(RestartApplicationRequest.class)))
 			.willReturn(Mono.empty());
 
@@ -111,7 +111,7 @@ class ManagementClientTest {
 	}
 
 	@Test
-	void restartNullApplication() {
+	public void restartNullApplication() {
 		StepVerifier.create(managementClient.restart(null))
 			.verifyComplete();
 
@@ -119,7 +119,7 @@ class ManagementClientTest {
 	}
 
 	@Test
-	void restageApplication() {
+	public void restageApplication() {
 		given(appManager.restage(any(RestageApplicationRequest.class)))
 			.willReturn(Mono.empty());
 
@@ -132,10 +132,11 @@ class ManagementClientTest {
 	}
 
 	@Test
-	void restageNullApplication() {
+	public void restageNullApplication() {
 		StepVerifier.create(managementClient.restage(null))
 			.verifyComplete();
 
 		verifyZeroInteractions(appManager);
 	}
+
 }

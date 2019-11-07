@@ -31,25 +31,25 @@ public class BackingServicesParametersTransformationService {
 
 	private final ExtensionLocator<ParametersTransformer<BackingService>> locator;
 
-	public BackingServicesParametersTransformationService(
-		List<ParametersTransformerFactory<BackingService, ?>> factories) {
+	public BackingServicesParametersTransformationService(List<ParametersTransformerFactory<BackingService, ?>> factories) {
 		locator = new ExtensionLocator<>(factories);
 	}
 
 	public Mono<List<BackingService>> transformParameters(List<BackingService> backingServices,
-														  Map<String, Object> parameters) {
+		Map<String, Object> parameters) {
 		return Flux.fromIterable(backingServices)
-				   .flatMap(backingService -> {
-					   List<ParametersTransformerSpec> specs = getTransformerSpecsForService(backingService);
+			.flatMap(backingService -> {
+				List<ParametersTransformerSpec> specs = getTransformerSpecsForService(backingService);
 
-					   return Flux.fromIterable(specs)
-								  .flatMap(spec -> {
-									  ParametersTransformer<BackingService> transformer = locator.getByName(spec.getName(), spec.getArgs());
-									  return transformer.transform(backingService, parameters);
-								  })
-								  .then(Mono.just(backingService));
-				   })
-				   .collectList();
+				return Flux.fromIterable(specs)
+					.flatMap(spec -> {
+						ParametersTransformer<BackingService> transformer = locator
+							.getByName(spec.getName(), spec.getArgs());
+						return transformer.transform(backingService, parameters);
+					})
+					.then(Mono.just(backingService));
+			})
+			.collectList();
 	}
 
 	private List<ParametersTransformerSpec> getTransformerSpecsForService(BackingService backingService) {
@@ -57,4 +57,5 @@ public class BackingServicesParametersTransformationService {
 			? Collections.emptyList()
 			: backingService.getParametersTransformers();
 	}
+
 }

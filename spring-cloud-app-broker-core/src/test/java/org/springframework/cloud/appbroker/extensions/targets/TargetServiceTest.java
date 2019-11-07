@@ -29,17 +29,18 @@ import org.springframework.cloud.appbroker.deployer.TargetSpec;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TargetServiceTest {
+public class TargetServiceTest {
 
 	private TargetService targetService;
 
 	@BeforeEach
-	void setUp() {
-		targetService = new TargetService(Arrays.asList(new SpacePerServiceInstance(), new ServiceInstanceGuidSuffix()));
+	public void setUp() {
+		targetService = new TargetService(
+			Arrays.asList(new SpacePerServiceInstance(), new ServiceInstanceGuidSuffix()));
 	}
 
 	@Test
-	void shouldAddProperties() {
+	public void shouldAddProperties() {
 		// given an app with a target
 		TargetSpec targetSpec = TargetSpec.builder().name("SpacePerServiceInstance").build();
 		BackingApplication backingApplication = BackingApplication.builder().name("app-name").build();
@@ -58,7 +59,7 @@ class TargetServiceTest {
 	}
 
 	@Test
-	void shouldAddPropertiesToAllBackingApps() {
+	public void shouldAddPropertiesToAllBackingApps() {
 		// given an app with a target
 		TargetSpec targetSpec = TargetSpec.builder().name("SpacePerServiceInstance").build();
 		BackingApplication backingApplication1 = BackingApplication.builder().name("app-name1").build();
@@ -67,7 +68,8 @@ class TargetServiceTest {
 		//when add gets called
 		List<BackingApplication> updatedBackingApplications =
 			targetService
-				.addToBackingApplications(Lists.newArrayList(backingApplication1, backingApplication2), targetSpec, "service-id")
+				.addToBackingApplications(Lists.newArrayList(backingApplication1, backingApplication2), targetSpec,
+					"service-id")
 				.block();
 
 		//then a host and space are added
@@ -83,7 +85,7 @@ class TargetServiceTest {
 	}
 
 	@Test
-	void shouldAddNameAsServiceInstanceGuidSuffix() {
+	public void shouldAddNameAsServiceInstanceGuidSuffix() {
 		TargetSpec targetSpec = TargetSpec.builder().name("ServiceInstanceGuidSuffix").build();
 		BackingApplication backingApplication = BackingApplication.builder().name("app-name").build();
 

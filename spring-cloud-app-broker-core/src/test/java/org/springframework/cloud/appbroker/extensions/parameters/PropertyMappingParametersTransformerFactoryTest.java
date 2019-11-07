@@ -16,28 +16,30 @@
 
 package org.springframework.cloud.appbroker.extensions.parameters;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.cloud.appbroker.deployer.BackingApplication;
-import reactor.test.StepVerifier;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import reactor.test.StepVerifier;
+
+import org.springframework.cloud.appbroker.deployer.BackingApplication;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PropertyMappingParametersTransformerFactoryTest {
+public class PropertyMappingParametersTransformerFactoryTest {
+
 	private ParametersTransformer<BackingApplication> transformer;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		transformer = new PropertyMappingParametersTransformerFactory()
 			.createWithConfig(config ->
 				config.setInclude("count,memory"));
 	}
 
 	@Test
-	void parametersAreMappedToApplicationProperties() {
+	public void parametersAreMappedToApplicationProperties() {
 		BackingApplication backingApplication = BackingApplication.builder()
 			.build();
 
@@ -57,7 +59,7 @@ class PropertyMappingParametersTransformerFactoryTest {
 	}
 
 	@Test
-	void parametersOverrideApplicationProperties() {
+	public void parametersOverrideApplicationProperties() {
 		BackingApplication backingApplication = BackingApplication.builder()
 			.property("count", "1")
 			.property("memory", "1G")

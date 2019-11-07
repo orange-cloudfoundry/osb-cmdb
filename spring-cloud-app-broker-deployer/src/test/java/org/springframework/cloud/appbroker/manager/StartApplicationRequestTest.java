@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
 
-class StartApplicationRequestTest {
+public class StartApplicationRequestTest {
 
 	@Test
-	void builderWithNoValues() {
+	public void builderWithNoValues() {
 		StartApplicationRequest request = StartApplicationRequest.builder()
 			.build();
 		assertThat(request).isNotNull();
@@ -35,7 +35,7 @@ class StartApplicationRequestTest {
 	}
 
 	@Test
-	void builderWithValues() {
+	public void builderWithValues() {
 		StartApplicationRequest request = StartApplicationRequest.builder()
 			.name("foo")
 			.properties(Collections.singletonMap("foo", "bar"))
@@ -46,7 +46,7 @@ class StartApplicationRequestTest {
 	}
 
 	@Test
-	void builderAcceptsNullProperties() {
+	public void builderAcceptsNullProperties() {
 		StartApplicationRequest request = StartApplicationRequest.builder()
 			.name("foo")
 			.properties(null)
@@ -57,7 +57,7 @@ class StartApplicationRequestTest {
 	}
 
 	@Test
-	void builderAcceptsEmptyProperties() {
+	public void builderAcceptsEmptyProperties() {
 		StartApplicationRequest request = StartApplicationRequest.builder()
 			.name("foo")
 			.properties(Collections.emptyMap())
@@ -66,4 +66,5 @@ class StartApplicationRequestTest {
 		assertThat(request.getName()).isEqualTo("foo");
 		assertThat(request.getProperties()).isEmpty();
 	}
+
 }

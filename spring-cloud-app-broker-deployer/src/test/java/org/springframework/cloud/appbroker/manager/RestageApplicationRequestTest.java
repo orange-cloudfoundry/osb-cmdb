@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
 
-class RestageApplicationRequestTest {
+public class RestageApplicationRequestTest {
 
 	@Test
-	void builderWithNoValues() {
+	public void builderWithNoValues() {
 		RestageApplicationRequest request = RestageApplicationRequest.builder()
 			.build();
 		assertThat(request).isNotNull();
@@ -35,7 +35,7 @@ class RestageApplicationRequestTest {
 	}
 
 	@Test
-	void builderWithValues() {
+	public void builderWithValues() {
 		RestageApplicationRequest request = RestageApplicationRequest.builder()
 			.name("foo")
 			.properties(Collections.singletonMap("foo", "bar"))
@@ -46,7 +46,7 @@ class RestageApplicationRequestTest {
 	}
 
 	@Test
-	void builderAcceptsNullProperties() {
+	public void builderAcceptsNullProperties() {
 		RestageApplicationRequest request = RestageApplicationRequest.builder()
 			.name("foo")
 			.properties(null)
@@ -57,7 +57,7 @@ class RestageApplicationRequestTest {
 	}
 
 	@Test
-	void builderAcceptsEmptyProperties() {
+	public void builderAcceptsEmptyProperties() {
 		RestageApplicationRequest request = RestageApplicationRequest.builder()
 			.name("foo")
 			.properties(Collections.emptyMap())
@@ -66,4 +66,5 @@ class RestageApplicationRequestTest {
 		assertThat(request.getName()).isEqualTo("foo");
 		assertThat(request.getProperties()).isEmpty();
 	}
+
 }

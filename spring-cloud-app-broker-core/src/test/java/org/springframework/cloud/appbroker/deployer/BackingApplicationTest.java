@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BackingApplicationTest {
+public class BackingApplicationTest {
 
 	@Test
-	void stringRepresentationShouldNotExposeSensitiveInformationFromTheEnvironment() {
+	public void stringRepresentationShouldNotExposeSensitiveInformationFromTheEnvironment() {
 		BackingApplication backingApp = BackingApplication
 			.builder()
 			.name("Test")
@@ -45,4 +45,5 @@ class BackingApplicationTest {
 		backingApp.setEnvironment(null);
 		assertThat(backingApp.toString()).isNotEmpty();
 	}
+
 }
