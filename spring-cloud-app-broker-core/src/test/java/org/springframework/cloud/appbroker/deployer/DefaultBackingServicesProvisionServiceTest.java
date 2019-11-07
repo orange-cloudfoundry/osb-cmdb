@@ -32,35 +32,36 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
-class DefaultBackingServicesProvisionServiceTest {
+public class DefaultBackingServicesProvisionServiceTest {
 
 	@Mock
 	private DeployerClient deployerClient;
 
 	private BackingServicesProvisionService backingServicesProvisionService;
+
 	private BackingServices backingServices;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		backingServicesProvisionService = new DefaultBackingServicesProvisionService(deployerClient);
 		backingServices = BackingServices.builder()
-										 .backingService(BackingService.builder()
-																	   .serviceInstanceName("si1")
-																	   .name("service1")
-																	   .plan("standard")
-																	   .parameters(Collections.singletonMap("key1", "value1"))
-																	   .build())
-										 .backingService(BackingService.builder()
-																	   .serviceInstanceName("si2")
-																	   .name("service2")
-																	   .plan("free")
-																	   .build())
-										 .build();
+			.backingService(BackingService.builder()
+				.serviceInstanceName("si1")
+				.name("service1")
+				.plan("standard")
+				.parameters(Collections.singletonMap("key1", "value1"))
+				.build())
+			.backingService(BackingService.builder()
+				.serviceInstanceName("si2")
+				.name("service2")
+				.plan("free")
+				.build())
+			.build();
 	}
 
 	@Test
 	@SuppressWarnings("UnassignedFluxMonoInstance")
-	void createServiceInstance() {
+	public void createServiceInstance() {
 		doReturn(Mono.just("si1"))
 			.when(deployerClient).createServiceInstance(backingServices.get(0));
 		doReturn(Mono.just("si2"))
@@ -80,7 +81,7 @@ class DefaultBackingServicesProvisionServiceTest {
 
 	@Test
 	@SuppressWarnings("UnassignedFluxMonoInstance")
-	void updateServiceInstance() {
+	public void updateServiceInstance() {
 		doReturn(Mono.just("updated1"))
 			.when(deployerClient).updateServiceInstance(backingServices.get(0));
 		doReturn(Mono.just("updated2"))
@@ -100,7 +101,7 @@ class DefaultBackingServicesProvisionServiceTest {
 
 	@Test
 	@SuppressWarnings("UnassignedFluxMonoInstance")
-	void deleteServiceInstance() {
+	public void deleteServiceInstance() {
 		doReturn(Mono.just("deleted1"))
 			.when(deployerClient).deleteServiceInstance(backingServices.get(0));
 		doReturn(Mono.just("deleted2"))

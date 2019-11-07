@@ -43,7 +43,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 @ExtendWith(MockitoExtension.class)
-class BackingAppManagementServiceTest {
+public class BackingAppManagementServiceTest {
 
 	private BackingAppManagementService backingAppManagementService;
 
@@ -59,7 +59,7 @@ class BackingAppManagementServiceTest {
 	private TargetService targetService;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		this.backingApps = BackingApplications.builder()
 			.backingApplication(BackingApplication.builder()
 				.name("testApp1")
@@ -87,7 +87,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void stopApplications() {
+	public void stopApplications() {
 		doReturn(Mono.empty()).when(managementClient).stop(backingApps.get(0));
 		doReturn(Mono.empty()).when(managementClient).stop(backingApps.get(1));
 
@@ -113,7 +113,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void stopApplicationsWithEmptyApplications() {
+	public void stopApplicationsWithEmptyApplications() {
 		BackingApplications emptyBackingApps = BackingApplications.builder().build();
 
 		BrokeredServices brokeredServicesNoApps = BrokeredServices
@@ -150,7 +150,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void stopApplicationsServiceNotFound() {
+	public void stopApplicationsServiceNotFound() {
 		given(appDeployer.getServiceInstance(any(GetServiceInstanceRequest.class)))
 			.willReturn(Mono.just(GetServiceInstanceResponse.builder()
 				.build()));
@@ -162,7 +162,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void startApplications() {
+	public void startApplications() {
 		given(appDeployer.getServiceInstance(any(GetServiceInstanceRequest.class)))
 			.willReturn(Mono.just(GetServiceInstanceResponse.builder()
 				.name("foo-service")
@@ -188,7 +188,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void startApplicationsServiceNotFound() {
+	public void startApplicationsServiceNotFound() {
 		given(appDeployer.getServiceInstance(any(GetServiceInstanceRequest.class)))
 			.willReturn(Mono.just(GetServiceInstanceResponse.builder()
 				.build()));
@@ -200,7 +200,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void startApplicationsWithEmptyApplications() {
+	public void startApplicationsWithEmptyApplications() {
 		BackingApplications emptyBackingApps = BackingApplications.builder().build();
 
 		BrokeredServices brokeredServicesNoApps = BrokeredServices
@@ -237,7 +237,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void restartApplications() {
+	public void restartApplications() {
 		given(appDeployer.getServiceInstance(any(GetServiceInstanceRequest.class)))
 			.willReturn(Mono.just(GetServiceInstanceResponse.builder()
 				.name("foo-service")
@@ -263,7 +263,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void restartApplicationsServiceNotFound() {
+	public void restartApplicationsServiceNotFound() {
 		given(appDeployer.getServiceInstance(any(GetServiceInstanceRequest.class)))
 			.willReturn(Mono.just(GetServiceInstanceResponse.builder()
 				.build()));
@@ -275,7 +275,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void restartApplicationsWithEmptyApplications() {
+	public void restartApplicationsWithEmptyApplications() {
 		BackingApplications emptyBackingApps = BackingApplications.builder().build();
 
 		BrokeredServices brokeredServicesNoApps = BrokeredServices
@@ -312,7 +312,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void restageApplications() {
+	public void restageApplications() {
 		given(appDeployer.getServiceInstance(any(GetServiceInstanceRequest.class)))
 			.willReturn(Mono.just(GetServiceInstanceResponse.builder()
 				.name("foo-service")
@@ -338,7 +338,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void restageApplicationsServiceNotFound() {
+	public void restageApplicationsServiceNotFound() {
 		given(appDeployer.getServiceInstance(any(GetServiceInstanceRequest.class)))
 			.willReturn(Mono.just(GetServiceInstanceResponse.builder()
 				.build()));
@@ -350,7 +350,7 @@ class BackingAppManagementServiceTest {
 	}
 
 	@Test
-	void restageApplicationsWithEmptyApplications() {
+	public void restageApplicationsWithEmptyApplications() {
 		BackingApplications emptyBackingApps = BackingApplications.builder().build();
 
 		BrokeredServices brokeredServicesNoApps = BrokeredServices

@@ -61,7 +61,7 @@ import org.springframework.context.annotation.Configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class AppBrokerAutoConfigurationTest {
+public class AppBrokerAutoConfigurationTest {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withConfiguration(AutoConfigurations.of(
@@ -70,7 +70,7 @@ class AppBrokerAutoConfigurationTest {
 		));
 
 	@Test
-	void servicesAreCreatedWithCloudFoundryConfigured() {
+	public void servicesAreCreatedWithCloudFoundryConfigured() {
 		configuredContext()
 			.run(context -> {
 				assertBeansCreated(context);
@@ -84,7 +84,7 @@ class AppBrokerAutoConfigurationTest {
 	}
 
 	@Test
-	void servicesAreNotCreatedWithoutDeployerConfiguration() {
+	public void servicesAreNotCreatedWithoutDeployerConfiguration() {
 		this.contextRunner
 			.run((context) -> {
 				assertThat(context).doesNotHaveBean(BackingApplications.class);
@@ -93,7 +93,7 @@ class AppBrokerAutoConfigurationTest {
 	}
 
 	@Test
-	void bindingServiceIsNotCreatedIfProvided() {
+	public void bindingServiceIsNotCreatedIfProvided() {
 		configuredContext()
 			.withUserConfiguration(CustomBindingServiceConfiguration.class)
 			.run(context -> {
@@ -107,7 +107,7 @@ class AppBrokerAutoConfigurationTest {
 	}
 
 	@Test
-	void clientCredentialsNotAllowedWhenUsernameAndPasswordSet() {
+	public void clientCredentialsNotAllowedWhenUsernameAndPasswordSet() {
 		assertThatThrownBy(() -> this.contextRunner
 			.withPropertyValues("spring.cloud.appbroker.deployer.cloudfoundry.api-host=https://api.example.com",
 				"spring.cloud.appbroker.deployer.cloudfoundry.username=user",
@@ -118,7 +118,7 @@ class AppBrokerAutoConfigurationTest {
 	}
 
 	@Test
-	void clientIdWithoutSecretNotAllowed() {
+	public void clientIdWithoutSecretNotAllowed() {
 		assertThatThrownBy(() -> this.contextRunner
 			.withPropertyValues("spring.cloud.appbroker.deployer.cloudfoundry.api-host=https://api.example.com",
 				"spring.cloud.appbroker.deployer.cloudfoundry.client_id=user")
@@ -126,7 +126,7 @@ class AppBrokerAutoConfigurationTest {
 	}
 
 	@Test
-	void configureCloudFoundryClientWithClientCredentials() {
+	public void configureCloudFoundryClientWithClientCredentials() {
 		this.contextRunner
 			.withPropertyValues("spring.cloud.appbroker.deployer.cloudfoundry.api-host=https://api.example.com",
 				"spring.cloud.appbroker.deployer.cloudfoundry.client_id=user",
@@ -138,7 +138,7 @@ class AppBrokerAutoConfigurationTest {
 	}
 
 	@Test
-	void serviceInstanceStateRepositoryIsNotCreatedIfProvided() {
+	public void serviceInstanceStateRepositoryIsNotCreatedIfProvided() {
 		configuredContext()
 			.withUserConfiguration(CustomStateRepositoriesConfiguration.class)
 			.run(context -> {
@@ -152,7 +152,7 @@ class AppBrokerAutoConfigurationTest {
 	}
 
 	@Test
-	void serviceInstanceBindingStateRepositoryIsNotCreatedIfProvided() {
+	public void serviceInstanceBindingStateRepositoryIsNotCreatedIfProvided() {
 		configuredContext()
 			.withUserConfiguration(CustomStateRepositoriesConfiguration.class)
 			.run(context -> {
@@ -266,10 +266,12 @@ class AppBrokerAutoConfigurationTest {
 		public ServiceInstanceBindingService serviceInstanceBindingService() {
 			return new TestServiceInstanceBindingService();
 		}
+
 	}
 
 	@Configuration
 	public static class CustomStateRepositoriesConfiguration {
+
 		@Bean
 		public ServiceInstanceStateRepository serviceInstanceStateRepository() {
 			return new TestServiceInstanceStateRepository();
@@ -279,6 +281,7 @@ class AppBrokerAutoConfigurationTest {
 		public ServiceInstanceBindingStateRepository serviceInstanceBindingStateRepository() {
 			return new TestServiceInstanceBindingStateRepository();
 		}
+
 	}
 
 	private static class TestServiceInstanceBindingService implements ServiceInstanceBindingService {
@@ -287,4 +290,5 @@ class AppBrokerAutoConfigurationTest {
 	private static class TestServiceInstanceStateRepository implements ServiceInstanceStateRepository {}
 
 	private static class TestServiceInstanceBindingStateRepository implements ServiceInstanceBindingStateRepository {}
+
 }

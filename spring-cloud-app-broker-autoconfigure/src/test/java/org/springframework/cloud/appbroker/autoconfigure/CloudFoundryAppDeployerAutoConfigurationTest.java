@@ -38,13 +38,13 @@ import org.springframework.cloud.appbroker.oauth2.OAuth2Client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class CloudFoundryAppDeployerAutoConfigurationTest {
+public class CloudFoundryAppDeployerAutoConfigurationTest {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withConfiguration(AutoConfigurations.of(CloudFoundryAppDeployerAutoConfiguration.class));
 
 	@Test
-	void clientIsCreatedWithPasswordGrantConfiguration() {
+	public void clientIsCreatedWithPasswordGrantConfiguration() {
 		this.contextRunner
 			.withPropertyValues(
 				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.com",
@@ -69,7 +69,8 @@ class CloudFoundryAppDeployerAutoConfigurationTest {
 				assertThat(targetProperties.getPassword()).isEqualTo("secret");
 
 				assertThat(context).hasSingleBean(CloudFoundryDeploymentProperties.class);
-				CloudFoundryDeploymentProperties deploymentProperties = context.getBean(CloudFoundryDeploymentProperties.class);
+				CloudFoundryDeploymentProperties deploymentProperties = context
+					.getBean(CloudFoundryDeploymentProperties.class);
 				assertThat(deploymentProperties.getMemory()).isEqualTo("2G");
 				assertThat(deploymentProperties.getCount()).isEqualTo(3);
 				assertThat(deploymentProperties.getBuildpack()).isEqualTo("example-buildpack");
@@ -90,7 +91,7 @@ class CloudFoundryAppDeployerAutoConfigurationTest {
 	}
 
 	@Test
-	void clientIsCreatedWithCredentialsGrantConfiguration() {
+	public void clientIsCreatedWithCredentialsGrantConfiguration() {
 		this.contextRunner
 			.withPropertyValues(
 				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.com",
@@ -124,7 +125,7 @@ class CloudFoundryAppDeployerAutoConfigurationTest {
 	}
 
 	@Test
-	void clientIsNotCreatedWithoutConfiguration() {
+	public void clientIsNotCreatedWithoutConfiguration() {
 		this.contextRunner
 			.run((context) -> {
 				assertThat(context).doesNotHaveBean(CloudFoundryTargetProperties.class);

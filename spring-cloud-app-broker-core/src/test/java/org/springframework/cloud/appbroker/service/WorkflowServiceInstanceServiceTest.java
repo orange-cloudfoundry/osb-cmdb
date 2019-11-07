@@ -53,10 +53,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class WorkflowServiceInstanceServiceTest {
+public class WorkflowServiceInstanceServiceTest {
 
 	@Mock
 	private ServiceInstanceStateRepository serviceInstanceStateRepository;
@@ -82,7 +81,7 @@ class WorkflowServiceInstanceServiceTest {
 	private WorkflowServiceInstanceService workflowServiceInstanceService;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		this.workflowServiceInstanceService = new WorkflowServiceInstanceService(serviceInstanceStateRepository,
 			Arrays.asList(createServiceInstanceWorkflow1, createServiceInstanceWorkflow2),
 			Arrays.asList(deleteServiceInstanceWorkflow1, deleteServiceInstanceWorkflow2),
@@ -90,12 +89,14 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void createServiceInstance() throws InterruptedException {
-		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
-				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "create service instance completed",
-				new Timestamp(Instant.now().minusSeconds(300).toEpochMilli()))));
+	public void createServiceInstance() throws InterruptedException {
+		given(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
+					new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "create service instance completed",
+					new Timestamp(Instant.now().minusSeconds(300).toEpochMilli()))));
 
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
@@ -115,7 +116,8 @@ class WorkflowServiceInstanceServiceTest {
 			.willReturn(Mono.just(true));
 		given(createServiceInstanceWorkflow1.create(eq(request), eq(builtResponse)))
 			.willReturn(lowerOrderFlow.mono());
-		given(createServiceInstanceWorkflow1.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
+		given(
+			createServiceInstanceWorkflow1.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder
 				.async(true)
 				.operation("working1")));
@@ -127,11 +129,13 @@ class WorkflowServiceInstanceServiceTest {
 				.flatMap(value -> {
 					try {
 						Thread.sleep(500);
-					} catch (InterruptedException e) {
+					}
+					catch (InterruptedException e) {
 					}
 					return higherOrderFlow.mono();
 				}));
-		given(createServiceInstanceWorkflow2.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
+		given(
+			createServiceInstanceWorkflow2.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder
 				.dashboardUrl("https://dashboard.example.com")
 				.operation("working2")));
@@ -174,11 +178,12 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void createServiceInstanceWithAsyncError() throws InterruptedException {
-		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
-				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.FAILED, "create service instance failed",
+	public void createServiceInstanceWithAsyncError() throws InterruptedException {
+		given(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
+					new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
+			.willReturn(Mono.just(new ServiceInstanceState(OperationState.FAILED, "create service instance failed",
 				new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
 
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest.builder()
@@ -191,14 +196,16 @@ class WorkflowServiceInstanceServiceTest {
 			.willReturn(Mono.just(true));
 		given(createServiceInstanceWorkflow1.create(request, responseBuilder.build()))
 			.willReturn(Mono.error(new RuntimeException("create foo error")));
-		given(createServiceInstanceWorkflow1.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
+		given(
+			createServiceInstanceWorkflow1.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder));
 
 		given(createServiceInstanceWorkflow2.accept(request))
 			.willReturn(Mono.just(true));
 		given(createServiceInstanceWorkflow2.create(request, responseBuilder.build()))
 			.willReturn(Mono.empty());
-		given(createServiceInstanceWorkflow2.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
+		given(
+			createServiceInstanceWorkflow2.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder));
 
 		InOrder repoOrder = inOrder(serviceInstanceStateRepository);
@@ -220,7 +227,8 @@ class WorkflowServiceInstanceServiceTest {
 
 		Thread.sleep(50);
 
-		repoOrder.verify(serviceInstanceStateRepository).saveState(eq("foo"), eq(OperationState.FAILED), eq("create foo error"));
+		repoOrder.verify(serviceInstanceStateRepository)
+			.saveState(eq("foo"), eq(OperationState.FAILED), eq("create foo error"));
 		repoOrder.verifyNoMoreInteractions();
 
 		createOrder.verify(createServiceInstanceWorkflow2).create(request, responseBuilder.build());
@@ -229,7 +237,7 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void createServiceInstanceWithResponseError() {
+	public void createServiceInstanceWithResponseError() {
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
 			.build();
@@ -238,12 +246,14 @@ class WorkflowServiceInstanceServiceTest {
 
 		given(createServiceInstanceWorkflow1.accept(request))
 			.willReturn(Mono.just(true));
-		given(createServiceInstanceWorkflow1.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
+		given(
+			createServiceInstanceWorkflow1.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.error(new ServiceBrokerException("create foo error")));
 
 		given(createServiceInstanceWorkflow2.accept(request))
 			.willReturn(Mono.just(true));
-		given(createServiceInstanceWorkflow2.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
+		given(
+			createServiceInstanceWorkflow2.buildResponse(eq(request), any(CreateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder));
 
 		StepVerifier.create(workflowServiceInstanceService.createServiceInstance(request))
@@ -254,12 +264,14 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void createServiceInstanceWithNoAcceptsDoesNothing() throws InterruptedException {
-		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
-				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "create service instance completed",
-				new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
+	public void createServiceInstanceWithNoAcceptsDoesNothing() throws InterruptedException {
+		given(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
+					new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "create service instance completed",
+					new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
 
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
@@ -297,12 +309,14 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void deleteServiceInstance() throws InterruptedException {
-		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
-				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "delete service instance completed",
-				new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
+	public void deleteServiceInstance() throws InterruptedException {
+		given(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
+					new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "delete service instance completed",
+					new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
 
 		DeleteServiceInstanceRequest request = DeleteServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
@@ -319,7 +333,8 @@ class WorkflowServiceInstanceServiceTest {
 
 		given(deleteServiceInstanceWorkflow1.accept(request))
 			.willReturn(Mono.just(true));
-		given(deleteServiceInstanceWorkflow1.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
+		given(
+			deleteServiceInstanceWorkflow1.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder
 				.async(true)
 				.operation("working1")));
@@ -328,7 +343,8 @@ class WorkflowServiceInstanceServiceTest {
 
 		given(deleteServiceInstanceWorkflow2.accept(request))
 			.willReturn(Mono.just(true));
-		given(deleteServiceInstanceWorkflow2.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
+		given(
+			deleteServiceInstanceWorkflow2.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder
 				.operation("working2")));
 		given(deleteServiceInstanceWorkflow2.delete(eq(request), eq(builtResponse)))
@@ -336,7 +352,8 @@ class WorkflowServiceInstanceServiceTest {
 				.flatMap(value -> {
 					try {
 						Thread.sleep(500);
-					} catch (InterruptedException e) {
+					}
+					catch (InterruptedException e) {
 					}
 					return higherOrderFlow.mono();
 				}));
@@ -378,11 +395,12 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void deleteServiceInstanceWithAsyncError() throws InterruptedException {
-		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
-				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.FAILED, "delete service instance failed",
+	public void deleteServiceInstanceWithAsyncError() throws InterruptedException {
+		given(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
+					new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
+			.willReturn(Mono.just(new ServiceInstanceState(OperationState.FAILED, "delete service instance failed",
 				new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
 
 		DeleteServiceInstanceRequest request = DeleteServiceInstanceRequest.builder()
@@ -395,14 +413,16 @@ class WorkflowServiceInstanceServiceTest {
 			.willReturn(Mono.just(true));
 		given(deleteServiceInstanceWorkflow1.delete(request, responseBuilder.build()))
 			.willReturn(Mono.error(new RuntimeException("delete foo error")));
-		given(deleteServiceInstanceWorkflow1.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
+		given(
+			deleteServiceInstanceWorkflow1.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder));
 
 		given(deleteServiceInstanceWorkflow2.accept(request))
 			.willReturn(Mono.just(true));
 		given(deleteServiceInstanceWorkflow2.delete(request, responseBuilder.build()))
 			.willReturn(Mono.empty());
-		given(deleteServiceInstanceWorkflow2.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
+		given(
+			deleteServiceInstanceWorkflow2.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder));
 
 		InOrder repoOrder = inOrder(serviceInstanceStateRepository);
@@ -424,7 +444,8 @@ class WorkflowServiceInstanceServiceTest {
 
 		Thread.sleep(50);
 
-		repoOrder.verify(serviceInstanceStateRepository).saveState(eq("foo"), eq(OperationState.FAILED), eq("delete foo error"));
+		repoOrder.verify(serviceInstanceStateRepository)
+			.saveState(eq("foo"), eq(OperationState.FAILED), eq("delete foo error"));
 		repoOrder.verifyNoMoreInteractions();
 
 		deleteOrder.verify(deleteServiceInstanceWorkflow2).delete(request, responseBuilder.build());
@@ -433,7 +454,7 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void deleteServiceInstanceWithResponseError() {
+	public void deleteServiceInstanceWithResponseError() {
 		DeleteServiceInstanceRequest request = DeleteServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
 			.build();
@@ -442,12 +463,14 @@ class WorkflowServiceInstanceServiceTest {
 
 		given(deleteServiceInstanceWorkflow1.accept(request))
 			.willReturn(Mono.just(true));
-		given(deleteServiceInstanceWorkflow1.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
+		given(
+			deleteServiceInstanceWorkflow1.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.error(new ServiceBrokerException("delete foo error")));
 
 		given(deleteServiceInstanceWorkflow2.accept(request))
 			.willReturn(Mono.just(true));
-		given(deleteServiceInstanceWorkflow2.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
+		given(
+			deleteServiceInstanceWorkflow2.buildResponse(eq(request), any(DeleteServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder));
 
 		StepVerifier.create(workflowServiceInstanceService.deleteServiceInstance(request))
@@ -458,12 +481,14 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void deleteServiceInstanceWithNoAcceptsDoesNothing() throws InterruptedException {
-		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
-				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "delete service instance completed",
-				new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
+	public void deleteServiceInstanceWithNoAcceptsDoesNothing() throws InterruptedException {
+		given(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
+					new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "delete service instance completed",
+					new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
 
 		DeleteServiceInstanceRequest request = DeleteServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
@@ -501,12 +526,14 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void updateServiceInstance() throws InterruptedException {
-		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
-				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "update service instance completed",
-				new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
+	public void updateServiceInstance() throws InterruptedException {
+		given(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
+					new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "update service instance completed",
+					new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
 
 		UpdateServiceInstanceRequest request = UpdateServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
@@ -524,7 +551,8 @@ class WorkflowServiceInstanceServiceTest {
 
 		given(updateServiceInstanceWorkflow1.accept(request))
 			.willReturn(Mono.just(true));
-		given(updateServiceInstanceWorkflow1.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
+		given(
+			updateServiceInstanceWorkflow1.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder
 				.async(true)
 				.operation("working1")));
@@ -533,7 +561,8 @@ class WorkflowServiceInstanceServiceTest {
 
 		given(updateServiceInstanceWorkflow2.accept(request))
 			.willReturn(Mono.just(true));
-		given(updateServiceInstanceWorkflow2.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
+		given(
+			updateServiceInstanceWorkflow2.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder
 				.dashboardUrl("https://dashboard.example.com")
 				.operation("working2")));
@@ -542,7 +571,8 @@ class WorkflowServiceInstanceServiceTest {
 				.flatMap(value -> {
 					try {
 						Thread.sleep(500);
-					} catch (InterruptedException e) {
+					}
+					catch (InterruptedException e) {
 					}
 					return higherOrderFlow.mono();
 				}));
@@ -585,11 +615,12 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void updateServiceInstanceWithAsyncError() throws InterruptedException {
-		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
-				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.FAILED, "update service instance failed",
+	public void updateServiceInstanceWithAsyncError() throws InterruptedException {
+		given(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
+					new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
+			.willReturn(Mono.just(new ServiceInstanceState(OperationState.FAILED, "update service instance failed",
 				new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
 
 		UpdateServiceInstanceRequest request = UpdateServiceInstanceRequest.builder()
@@ -602,14 +633,16 @@ class WorkflowServiceInstanceServiceTest {
 			.willReturn(Mono.just(true));
 		given(updateServiceInstanceWorkflow1.update(request, responseBuilder.build()))
 			.willReturn(Mono.error(new RuntimeException("update foo error")));
-		given(updateServiceInstanceWorkflow1.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
+		given(
+			updateServiceInstanceWorkflow1.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder));
 
 		given(updateServiceInstanceWorkflow2.accept(request))
 			.willReturn(Mono.just(true));
 		given(updateServiceInstanceWorkflow2.update(request, responseBuilder.build()))
 			.willReturn(Mono.empty());
-		given(updateServiceInstanceWorkflow2.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
+		given(
+			updateServiceInstanceWorkflow2.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder));
 
 		InOrder repoOrder = inOrder(serviceInstanceStateRepository);
@@ -631,7 +664,8 @@ class WorkflowServiceInstanceServiceTest {
 
 		Thread.sleep(50);
 
-		repoOrder.verify(serviceInstanceStateRepository).saveState(eq("foo"), eq(OperationState.FAILED), eq("update foo error"));
+		repoOrder.verify(serviceInstanceStateRepository)
+			.saveState(eq("foo"), eq(OperationState.FAILED), eq("update foo error"));
 		repoOrder.verifyNoMoreInteractions();
 
 		updateOrder.verify(updateServiceInstanceWorkflow2).update(request, responseBuilder.build());
@@ -640,7 +674,7 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void updateServiceInstanceWithResponseError() {
+	public void updateServiceInstanceWithResponseError() {
 		UpdateServiceInstanceRequest request = UpdateServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
 			.build();
@@ -649,12 +683,14 @@ class WorkflowServiceInstanceServiceTest {
 
 		given(updateServiceInstanceWorkflow1.accept(request))
 			.willReturn(Mono.just(true));
-		given(updateServiceInstanceWorkflow1.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
+		given(
+			updateServiceInstanceWorkflow1.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.error(new ServiceBrokerException("update foo error")));
 
 		given(updateServiceInstanceWorkflow2.accept(request))
 			.willReturn(Mono.just(true));
-		given(updateServiceInstanceWorkflow2.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
+		given(
+			updateServiceInstanceWorkflow2.buildResponse(eq(request), any(UpdateServiceInstanceResponseBuilder.class)))
 			.willReturn(Mono.just(responseBuilder));
 
 		StepVerifier.create(workflowServiceInstanceService.updateServiceInstance(request))
@@ -665,12 +701,14 @@ class WorkflowServiceInstanceServiceTest {
 	}
 
 	@Test
-	void updateServiceInstanceWithNoAcceptsDoesNothing() throws InterruptedException {
-		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
-				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
-			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "update service instance completed",
-				new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
+	public void updateServiceInstanceWithNoAcceptsDoesNothing() throws InterruptedException {
+		given(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
+					new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
+			.willReturn(
+				Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "update service instance completed",
+					new Timestamp(Instant.now().minusSeconds(30).toEpochMilli()))));
 
 		UpdateServiceInstanceRequest request = UpdateServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
@@ -730,4 +768,5 @@ class WorkflowServiceInstanceServiceTest {
 	@Order
 	private interface LowOrderUpdateServiceInstanceWorkflow extends UpdateServiceInstanceWorkflow {
 	}
+
 }

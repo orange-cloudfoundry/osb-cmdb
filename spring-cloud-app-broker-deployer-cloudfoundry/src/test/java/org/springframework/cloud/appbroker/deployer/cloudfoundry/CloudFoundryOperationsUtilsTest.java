@@ -29,28 +29,29 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class CloudFoundryOperationsUtilsTest {
+public class CloudFoundryOperationsUtilsTest {
 
 	private CloudFoundryOperationsUtils operationsUtils;
 
 	private CloudFoundryOperations operations;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		this.operations = DefaultCloudFoundryOperations.builder().build();
 		this.operationsUtils = new CloudFoundryOperationsUtils(operations);
 	}
 
 	@Test
-	void getOperationsWithEmptyProperties() {
+	public void getOperationsWithEmptyProperties() {
 		StepVerifier.create(operationsUtils.getOperations(Collections.emptyMap()))
 			.expectNext(operations)
 			.verifyComplete();
 	}
 
 	@Test
-	void getOperationsWithProperties() {
-		StepVerifier.create(operationsUtils.getOperations(Collections.singletonMap(DeploymentProperties.TARGET_PROPERTY_KEY, "foo-space1")))
+	public void getOperationsWithProperties() {
+		StepVerifier.create(operationsUtils
+			.getOperations(Collections.singletonMap(DeploymentProperties.TARGET_PROPERTY_KEY, "foo-space1")))
 			.assertNext(ops -> {
 				String space = (String) ReflectionTestUtils.getField(ops, "space");
 				assertThat(space).isEqualTo("foo-space1");
@@ -59,7 +60,7 @@ class CloudFoundryOperationsUtilsTest {
 	}
 
 	@Test
-	void getOperationsForSpace() {
+	public void getOperationsForSpace() {
 		StepVerifier.create(operationsUtils.getOperationsForSpace("foo-space2"))
 			.assertNext(ops -> {
 				String space = (String) ReflectionTestUtils.getField(ops, "space");
@@ -67,4 +68,5 @@ class CloudFoundryOperationsUtilsTest {
 			})
 			.verifyComplete();
 	}
+
 }

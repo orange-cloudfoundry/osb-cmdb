@@ -28,19 +28,19 @@ import org.springframework.cloud.appbroker.deployer.BackingApplication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class EnvironmentMappingParametersTransformerFactoryTest {
+public class EnvironmentMappingParametersTransformerFactoryTest {
 
 	private ParametersTransformer<BackingApplication> transformer;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		transformer = new EnvironmentMappingParametersTransformerFactory()
 			.createWithConfig(config ->
 				config.setInclude("parameter1,parameter2,parameter4,parameter5"));
 	}
 
 	@Test
-	void parametersAreMappedToApplicationEnvironment() {
+	public void parametersAreMappedToApplicationEnvironment() {
 		BackingApplication backingApplication = BackingApplication.builder()
 			.build();
 
@@ -64,7 +64,7 @@ class EnvironmentMappingParametersTransformerFactoryTest {
 	}
 
 	@Test
-	void parametersOverrideApplicationEnvironment() {
+	public void parametersOverrideApplicationEnvironment() {
 		BackingApplication backingApplication = BackingApplication.builder()
 			.environment("parameter1", "config-value1")
 			.environment("parameter3", "config-value3")

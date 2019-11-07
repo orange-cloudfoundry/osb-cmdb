@@ -17,6 +17,7 @@
 package org.springframework.cloud.appbroker.autoconfigure;
 
 import org.junit.jupiter.api.Test;
+
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -32,7 +33,7 @@ import org.springframework.credhub.core.CredHubOperations;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-class CredHubAutoConfigurationTest {
+public class CredHubAutoConfigurationTest {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withConfiguration(AutoConfigurations.of(
@@ -48,7 +49,7 @@ class CredHubAutoConfigurationTest {
 		);
 
 	@Test
-	void servicesAreNotCreatedWithoutCredHubOnClasspath() {
+	public void servicesAreNotCreatedWithoutCredHubOnClasspath() {
 		contextRunner
 			.withClassLoader(new FilteredClassLoader(CredHubOperations.class))
 			.run((context) -> {
@@ -64,7 +65,7 @@ class CredHubAutoConfigurationTest {
 	}
 
 	@Test
-	void servicesAreCreatedWithCredHubConfigured() {
+	public void servicesAreCreatedWithCredHubConfigured() {
 		contextRunner
 			.run((context) -> {
 				assertThat(context)
@@ -80,10 +81,12 @@ class CredHubAutoConfigurationTest {
 
 	@TestConfiguration
 	public static class CredHubConfiguration {
+
 		@Bean
 		public CredHubOperations credHubOperations() {
 			return mock(CredHubOperations.class);
 		}
+
 	}
 
 }

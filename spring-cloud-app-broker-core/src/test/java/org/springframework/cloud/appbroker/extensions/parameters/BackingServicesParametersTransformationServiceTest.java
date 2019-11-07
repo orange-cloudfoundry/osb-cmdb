@@ -29,15 +29,15 @@ import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BackingServicesParametersTransformationServiceTest {
+public class BackingServicesParametersTransformationServiceTest {
 
 	@Test
-	void transformParametersWithNoBackingServices() {
+	public void transformParametersWithNoBackingServices() {
 		BackingServicesParametersTransformationService service =
 			new BackingServicesParametersTransformationService(Collections.emptyList());
 
 		BackingServices backingServices = BackingServices.builder()
-														 .build();
+			.build();
 
 		StepVerifier
 			.create(service.transformParameters(backingServices, new HashMap<>()))
@@ -46,7 +46,7 @@ class BackingServicesParametersTransformationServiceTest {
 	}
 
 	@Test
-	void transformParametersWithNoTransformers() {
+	public void transformParametersWithNoTransformers() {
 		BackingServicesParametersTransformationService service =
 			new BackingServicesParametersTransformationService(Collections.emptyList());
 
@@ -62,19 +62,19 @@ class BackingServicesParametersTransformationServiceTest {
 	}
 
 	@Test
-	void transformParametersWithUnknownTransformer() {
+	public void transformParametersWithUnknownTransformer() {
 		BackingServicesParametersTransformationService service =
 			new BackingServicesParametersTransformationService(Collections.emptyList());
 
 		BackingServices backingServices = BackingServices
 			.builder()
 			.backingService(BackingService.builder()
-										  .name("misconfigured-service")
-										  .parameterTransformers(ParametersTransformerSpec
-											  .builder()
-											  .name("unknown-transformer")
-											  .build())
-										  .build())
+				.name("misconfigured-service")
+				.parameterTransformers(ParametersTransformerSpec
+					.builder()
+					.name("unknown-transformer")
+					.build())
+				.build())
 			.build();
 
 		StepVerifier
@@ -84,4 +84,5 @@ class BackingServicesParametersTransformationServiceTest {
 				.hasMessageContaining("unknown-transformer"))
 			.verify();
 	}
+
 }

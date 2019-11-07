@@ -27,19 +27,19 @@ import org.springframework.cloud.appbroker.deployer.BackingService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ParameterMappingParametersTransformerFactoryTest {
+public class ParameterMappingParametersTransformerFactoryTest {
 
 	private ParametersTransformer<BackingService> transformer;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		transformer = new ParameterMappingParametersTransformerFactory()
 			.createWithConfig(config ->
 				config.setInclude("parameter1,parameter2"));
 	}
 
 	@Test
-	void parametersOverrideApplicationEnvironment() {
+	public void parametersOverrideApplicationEnvironment() {
 		Map<String, Object> inputParameters = new HashMap<>();
 		inputParameters.put("parameter1", "value1");
 		inputParameters.put("parameter2", "value2");
@@ -52,8 +52,8 @@ class ParameterMappingParametersTransformerFactoryTest {
 
 		BackingService backingService =
 			BackingService.builder()
-						  .parameters(expectedParameters)
-						  .build();
+				.parameters(expectedParameters)
+				.build();
 
 		StepVerifier
 			.create(transformer.transform(backingService, inputParameters))

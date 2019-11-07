@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
 
-class GetServiceInstanceRequestTest {
+public class GetServiceInstanceRequestTest {
 
 	@Test
-	void builderWithNoValues() {
+	public void builderWithNoValues() {
 		GetServiceInstanceRequest request = GetServiceInstanceRequest.builder()
 			.build();
 		assertThat(request).isNotNull();
@@ -36,7 +36,7 @@ class GetServiceInstanceRequestTest {
 	}
 
 	@Test
-	void builderWithValues() {
+	public void builderWithValues() {
 		GetServiceInstanceRequest request = GetServiceInstanceRequest.builder()
 			.name("foo-name")
 			.serviceInstanceId("foo-id")
@@ -49,7 +49,7 @@ class GetServiceInstanceRequestTest {
 	}
 
 	@Test
-	void builderAcceptsNullProperties() {
+	public void builderAcceptsNullProperties() {
 		GetServiceInstanceRequest request = GetServiceInstanceRequest.builder()
 			.properties(null)
 			.build();
@@ -58,7 +58,7 @@ class GetServiceInstanceRequestTest {
 	}
 
 	@Test
-	void builderAcceptsEmptyProperties() {
+	public void builderAcceptsEmptyProperties() {
 		GetServiceInstanceRequest request = GetServiceInstanceRequest.builder()
 			.properties(Collections.emptyMap())
 			.build();

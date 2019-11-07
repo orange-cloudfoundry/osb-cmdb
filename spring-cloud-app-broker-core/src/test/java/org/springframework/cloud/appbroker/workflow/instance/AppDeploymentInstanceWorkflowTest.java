@@ -18,23 +18,25 @@ package org.springframework.cloud.appbroker.workflow.instance;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import reactor.test.StepVerifier;
+
 import org.springframework.cloud.appbroker.deployer.BackingApplication;
 import org.springframework.cloud.appbroker.deployer.BackingApplications;
 import org.springframework.cloud.appbroker.deployer.BrokeredService;
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
-import reactor.test.StepVerifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class AppDeploymentInstanceWorkflowTest {
+public class AppDeploymentInstanceWorkflowTest {
 
 	private BackingApplications backingApps;
+
 	private AppDeploymentInstanceWorkflow workflow;
 
 	@BeforeEach
-	void setUp() {
+	public void setUp() {
 		backingApps = BackingApplications.builder()
 			.backingApplication(BackingApplication.builder()
 				.name("app1")
@@ -54,7 +56,7 @@ class AppDeploymentInstanceWorkflowTest {
 	}
 
 	@Test
-	void acceptWithMatchingService() {
+	public void acceptWithMatchingService() {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("service1", "plan1");
 		StepVerifier
 			.create(workflow.accept(serviceDefinition, serviceDefinition.getPlans().get(0)))
@@ -63,7 +65,7 @@ class AppDeploymentInstanceWorkflowTest {
 	}
 
 	@Test
-	void doNotAcceptWithUnsupportedService() {
+	public void doNotAcceptWithUnsupportedService() {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("unknown-service", "plan1");
 		StepVerifier
 			.create(workflow.accept(serviceDefinition, serviceDefinition.getPlans().get(0)))
@@ -72,7 +74,7 @@ class AppDeploymentInstanceWorkflowTest {
 	}
 
 	@Test
-	void doNotAcceptWithUnsupportedPlan() {
+	public void doNotAcceptWithUnsupportedPlan() {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("service1", "unknown-plan");
 		StepVerifier
 			.create(workflow.accept(serviceDefinition, serviceDefinition.getPlans().get(0)))
@@ -81,7 +83,7 @@ class AppDeploymentInstanceWorkflowTest {
 	}
 
 	@Test
-	void getBackingAppForServiceSucceeds() {
+	public void getBackingAppForServiceSucceeds() {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("service1", "plan1");
 		StepVerifier
 			.create(workflow
@@ -93,21 +95,21 @@ class AppDeploymentInstanceWorkflowTest {
 	}
 
 	@Test
-	void getBackingAppForServiceWithUnknownServiceIdDoesNothing() {
+	public void getBackingAppForServiceWithUnknownServiceIdDoesNothing() {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("unknown-service", "plan1");
 		StepVerifier
 			.create(workflow
-				.getBackingApplicationsForService(serviceDefinition,serviceDefinition.getPlans().get(0)))
-		.verifyComplete();
+				.getBackingApplicationsForService(serviceDefinition, serviceDefinition.getPlans().get(0)))
+			.verifyComplete();
 	}
 
 	@Test
-	void getBackingAppForServiceWithUnknownPlanIdDoesNothing() {
+	public void getBackingAppForServiceWithUnknownPlanIdDoesNothing() {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("service1", "unknown-plan");
 		StepVerifier
 			.create(workflow
 				.getBackingApplicationsForService(serviceDefinition, serviceDefinition.getPlans().get(0)))
-		.verifyComplete();
+			.verifyComplete();
 	}
 
 	private ServiceDefinition buildServiceDefinition(String serviceName, String planName) {
@@ -120,4 +122,5 @@ class AppDeploymentInstanceWorkflowTest {
 				.build())
 			.build();
 	}
+
 }
