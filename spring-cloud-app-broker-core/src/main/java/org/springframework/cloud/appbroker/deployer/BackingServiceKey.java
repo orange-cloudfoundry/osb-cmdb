@@ -31,7 +31,7 @@ public class BackingServiceKey {
 	private BackingServiceKey() {
 	}
 
-	BackingServiceKey(String serviceInstanceName,
+	public BackingServiceKey(String serviceInstanceName,
 					  String serviceKeyName,
 					  Map<String, Object> parameters,
 					  Map<String, String> properties,
@@ -130,9 +130,6 @@ public class BackingServiceKey {
 		private final Map<String, Object> parameters = new HashMap<>();
 		private final Map<String, String> properties = new HashMap<>();
 		private final List<ParametersTransformerSpec> parameterTransformers = new ArrayList<>();
-
-		BackingServiceKeyBuilder() {
-		}
 
 		public BackingServiceKeyBuilder backingService(BackingServiceKey backingService) {
 			return this.serviceInstanceName(backingService.getServiceInstanceName())
