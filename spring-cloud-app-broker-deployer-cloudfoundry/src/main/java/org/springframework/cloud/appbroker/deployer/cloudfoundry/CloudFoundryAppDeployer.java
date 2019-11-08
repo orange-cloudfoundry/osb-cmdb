@@ -87,7 +87,6 @@ import org.cloudfoundry.operations.domains.Domain;
 import org.cloudfoundry.operations.organizations.OrganizationDetail;
 import org.cloudfoundry.operations.organizations.OrganizationInfoRequest;
 import org.cloudfoundry.operations.services.BindServiceInstanceRequest;
-import org.cloudfoundry.operations.services.GetServiceKeyRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.operations.services.UnbindServiceInstanceRequest;
 import org.cloudfoundry.operations.spaces.GetSpaceRequest;
@@ -980,7 +979,8 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 				.parameters(request.getParameters())
 				.build();
 
-		org.cloudfoundry.operations.services.GetServiceKeyRequest getServiceKeyRequest = GetServiceKeyRequest.builder()
+		org.cloudfoundry.operations.services.GetServiceKeyRequest getServiceKeyRequest =
+			org.cloudfoundry.operations.services.GetServiceKeyRequest.builder()
 			.serviceInstanceName(request.getServiceInstanceName())
 			.serviceKeyName(request.getServiceKeyName())
 			.build();
