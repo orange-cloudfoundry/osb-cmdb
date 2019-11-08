@@ -1048,7 +1048,7 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 			.flatMap(cfOperations -> deleteServiceKey(serviceInstanceName, serviceKeyName, cfOperations));
 
 		return requestDeleteServiceKey
-			.doOnSuccess(v -> logger.info("Successfully deleted service key {} from service instance {}", serviceKeyName, serviceInstanceName))
+			.doOnSuccess(v -> LOG.info("Successfully deleted service key {} from service instance {}", serviceKeyName, serviceInstanceName))
 			.doOnError(logError(String.format("Failed to delete service key %s from service instance %s", serviceKeyName, serviceInstanceName)))
 			.thenReturn(DeleteServiceKeyResponse.builder()
 				.name(serviceKeyName)
@@ -1088,7 +1088,7 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 				.serviceInstanceName(serviceInstanceName)
 				.serviceKeyName(serviceKeyName)
 				.build())
-			.doOnError(exception -> logger.debug("Error deleting service key {} from instance {} with error '{}'",
+			.doOnError(exception -> LOG.debug("Error deleting service key {} from instance {} with error '{}'",
 				serviceKeyName, serviceInstanceName, exception.getMessage()))
 			.onErrorResume(e -> Mono.empty());
 	}

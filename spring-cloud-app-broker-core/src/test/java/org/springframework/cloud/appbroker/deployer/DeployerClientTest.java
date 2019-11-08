@@ -35,6 +35,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings("UnassignedFluxMonoInstance")
@@ -215,7 +217,7 @@ public class DeployerClientTest {
 	}
 
 	@Test
-	void shouldCreateServiceKey() {
+	public void shouldCreateServiceKey() {
 		// given
 		when(appDeployer.createServiceKey(any()))
 			.thenReturn(Mono.just(CreateServiceKeyResponse.builder()
@@ -240,7 +242,7 @@ public class DeployerClientTest {
 	}
 
 	@Test
-	void shouldDeleteServiceKey() {
+	public void shouldDeleteServiceKey() {
 		// given
 		when(appDeployer.deleteServiceKey(any()))
 			.thenReturn(Mono.just(DeleteServiceKeyResponse.builder()
@@ -344,7 +346,7 @@ public class DeployerClientTest {
 	}
 
 	@Test
-	void shouldNotReturnErrorWhenDeletingServiceKeyThatDoesNotExist() {
+	public void shouldNotReturnErrorWhenDeletingServiceKeyThatDoesNotExist() {
 		// given
 		when(appDeployer.deleteServiceKey(any()))
 			.thenReturn(Mono.error(new IllegalStateException("service key does not exist")));

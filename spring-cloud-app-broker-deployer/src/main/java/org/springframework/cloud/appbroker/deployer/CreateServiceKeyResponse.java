@@ -26,7 +26,7 @@ public class CreateServiceKeyResponse {
 	private final String name;
 	private final Map<String, Object> credentials;
 
-	CreateServiceKeyResponse(String name, Map<String, Object> credentials) {
+	public CreateServiceKeyResponse(String name, Map<String, Object> credentials) {
 		this.name = name;
 		this.credentials = credentials;
 	}
@@ -48,7 +48,7 @@ public class CreateServiceKeyResponse {
 		private String name;
 		private Map<String, Object> credentials;
 
-		CreateServiceKeyResponseBuilder() {
+		private CreateServiceKeyResponseBuilder() {
 		}
 
 		public CreateServiceKeyResponseBuilder name(String name) {

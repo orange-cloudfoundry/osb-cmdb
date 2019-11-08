@@ -108,7 +108,7 @@ public class DeployerClient {
 			.map(CreateServiceInstanceResponse::getName);
 	}
 
-	Mono<Map<String, Object>> createServiceKey(BackingServiceKey backingServiceKey) {
+	public Mono<Map<String, Object>> createServiceKey(BackingServiceKey backingServiceKey) {
 		return appDeployer
 			.createServiceKey(
 				CreateServiceKeyRequest.builder()
@@ -130,7 +130,7 @@ public class DeployerClient {
 			.map(CreateServiceKeyResponse::getCredentials);
 	}
 
-	Mono<String> updateServiceInstance(BackingService backingService) {
+	public Mono<String> updateServiceInstance(BackingService backingService) {
 		return appDeployer
 			.updateServiceInstance(
 				UpdateServiceInstanceRequest
@@ -165,7 +165,7 @@ public class DeployerClient {
 			.map(DeleteServiceInstanceResponse::getName);
 	}
 
-	Mono<String> deleteServiceKey(BackingServiceKey backingServiceKey) {
+	public Mono<String> deleteServiceKey(BackingServiceKey backingServiceKey) {
 		return appDeployer
 			.deleteServiceKey(
 				DeleteServiceKeyRequest

@@ -25,7 +25,7 @@ public class DeleteServiceKeyRequest {
 	private final Map<String, String> properties; // to access space target property
 
 
-	DeleteServiceKeyRequest(String serviceInstanceName, String serviceKeyName, Map<String, String> properties) {
+	public DeleteServiceKeyRequest(String serviceInstanceName, String serviceKeyName, Map<String, String> properties) {
 		this.serviceInstanceName = serviceInstanceName;
 		this.serviceKeyName = serviceKeyName;
 		this.properties = properties;
@@ -53,7 +53,7 @@ public class DeleteServiceKeyRequest {
 		private String serviceKeyName;
 		private Map<String, String> properties;
 
-		DeleteServiceKeyRequestBuilder() {
+		private DeleteServiceKeyRequestBuilder() {
 		}
 
 		public DeleteServiceKeyRequestBuilder serviceInstanceName(String name) {

@@ -20,7 +20,7 @@ public class DeleteServiceKeyResponse {
 
 	private final String name;
 
-	DeleteServiceKeyResponse(String name) {
+	public DeleteServiceKeyResponse(String name) {
 		this.name = name;
 	}
 
@@ -36,7 +36,7 @@ public class DeleteServiceKeyResponse {
 
 		private String name;
 
-		DeleteServiceInstanceResponseBuilder() {
+		private DeleteServiceInstanceResponseBuilder() {
 		}
 
 		public DeleteServiceInstanceResponseBuilder name(String name) {

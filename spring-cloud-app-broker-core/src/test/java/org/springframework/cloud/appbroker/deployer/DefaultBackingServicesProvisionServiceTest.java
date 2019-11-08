@@ -123,7 +123,7 @@ public class DefaultBackingServicesProvisionServiceTest {
 	}
 
 	@Test
-	void createServiceKey() {
+	public void createServiceKey() {
 		BackingServiceKey sk1 = BackingServiceKey.builder()
 			.serviceInstanceName("si1")
 			.serviceKeyName("sk1")
@@ -153,7 +153,7 @@ public class DefaultBackingServicesProvisionServiceTest {
 
 	@Test
 	@SuppressWarnings("UnassignedFluxMonoInstance")
-	void deleteServiceKey() {
+	public void deleteServiceKey() {
 		BackingServiceKey sk1 = BackingServiceKey.builder()
 			.serviceInstanceName("si1")
 			.serviceKeyName("sk1")

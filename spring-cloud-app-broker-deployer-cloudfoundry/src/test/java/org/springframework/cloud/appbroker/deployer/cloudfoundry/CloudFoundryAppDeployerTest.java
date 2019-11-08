@@ -86,6 +86,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.when;
 import static org.springframework.cloud.appbroker.deployer.DeploymentProperties.TARGET_PROPERTY_KEY;
 
 @SuppressWarnings("UnassignedFluxMonoInstance")
@@ -578,7 +579,7 @@ public class CloudFoundryAppDeployerTest {
 	}
 
 	@Test
-	void createServiceKey() {
+	public void createServiceKey() {
 		when(operationsServices.createServiceKey(
 			org.cloudfoundry.operations.services.CreateServiceKeyRequest.builder()
 																			 .serviceInstanceName("service-instance-name")
@@ -612,7 +613,7 @@ public class CloudFoundryAppDeployerTest {
 	}
 
 	@Test
-	void deleteServiceKey() {
+	public void deleteServiceKey() {
 		when(operationsServices.deleteServiceKey(
 			org.cloudfoundry.operations.services.DeleteServiceKeyRequest.builder()
 																			 .serviceInstanceName("service-instance-name")
