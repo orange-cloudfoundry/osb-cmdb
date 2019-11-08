@@ -36,7 +36,6 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cloudfoundry.AbstractCloudFoundryException;
-import org.cloudfoundry.UnknownCloudFoundryException;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.applications.AssociateApplicationRouteRequest;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
@@ -87,7 +86,6 @@ import org.cloudfoundry.operations.domains.Domain;
 import org.cloudfoundry.operations.organizations.OrganizationDetail;
 import org.cloudfoundry.operations.organizations.OrganizationInfoRequest;
 import org.cloudfoundry.operations.services.BindServiceInstanceRequest;
-import org.cloudfoundry.operations.services.GetServiceKeyRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.operations.services.UnbindServiceInstanceRequest;
 import org.cloudfoundry.operations.spaces.GetSpaceRequest;
@@ -939,30 +937,7 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 
 	@Override
 	public Mono<CreateServiceKeyResponse> createServiceKey(CreateServiceKeyRequest request) {
-		org.cloudfoundry.operations.services.CreateServiceKeyRequest createServiceKeyRequest =
-			org.cloudfoundry.operations.services.CreateServiceKeyRequest
-				.builder()
-				.serviceInstanceName(request.getServiceInstanceName())
-				.serviceKeyName(request.getServiceKeyName())
-				.parameters(request.getParameters())
-				.build();
-
-		org.cloudfoundry.operations.services.GetServiceKeyRequest getServiceKeyRequest = GetServiceKeyRequest.builder()
-			.serviceInstanceName(request.getServiceInstanceName())
-			.serviceKeyName(request.getServiceKeyName())
-			.build();
-
-		//No need to check for existence of the space target: service keys need to be in same space than their service instance.
-
-		return operations.services()
-			.createServiceKey(createServiceKeyRequest)
-			.then(operations.services().
-				getServiceKey(getServiceKeyRequest))
-			.map(serviceKey -> CreateServiceKeyResponse.builder()
-				.name(request.getServiceKeyName())
-				.credentials(serviceKey.getCredentials())
-				.build()
-			);
+		return operationsUtils.createServiceKey(request);
 	}
 
 	@Override
@@ -1006,20 +981,7 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 
 	@Override
 	public Mono<DeleteServiceKeyResponse> deleteServiceKey(DeleteServiceKeyRequest request) {
-		String serviceInstanceName = request.getServiceInstanceName();
-		String serviceKeyName = request.getServiceKeyName();
-		Map<String, String> deploymentProperties = request.getProperties();
-
-		Mono<Void> requestDeleteServiceKey;
-		requestDeleteServiceKey = operationsUtils.getOperations(deploymentProperties)
-			.flatMap(cfOperations -> deleteServiceKey(serviceInstanceName, serviceKeyName, cfOperations));
-
-		return requestDeleteServiceKey
-			.doOnSuccess(v -> logger.info("Successfully deleted service key {} from service instance {}", serviceKeyName, serviceInstanceName))
-			.doOnError(logError(String.format("Failed to delete service key %s from service instance %s", serviceKeyName, serviceInstanceName)))
-			.thenReturn(DeleteServiceKeyResponse.builder()
-				.name(serviceKeyName)
-				.build());
+		return operationsUtils.deleteServiceKey(request);
 	}
 
 	@Override
@@ -1045,18 +1007,6 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 			.thenReturn(DeleteServiceInstanceResponse.builder()
 				.name(serviceInstanceName)
 				.build());
-	}
-
-	private Mono<Void> deleteServiceKey(String serviceInstanceName, String serviceKeyName, CloudFoundryOperations cloudFoundryOperations) {
-		return cloudFoundryOperations.services().deleteServiceKey(
-			org.cloudfoundry.operations.services.DeleteServiceKeyRequest
-				.builder()
-				.serviceInstanceName(serviceInstanceName)
-				.serviceKeyName(serviceKeyName)
-				.build())
-			.doOnError(exception -> logger.debug("Error deleting service key {} from instance {} with error '{}'",
-				serviceKeyName, serviceInstanceName, exception.getMessage()))
-			.onErrorResume(e -> Mono.empty());
 	}
 
 	private Mono<Void> deleteServiceInstance(String serviceInstanceName, CloudFoundryOperations cloudFoundryOperations) {
@@ -1145,13 +1095,7 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 	 * and log the text payload.
 	 */
 	private Consumer<Throwable> logError(String msg) {
-		return e -> {
-			if (e instanceof UnknownCloudFoundryException) {
-				logger.error(msg + "\nUnknownCloudFoundryException encountered, whose payload follows:\n"
-					+ ((UnknownCloudFoundryException)e).getPayload(), e);
-			} else {
-				logger.error(msg, e);
-			}
-		};
+		return operationsUtils.logError(msg, this.logger);
 	}
+
 }

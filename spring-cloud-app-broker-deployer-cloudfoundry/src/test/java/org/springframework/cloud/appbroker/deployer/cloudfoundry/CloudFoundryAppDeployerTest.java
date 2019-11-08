@@ -45,8 +45,13 @@ import org.cloudfoundry.operations.organizations.OrganizationDetail;
 import org.cloudfoundry.operations.organizations.OrganizationInfoRequest;
 import org.cloudfoundry.operations.organizations.OrganizationQuota;
 import org.cloudfoundry.operations.organizations.Organizations;
-import org.cloudfoundry.operations.services.*;
+import org.cloudfoundry.operations.services.BindServiceInstanceRequest;
 import org.cloudfoundry.operations.services.GetServiceInstanceRequest;
+import org.cloudfoundry.operations.services.ServiceInstance;
+import org.cloudfoundry.operations.services.ServiceInstanceType;
+import org.cloudfoundry.operations.services.ServiceKey;
+import org.cloudfoundry.operations.services.Services;
+import org.cloudfoundry.operations.services.UnbindServiceInstanceRequest;
 import org.cloudfoundry.operations.spaces.Spaces;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,11 +61,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.cloud.appbroker.deployer.*;
+import org.springframework.cloud.appbroker.deployer.AppDeployer;
 import org.springframework.cloud.appbroker.deployer.CreateServiceInstanceRequest;
 import org.springframework.cloud.appbroker.deployer.CreateServiceKeyRequest;
 import org.springframework.cloud.appbroker.deployer.DeleteServiceInstanceRequest;
 import org.springframework.cloud.appbroker.deployer.DeleteServiceKeyRequest;
+import org.springframework.cloud.appbroker.deployer.DeployApplicationRequest;
+import org.springframework.cloud.appbroker.deployer.DeploymentProperties;
 import org.springframework.cloud.appbroker.deployer.UpdateServiceInstanceRequest;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -83,7 +90,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.cloud.appbroker.deployer.DeploymentProperties.TARGET_PROPERTY_KEY;
 
-@SuppressWarnings("UnassignedFluxMonoInstance")
+@SuppressWarnings({"UnassignedFluxMonoInstance"})
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class CloudFoundryAppDeployerTest {
