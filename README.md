@@ -12,11 +12,11 @@ Plan is to work with the SCAB team to contribute upstream osb-cmdb's changes to 
 ### Functional overview
 
 The following diagram presents a functional overview of the ocb-cdmb feature scope
-![Overview diagram](overview.png)
+![Overview diagram](osb-cmdb/overview.png)
 
 The feature are supported by coarse gain components used by osb-cmdb:
 
-![Osb cmdb component diagrams](Osb-cmdb-zoom.png)
+![Osb cmdb component diagrams](osb-cmdb/Osb-cmdb-zoom.png)
 
 The osb-cdmb service broker translates received osb calls into equivalent CF CC API calls
 
