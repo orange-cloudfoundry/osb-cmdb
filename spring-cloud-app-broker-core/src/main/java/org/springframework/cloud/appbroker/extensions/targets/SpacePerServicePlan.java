@@ -16,11 +16,13 @@
 
 package org.springframework.cloud.appbroker.extensions.targets;
 
+import org.springframework.cloud.appbroker.deployer.DeploymentProperties;
+
 import java.util.Map;
 
-public class ServiceInstanceGuidSuffix extends TargetFactory<ServiceInstanceGuidSuffix.Config> {
+public class SpacePerServicePlan extends TargetFactory<SpacePerServicePlan.Config> {
 
-	public ServiceInstanceGuidSuffix() {
+	public SpacePerServicePlan() {
 		super(Config.class);
 	}
 
@@ -29,9 +31,12 @@ public class ServiceInstanceGuidSuffix extends TargetFactory<ServiceInstanceGuid
 		return this::apply;
 	}
 
-	private ArtifactDetails apply(Map<String, String> properties, String name, String serviceInstanceId, String backingServiceName, String backingServicePlanName) {
+	private ArtifactDetails apply(Map<String, String> properties, String name, String brokeredServiceInstanceId, String backingServiceName, String backingServicePlanName) {
+		properties.put(DeploymentProperties.TARGET_PROPERTY_KEY, backingServiceName + "-" + backingServicePlanName);
+		properties.put(DeploymentProperties.KEEP_TARGET_ON_DELETE_PROPERTY_KEY, "true");
+
 		return ArtifactDetails.builder()
-			.name(name + "-" + serviceInstanceId)
+			.name(name + "-" + brokeredServiceInstanceId)
 			.properties(properties)
 			.build();
 	}

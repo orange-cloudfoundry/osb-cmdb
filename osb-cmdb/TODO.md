@@ -1,3 +1,64 @@
+
+- create space with custom strategy: see org.springframework.cloud.appbroker.extensions.targets.SpacePerServiceInstance: probably need to combine the TargetService SpacePerServiceInstance with ServiceInstanceGuidSuffix as a single target is currently supported in BackingService
+        - Pb: Impl Hardcoded into `CloudFoundryAppDeployer.createServiceInstance()`  looking up DeploymentProperties.TARGET_PROPERTY_KEY (target) property to create a space display a warn log if space already exists
+            - Option 1: avoid setting target property when space exists
+               - Can't lookup in SpacePerServiceInstance strategy whether the space exists
+            - Option 2: ignore the warn trace with current message saying space name is already taken
+            - Option 3: modify the warn trace to hint this may be normal
+            - Option 4: make CloudFoundryAppDeployer idempotent and not issue a warn trace if space exists
+         - Pb: Target interface is only providing service name and instance id, how to lookup service name, service plan name ? 
+             > public interface Target {
+             >  	ArtifactDetails apply(Map<String, String> properties, String name, String serviceInstanceId);
+             >  }
+           - Option 1: Refactor Target interface to inject serviceName & servicePlanName
+              - Implies propagating up to org.springframework.cloud.appbroker.extensions.targets.TargetService.addToBackingServices()  
+                - Implies propagating to SpacePerServiceInstance and ServiceInstanceGuidSuffix classes  
+           - Option 2: Have the strategy lookup service name, plan using CF API + create the space
+         - Pb: Space is provisionned in defaultOrg. We'd eventually like to have it dynamically selected from client credentials in a future multi-tenant setting
+            - Option 1 : don't support this yet   
+            - Option 2 : Add new properties into BackingService
+         - Pb: with this naming a plan update would translate into a service instances be moved across spaces   
+            - Option 1 : don't support plan updates when a quota is set on a service plan (i.e. when target is set to SpacePerServicePlan)
+               - Need to check proper error message is returned to user
+            - Option 2 : share service instances across spaces to create service keys. 
+               - Pb: this still defeats the quota per service plans
+            - Option 3 : provide option to configure quota per service definition, i.e. SpacePerServiceDefinition
+               - Q: how to handle service definition renamings ?  
+                  - A: expect operators to rename the space  
+         - Pb: `CloudFoundryAppDeployer.deleteServiceInstance()`  looks up DeploymentProperties.TARGET_PROPERTY_KEY (target) property to **delete** the space. This is an issue when the space should be shared among multiple service instances: cf delete-service fails with 
+            > Error deleting service instance p-mysql-5f037acf-eaa1-4ec8-9b34-9827f21a3ad9 with error 'CF-AssociationNotEmpty(10006): 
+            >   Please delete the service_bindings, service_keys, and routes associations for your service_instances.'
+            > org.cloudfoundry.client.v2.ClientV2Exception: CF-AssociationNotEmpty(10006): Please delete the service_bindings, service_keys, and routes associations for your service_instances.
+            - Option 1: use different properties for target space creation and target space deletion 
+            - Option 2: add a property to skip target space deletion 
+            - Option 3:  
+            
+- Fix &  Test propagation of brokered service binding params to backing service key params
+            
+            
+   - check current state for future regression. Need fast feedback from local build + ability to step into with debuger
+      - Run full cycle with concourse
+         - commit & push in a branch. 
+         - Wait for circle build to complete 
+         - Trigger concourse build (manually for through fly cli)
+         - Watch output in concourse UI from browser   
+      - run test-in-cf.bash or subparts (pushes to CF)
+         - Provides additional coverage: plan update & noop exec  
+         - !! May conflict with concourse execs (same target org, same broker instance)
+            - option 1: make a distinct instance 
+                - change target space from osb-cmdb-services to osb-cmdb-services
+                - change broker instance, url, registred services
+                - !! means duplicated diverging scripts
+            - option 2: pause the integration instance when pushing locally
+         - !! Currently as unversionned files added to .gitignore (manifest.yml with deployer properties, test-in-cf.bash)
+            - option 1: extract secrets from test-in-cf.bash & add it to the repo
+            - option 2: user intellij local versionning. https://www.jetbrains.com/help/idea/local-history.html
+         - !! lacks assertions and requires visual inspections
+             
+      - run test-locally.bash
+         - suiteable for local debugging of a specific case 
+
+
 Product risks/opportunities:
 - backing service location & future migration
    - quota use-cases

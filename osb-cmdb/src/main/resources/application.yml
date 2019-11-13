@@ -38,7 +38,7 @@ spring:
         - service-name: p-mysql-cmdb
           plan-name: 10mb
           target:
-            name: ServiceInstanceGuidSuffix
+            name: SpacePerServiceDefinition
           services:
             - service-instance-name: p-mysql
               name: p-mysql
@@ -46,7 +46,7 @@ spring:
         - service-name: p-mysql-cmdb
           plan-name: 20mb
           target:
-            name: ServiceInstanceGuidSuffix
+            name: SpacePerServiceDefinition
           services:
             - service-instance-name: p-mysql
               name: p-mysql
@@ -54,7 +54,7 @@ spring:
         - service-name: noop-ondemand-cmdb
           plan-name: default
           target:
-            name: ServiceInstanceGuidSuffix
+            name: SpacePerServiceDefinition
           services:
             - service-instance-name: noop-ondemand
               name: noop-ondemand
