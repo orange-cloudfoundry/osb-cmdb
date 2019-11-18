@@ -23,7 +23,7 @@ The osb-cdmb service broker translates received osb calls into equivalent CF CC 
 OSB API endpoint | eq CF CLI UX
 ------------ | -------------
 GET /v2/catalog | cf marketplace (WIP)
-PUT /v2/service_instances/:instance_id | cf create-space (WIP) ; cf create-service
+PUT /v2/service_instances/:instance_id | cf create-space ; cf create-service
 GET /v2/service_instances/:instance_id/last_operation | cf service
 GET /v2/service_instances/:instance_id | cf service (WIP)
 PATCH /v2/service_instances/:instance_id | cf update-service
