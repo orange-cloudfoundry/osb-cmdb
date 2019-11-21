@@ -3,7 +3,7 @@
 
 This repo contains a spike for the osb-cmdb project.
 
-This project provides a configuration management for Open Service Broker API broker implementations.
+This project provides a configuration management for Open Service Broker API broker implementations. See [orange-cloudfoundry/paas-templates#492](https://github.com/orange-cloudfoundry/paas-templates/issues/492) for more background around use-cases and considered alternatives.
 
 At this stage of the spike, this is a fork of the [https://github.com/spring-cloud/spring-cloud-app-broker]( spring-cloud/spring-cloud-app-broker) project (referred as SCAB).
 
