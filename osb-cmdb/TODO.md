@@ -1,38 +1,509 @@
+Next step:
+    - Add configuration
+        - run paas-templates smoke tests
+          - DONE missing strategy in PlanMapper
+          - DONE add suffixes to service names: -cmdb
+            - inject DynamicCatalogProperties to other beans
+               - Q: inject     
+          - adapt smoke tests to not expected suffix ?
+        - squash commit & run static code analysis
+        - PR autoconfig small change (cherrypick)
+        - test the error case: should fail fast and clean
+        - dump catalog and backing services as yaml on disk & stdout ?
+        - conditionally trigger autoconfiguration depending on property
+        - add filtering controlled by properties
+        - add filtering based to service plan visibilities
+        - integration tests using recorded mocks that can run on circleci
+           - look at cf-java-client tests for inspiration ? 
+        - override target strategy for some services ??
 
-- create space with custom strategy: see org.springframework.cloud.appbroker.extensions.targets.SpacePerServiceInstance: probably need to combine the TargetService SpacePerServiceInstance with ServiceInstanceGuidSuffix as a single target is currently supported in BackingService
-        - Pb: Impl Hardcoded into `CloudFoundryAppDeployer.createServiceInstance()`  looking up DeploymentProperties.TARGET_PROPERTY_KEY (target) property to create a space display a warn log if space already exists
-            - Option 1: avoid setting target property when space exists
-               - Can't lookup in SpacePerServiceInstance strategy whether the space exists
-            - Option 2: ignore the warn trace with current message saying space name is already taken
-            - Option 3: modify the warn trace to hint this may be normal
-            - Option 4: make CloudFoundryAppDeployer idempotent and not issue a warn trace if space exists
-         - Pb: Target interface is only providing service name and instance id, how to lookup service name, service plan name ? 
-             > public interface Target {
-             >  	ArtifactDetails apply(Map<String, String> properties, String name, String serviceInstanceId);
-             >  }
-           - Option 1: Refactor Target interface to inject serviceName & servicePlanName
-              - Implies propagating up to org.springframework.cloud.appbroker.extensions.targets.TargetService.addToBackingServices()  
-                - Implies propagating to SpacePerServiceInstance and ServiceInstanceGuidSuffix classes  
-           - Option 2: Have the strategy lookup service name, plan using CF API + create the space
-         - Pb: Space is provisionned in defaultOrg. We'd eventually like to have it dynamically selected from client credentials in a future multi-tenant setting
-            - Option 1 : don't support this yet   
-            - Option 2 : Add new properties into BackingService
-         - Pb: with this naming a plan update would translate into a service instances be moved across spaces   
-            - Option 1 : don't support plan updates when a quota is set on a service plan (i.e. when target is set to SpacePerServicePlan)
-               - Need to check proper error message is returned to user
-            - Option 2 : share service instances across spaces to create service keys. 
-               - Pb: this still defeats the quota per service plans
-            - Option 3 : provide option to configure quota per service definition, i.e. SpacePerServiceDefinition
-               - Q: how to handle service definition renamings ?  
-                  - A: expect operators to rename the space  
-         - Pb: `CloudFoundryAppDeployer.deleteServiceInstance()`  looks up DeploymentProperties.TARGET_PROPERTY_KEY (target) property to **delete** the space. This is an issue when the space should be shared among multiple service instances: cf delete-service fails with 
-            > Error deleting service instance p-mysql-5f037acf-eaa1-4ec8-9b34-9827f21a3ad9 with error 'CF-AssociationNotEmpty(10006): 
-            >   Please delete the service_bindings, service_keys, and routes associations for your service_instances.'
-            > org.cloudfoundry.client.v2.ClientV2Exception: CF-AssociationNotEmpty(10006): Please delete the service_bindings, service_keys, and routes associations for your service_instances.
-            - Option 1: use different properties for target space creation and target space deletion 
-            - Option 2: add a property to skip target space deletion 
-            - Option 3:  
-            
+          
+       - DONE: Proceed with unit testing of autoconfig: https://www.baeldung.com/spring-boot-context-runner
+          - DONE: Inject Mock for DynamicCatalogService
+             - option 1:
+                 - Conditionnally using 
+                        >	@Autowired(required = false)
+                        >	DynamicCatalogService dynamicCatalogService) {
+                 - If not dependencies missing throw exception using https://www.baeldung.com/spring-assert
+             - option 2: systematically with constructor injection a DynamicCatalogService bean defined in a new distinct auto config class   
+             - **option 3: systematically with method injection a DynamicCatalogService bean defined in a new distinct auto config class**   
+          - DONE: Pb: context is empty
+              - Try to turn on logs 
+                 > -Dlogging.level.org.springframework=trace
+                 > -Dlogging.level.org.springframework.boot=trace
+                 > -Dlogging.level.org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener=debug
+                 > -Ddebug=true
+                 - step into debugger: 
+                    - slf4j level not set
+                    - ConditionEvaluationReportLoggingListener don't pop in debugging
+              - Q: no debugging traces available in sprinboottest supporting class ?
+             - some warn logs are displayed when forcing a context error
+               > 02-12-2019 11:18:26.172 [main] WARN  o.s.c.a.AnnotationConfigApplicationContext.refresh - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'dynamicCatalogServiceAutoConfiguration': Unsatisfied dependency expressed through constructor parameter 0; nested exception is org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type 'org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+               - The associated spring source code is using from Gradle: org.slf4j:jcl-over-slf4j:1.7.28
+                  >    import org.apache.commons.logging.Log;
+                  >    import org.apache.commons.logging.LogFactory;
+                  >	/** Logger used by this class. Available to subclasses. */
+                  >	protected final Log logger = LogFactory.getLog(getClass());
+              - trying to have slf4j display its logs through has no effect https://stackoverflow.com/questions/3752921/is-it-possible-to-make-log4j-display-which-file-it-used-to-configure-itself
+                  > -Dlog4j.debug=true
+                  - runs into a distinct JVM ?
+                     > /usr/lib/jvm/java-8-openjdk-amd64/bin/java -ea  -D .. com.intellij.rt.execution.application.AppMainV2 com.intellij.rt.execution.junit.JUnitStarter -ideVersion5 -junit5 org.springframework.cloud.appbroker.autoconfigure.DynamicServiceAutoConfigurationTest
+                      - print system properties: they properly display
+                  - logback config problems ?
+                     - https://stackoverflow.com/questions/48458052/logback-configuration-file-not-loaded 
+                         >  Check the classpath, does it contain commons-logging as well as jcl-over-slf4j? If it does, exclude commons-logging and see if that works. I've had problems with apps when they have both dependencies, they seem to conflict.
+                     - error triggers, debug does not trigger
+                     - modify osb-cmdb/spring-cloud-app-broker-autoconfigure/src/test/resources/logback.xml instead of env variables !!!
+  
+              
+         
+
+
+
+- DONE refactor to make it easier to test, configure and implement new features
+    - DONE: design interactions and responsibilities
+       - DONE: DynamicCatalogServiceAutoConfiguration
+          - conditional on opt-in
+          - exposes catalog and brokered services beans
+          - creates Mapper Beans
+       - DONE: DynamicCatalogService bean
+          - depends on CF client
+          - Catalog getCatalog(): Catalog
+       - ServiceDefinitionMapper bean
+           > ServiceDefinition toServiceDefinition(ServiceResource resource,
+           >  		List<ServicePlanResource> servicePlans)    
+          - in the future, also takes an associated List<ServicePlanVisibilityEntity>                             
+           >    public final class ServicePlanVisibilityEntity 
+           >        extends org.cloudfoundry.client.v2.serviceplanvisibilities._ServicePlanVisibilityEntity {
+           >      private final @Nullable String organizationId;
+           >      private final @Nullable String organizationUrl;
+           >      private final @Nullable String servicePlanId;
+           >      private final @Nullable String servicePlanUrl;                          
+           >                              
+          - DONE: controlled by an associated ServiceDefinitionMapperProperties class 
+             - brokers/service includes/excludes
+             - DONE: service offering suffix
+             - service offering prefix
+          - DONE: With associated unit test 
+       - PlanMapper bean
+           > Plan toPlan(ServicePlanResource resource)
+          - controlled by an associated PlanMapperProperties class 
+             - plan includes/excludes
+             - plan prefix/suffix ??
+          - With associated unit test 
+       - BrokeredServicesCatalogMapper bean
+          > BrokeredServices toBrokeredServices(Catalog)
+          - controlled by an associated BrokeredServiceMapperProperties class 
+             - strategy to use ?
+          - With associated unit test 
+    - DONE extract classes
+       - Q: can lambda reference instance methods ?  
+          - https://www.codementor.io/eh3rrera/using-java-8-method-reference-du10866vx
+            > (obj, args) -> obj.instanceMethod(args)
+          - in our case obj needs to be final immutable accessible
+          - get inspiration from Cf Java Client
+          - expand lambda
+       - DONE: BrokeredServicesCatalogMapper    
+    - DONE fix fromJson: custom mapper should only be registered for plan
+    - introduce properties classes & inject them to mappers
+       - choose the structure for properties: 
+          - scab or osb-cmdb prefix
+          - single class, or class per Mapper ?
+             - **start simple with a single one** 
+          - Profiles can help selection which scanned configuration classes to load https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-profiles 
+       - Q: can we have multiple @ConfigurationProperties with the same path ?
+          - not clearly documented, try it
+       - Q: how will test provide properties ?
+          - @TestPropertySource ?
+          - Inject properties in context
+          	>	this.contextRunner
+          	>		.withPropertyValues(
+          	>			"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.com",
+          - Instanciate bean explicitly in test configuration class
+       - Q: how to support general opt-in for dynamic catalog ?
+          - A mandatory field in the properties which must be set to true 
+            - @AssertTrue
+            - Catalog and BrokeredServices are @ConditionalOnBean(DynamicCatalogProperties)
+          - @ConditionalOnProperty on the autoconfig class 
+            >  @ConditionalOnProperty(
+            >      value="module.enabled", 
+            >      havingValue = "true"
+       - DONE Initiate a new unit test to prototype this
+          
+          
+
+
+DONE acceptance test pass but code should be vastly simplified, as well as unit test (still failing)
+Check back the custom deserialized and and reparse the nested json string. Would avoid the ugly/fragile builder copy.
+
+DONE: Cover the case of null extra into a component test
+
+- dynamic catalog configuration:
+  - DONE update component test for plan mapping
+     - DONE: sample json schemas
+     - DONE extra plan fields
+        - contains json serialized string, how to deserialize it since it is not mapped in SCOSB's Plan ?
+          > @JsonInclude(Include.NON_NULL)
+          >  public class Plan {
+          >  
+          >  	@NotEmpty
+          >  	private final String id;
+          >   ...
+          >  	private final Map<String, Object> metadata;
+           - DONE Configure ObjectMapper with field renaming
+              - Pb: Plan does not have setters for Jackson to assign fields, it fails using the constructor when metadata is provided
+                 >	private final Map<String, Object> metadata;
+                 >
+                 >	Plan(String id, String name, String description, Map<String, Object> metadata, Boolean free, Boolean bindable, Schemas schemas) {
+                 >		this.id = id;
+                 >		this.name = name;
+                 > java.lang.IllegalStateException: com.fasterxml.jackson.databind.exc.MismatchedInputException: 
+                 > Cannot construct instance of `java.util.LinkedHashMap` (although at least one Creator exists): 
+                 > no String-argument constructor/factory method to deserialize from String value ('{                                                                                                                     
+                 - subclass Plan to provide accessors for all fields
+                 - configure jackson to find the right constructor
+                 - PR SCOsb to support Json parsong
+                 - assign metadata after the Plan construction
+           - Load into another intermediate POJO under our control before converting to SCOSB's Plan ?
+           - preprocess the Json to rename extra into metadata 
+              - using Json document Pojo
+              - using plain string replace
+              
+                                                                                                              
+  - DONE missing plan metadata, including costs: present in ServicePlanEntity: String extra. Need to Json deserialize it and store it into Plan: Map<String, Object> metadata;
+
+
+DONE: try to run dynamic catalog config with controlled wiremocks reponse in component tests modules
+- test current autoconfig spring context with wiremocks in component tests
+    - Spring test context contains unorchestred beans available as @autowired
+       - wiremock server
+       - CF client
+    - Unit test instanciates DynamicCatalogService bean explicitly, and con
+     
+- DONE wire cf client to localhost
+   - cf client beans
+   - target properties
+- DONE start wiremock
+   - import wiremock autoconfiguration 
+      - how to trigger spring context loading and orchestration of autoconfigs to have wiremock started before dynamic catalog ?
+          - Use ApplicationContextRunner programmatically
+             - No autowired fields, need to fetch them manually
+          - Use Spring junit annotation @ContextConfiguration
+             - use initialize Before annotation to control scheduling
+             - configure mocks outside of Spring context 
+- DONE configure wiremock with stubs
+   - Can't inherit from WiremockComponentTest since it triggers loading of the spring app
+     > @SpringBootTest(
+     > 	webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+     > 	classes = {AppBrokerApplication.class,
+     > 		WiremockServerFixture.class,
+     > 		OpenServiceBrokerApiFixture.class,
+     > 		CloudControllerStubFixture.class,
+     > 		UaaStubFixture.class,
+     > 		CredHubStubFixture.class,
+     > 		TestBindingCredentialsProviderFixture.class},
+     - Duplicate it instead
+   - CloudControllerStubFixture does not exactly match our needs, but relies on many private methods that are expensive to duplicaye
+      - Modified it.
+- DONE tune the wiremock responses to return comprehensive service 
+
+  - DONE: start broker locally to test it within springboot
+  - DONE: manually review exposed catalog
+  - DONE: tests that run independently of a live CF API with controlled CF marketplace responses
+     - Split in 2 objects: 
+        - one with dependencies: 
+        - one disconnected: List<ServiceDefinitions>: unit tested without static methods
+     - cf java client mocks
+        - Get inspiration from cf-java-client tests
+          >  org.cloudfoundry.operations.services.DefaultServicesTest#listServiceOfferings
+          >  @Test
+          >  public void listServiceOfferings() {
+          >      requestListSpaceServicesTwo(this.cloudFoundryClient, TEST_SPACE_ID, "test-service1", "test-service2");
+          >      requestListSpaceServicePlans(this.cloudFoundryClient, "test-service1-id", "test-service1-plan", "test-service1-plan-id");
+          >      requestListSpaceServicePlans(this.cloudFoundryClient, "test-service2-id", "test-service2-plan", "test-service2-plan-id");
+          >
+            - Still requires to set up extra nested json
+     - cf java client Fake
+         > cloudFoundryClient.servicePlans()
+         >       Mono<ListSpaceServicesResponse> listServices(ListSpaceServicesRequest request);                     
+         > cloudFoundryClient.spaces()
+         >       Mono<ListServicePlansResponse> list(ListServicePlansRequest request);
+         > CloudFoundryOperations
+         >      DefaultCloudFoundryOperations.builder()
+         >       				.from(cfOperations)
+         >       				.organization(targetProperties.getDefaultOrg())
+         >       				.space(targetProperties.getDefaultSpace())
+         >       				.build()                                                            
+     - CF API stubs
+        - Only reuse Stubs but only run the autoconfiguration class within spring context, not the full app
+        
+        - copied CatalogComponentTest -> DynamicCatalogComponentTest
+        - SUSPENDED: Running DynamicCatalogComponentTest which launches the full SpringApp
+           - adapt properties to run localhost ? 
+           - pb with gradle dependencies: OsbCmdbApplication not found
+              - **move autoconfig class in autoconfig project and use component test application instead**
+                 - Q: do we want this in the long run ?
+                 - Pros
+                    - Be able to leverage SCAB component and acceptance tests, with dynamicCatalog opt-in
+                 - Cons
+                    - Harder to avoid forks, CMDB tests are within SCAB 
+              - duplicate component test
+           - Pb: autoconfig class is not loaded. Is component scan missing ?
+              - diagnostics
+                  - debugger breakpoint
+                  - springboot debug traces 
+              - fixes:
+                  - **register in spring.factories**
+           - Pb: autoconfig class starts before wiremock is started.
+              - Control wiremock to start earlier
+                 - Triggered in org.springframework.cloud.appbroker.integration.fixtures.WiremockServerFixture.startWiremock
+                 - When ?
+                    - Junit5 @BeforeAll
+                    - **Spring Bean initialization in WiremockServerFixture**
+            - Pb: mocks are not be registered soon enough
+               - initialize mocks with required stubs common to dynamic catalog tests (other tests will not have autoconfig opt-in)
+                  - in the DynamicCatalogComponentTest
+                     - by getting the wiremock stub injected
+                         > 	@Autowired
+                         >  	private CloudControllerStubFixture cloudControllerFixture;
+                     - by triggering wiremock initialization prior to DynamicCatalogAutoConfig
+                        - using @AutoConfigureBefore(AnotherConfig.class) 
+               - delay autoconfig bean instanciation, 
+                  - explore springcontext phases 
+                     - @PostConstruct and @PreDestroy https://docs.spring.io/spring-framework/docs/current/spring-framework-reference/core.html#beans-java-lifecycle-callbacks
+                        - Catalog bean 
+                           - currently defined as a class org.springframework.cloud.servicebroker.model.catalog.Catalog 
+                              > public class Catalog {}
+                        - SubClass it as LazyCatalog extends Catalog 
+                           - injected the DynamicCatalogService bean
+                           - initialized with @PostConstruct                                                                                                     
+                  - explore springboot application events https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-application-events-and-listeners
+                  - lazy loaded bean https://www.baeldung.com/spring-lazy-annotation with @Lazy
+                      - implies adding @Lazy to all @Autowired Catalog and BrokeredServices beans
+                      - how does this co-exist with @ConditionalOnMissingBean from org.springframework.cloud.servicebroker.autoconfigure.web.ServiceBrokerAutoConfiguration.beanCatalogService ?
+                        > 	@Configuration
+                        > 	@ConditionalOnMissingBean({Catalog.class, CatalogService.class})
+                        > 	@EnableConfigurationProperties(ServiceBrokerProperties.class)
+                        > 	@ConditionalOnProperty(prefix = "spring.cloud.openservicebroker.catalog.services[0]", name = "id")
+                        > 	protected static class CatalogPropertiesMinimalConfiguration {
+                        > 
+                        > 		private final ServiceBrokerProperties serviceBrokerProperties;
+                        > 
+                        > 		public CatalogPropertiesMinimalConfiguration(ServiceBrokerProperties serviceBrokerProperties) {
+                        > 			this.serviceBrokerProperties = serviceBrokerProperties;
+                        > 		}
+                        > 
+                        > 		@Bean
+                        > 		public Catalog catalog() {
+                        > 			return this.serviceBrokerProperties.getCatalog().toModel();
+                        > 		}
+                        > 	}
+                      
+                        > 	@Bean
+                        >  	@ConditionalOnMissingBean(CatalogService.class)
+                        >  	public CatalogService beanCatalogService(@Autowired(required = false) Catalog catalog) {
+                           
+                        >  	@Bean
+                        >  	@ConfigurationProperties(PROPERTY_PREFIX + ".services")
+                        >  	@ConditionalOnMissingBean
+                        >  	public BrokeredServices brokeredServices() {
+                        >  		return BrokeredServices.builder().build();
+                        >  	}                                                                                                                                                                          
+                      - implies initialization time in uncontrolled and will happen at first access. 
+                         - Catalog: org.springframework.cloud.servicebroker.service.BeanCatalogService.initializeMap
+                            >	public BeanCatalogService(Catalog catalog) {
+                            >		this.catalog = catalog;
+                            >		initializeMap();
+                            >	}
+                            > 	private void initializeMap() {
+                            >  		catalog.getServiceDefinitions().forEach(def -> serviceDefs.put(def.getId(), def));
+                            >  	}
+                              - replace BeanCatalogService with LazyBeanCatalogService
+                                >  	@Bean
+                                >  	@ConditionalOnMissingBean(CatalogService.class)
+                                >  	public CatalogService beanCatalogService(@Autowired(required = false) Catalog catalog) {
+                                >  		if (catalog == null) {
+                                >  			throw new CatalogDefinitionDoesNotExistException();
+                                >  		}
+                                >  		return new BeanCatalogService(catalog);
+                                >  	}
+
+                         - BrokeredServices, seems only stored so far in beans
+                                                                                                                                                                        
+                                > 	@Bean
+                                > 	public BackingAppManagementService backingAppManagementService(ManagementClient managementClient,
+                                > 		AppDeployer appDeployer, BrokeredServices brokeredServices, TargetService targetService) {
+                                > 		return new BackingAppManagementService(managementClient, appDeployer, brokeredServices, targetService);
+                                > 	}
+                                > 	
+                                >  @Bean
+                                >  public UpdateServiceInstanceWorkflow appDeploymentUpdateServiceInstanceWorkflow(
+                                >      BrokeredServices brokeredServices,
+                                >      BackingAppDeploymentService backingAppDeploymentService,
+                                >      BackingServicesProvisionService backingServicesProvisionService,
+                                >      BackingApplicationsParametersTransformationService appsParametersTransformationService,
+                                >      BackingServicesParametersTransformationService servicesParametersTransformationService,
+                                >      TargetService targetService) {
+                                >
+                                >      return new AppDeploymentUpdateServiceInstanceWorkflow(
+                                >          brokeredServices,
+                                >          backingAppDeploymentService,
+                                >          backingServicesProvisionService,
+                                >          appsParametersTransformationService,
+                                >          servicesParametersTransformationService,
+                                >          targetService);
+                                >  }
+
+                               	
+               
+                    
+
+
+
+
+- CSI/USI does not yet return dashboard url 
+  - Need to subclass workflow impl buildResponse() to set dashboard URL.
+  - However, buildResponse isn't provided backing app/service response
+  - Would need to change prototype from CreateServiceInstanceWorkflow
+  > from:
+  > Mono<Void> create(CreateServiceInstanceRequest request, CreateServiceInstanceResponse response)
+  > to: 
+  > Mono<Void> create(CreateServiceInstanceRequest request, CreateServiceInstanceResponseBuilder responseBuilder)
+  - And remove CreateServiceInstanceWorkflow.buildResponse()
+     - Update caller org.springframework.cloud.appbroker.service.WorkflowServiceInstanceService
+        > Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request)
+        - Understand cases where threading memory model should be given care 
+           > 	private Mono<CreateServiceInstanceResponse> invokeCreateResponseBuilders(CreateServiceInstanceRequest request) {
+           >  		AtomicReference<CreateServiceInstanceResponseBuilder> responseBuilder =
+           >  			new AtomicReference<>(CreateServiceInstanceResponse.builder());
+     - Update callees to return the backingService CSIResp, currently returns void, and CreateServiceInstanceResponse param is immutable
+           > org.springframework.cloud.appbroker.workflow.instance.AppDeploymentCreateServiceInstanceWorkflow.AppDeploymentCreateServiceInstanceWorkflow:
+           > CreateServiceInstanceWorkflow {
+           > 	default Mono<Void> create(CreateServiceInstanceRequest request,
+           > 							  CreateServiceInstanceResponse response) {
+           > 		return Mono.empty();
+           > 	}
+           - Downcalls are returning the name of the backing service created
+           >
+           > 	private Flux<String> createBackingServices(CreateServiceInstanceRequest request) {
+           > 		return getBackingServicesForService(request.getServiceDefinition(), request.getPlan())
+           > 			.flatMap(backingServices ->
+           > 				targetService.addToBackingServices(backingServices,
+           > 					getTargetForService(request.getServiceDefinition(), request.getPlan()) ,
+           > 					request.getServiceInstanceId()))
+           > 			.flatMap(backingServices ->
+           > 				servicesParametersTransformationService.transformParameters(backingServices,
+           > 					request.getParameters()))
+           > 			.flatMapMany(backingServicesProvisionService::createServiceInstance)
+           >
+           > org.springframework.cloud.appbroker.deployer.DefaultBackingServicesProvisionService
+           >  	public Flux<String> createServiceInstance(List<BackingService> backingServices) {
+           >  		return Flux.fromIterable(backingServices)
+           >  			.parallel()
+           >  			.runOn(Schedulers.parallel())
+           >  			.flatMap(deployerClient::createServiceInstance)
+           >  			.sequential()
+           >  			.doOnRequest(l -> log.debug("Creating backing services {}", backingServices))
+           >  			.doOnEach(response -> log.debug("Finished creating backing service {}", response))
+           >  			.doOnComplete(() -> log.debug("Finished creating backing services {}", backingServices))
+           >  			.doOnError(exception -> log.error(String.format("Error creating backing services %s with error '%s'",
+           >  				backingServices, exception.getMessage()), exception));
+           >  	}
+           >   	
+           > org.springframework.cloud.appbroker.deployer.DeployerClient 	
+           >   	Mono<String> createServiceInstance(BackingService backingService) {
+           >   		return appDeployer
+           >   			.createServiceInstance(
+           >   				CreateServiceInstanceRequest
+           >   					.builder()
+           >   					.serviceInstanceName(backingService.getServiceInstanceName())
+           >   					.name(backingService.getName())
+           >   					.plan(backingService.getPlan())
+           >   					.parameters(backingService.getParameters())
+           >   					.properties(backingService.getProperties())
+           >   					.build())
+           >   			.doOnRequest(l -> log.debug("Creating backing service {}", backingService.getName()))
+           >   			.doOnSuccess(response -> log.debug("Finished creating backing service {}", backingService.getName()))
+           >   			.doOnError(exception -> log.error(String.format("Error creating backing service %s with error '%s'",
+           >   				backingService.getName(), exception.getMessage()), exception))
+           >   			.map(CreateServiceInstanceResponse::getName);
+           >   	}
+           >   	
+           > org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryAppDeployer  	
+           >  	@Override
+           >  	public Mono<DeployApplicationResponse> deploy(DeployApplicationRequest request) {
+           >  		String appName = request.getName();
+           >  		Resource appResource = getAppResource(request.getPath());
+           >  		Map<String, String> deploymentProperties = request.getProperties();
+           >  
+           >  		logger.trace("Deploying application: request={}, resource={}",
+           >  			appName, appResource);
+           >  
+           >  		return pushApplication(request, deploymentProperties, appResource)
+           >  				.timeout(Duration.ofSeconds(this.defaultDeploymentProperties.getApiTimeout()))
+           >  				.doOnSuccess(item -> logger.info("Successfully deployed {}", appName))
+           >  				.doOnError(error -> {
+           >  					if (isNotFoundError().test(error)) {
+           >  						logger.warn("Unable to deploy application. It may have been destroyed before start completed: " + error.getMessage());
+           >  					}
+           >  					else {
+           >  						logError(String.format("Failed to deploy %s", appName)).accept(error);
+           >  					}
+           >  				})
+           >  				.thenReturn(DeployApplicationResponse.builder()
+           >  					.name(appName)
+           >  					.build());
+           >  	}
+           >
+           > org.springframework.cloud.appbroker.deployer.DeployApplicationResponse
+           >  public class DeployApplicationResponse {
+           >  
+           >  	private final String name;
+           >  }
+           >  
+           > 	@Override
+           > 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
+           >         org.cloudfoundry.operations.services.CreateServiceInstanceRequest createServiceInstanceRequest =
+           >             org.cloudfoundry.operations.services.CreateServiceInstanceRequest
+           >                 .builder()
+           >                 .serviceInstanceName(request.getServiceInstanceName())
+           >                 .serviceName(request.getName())
+           >                 .planName(request.getPlan())
+           >                 .parameters(request.getParameters())
+           >                 .completionTimeout(Duration.ofHours(4)) // Orange patch: COAB services may take up to 4 hours
+           >                 .build();
+           >   
+           >         Mono<CreateServiceInstanceResponse> createServiceInstanceResponseMono =
+           >             Mono.just(CreateServiceInstanceResponse.builder()
+           >                 .name(request.getServiceInstanceName())
+           >                 .build());
+           >   
+           >         if (request.getProperties().containsKey(DeploymentProperties.TARGET_PROPERTY_KEY)) {
+           >             return createSpace(request.getProperties().get(DeploymentProperties.TARGET_PROPERTY_KEY))
+           >                 .then(
+           >                     operationsUtils.getOperations(request.getProperties())
+           >                         .flatMap(cfOperations -> cfOperations.services()
+           >                             .createInstance(createServiceInstanceRequest)
+           >                             .then(createServiceInstanceResponseMono)));
+           >         }
+           >         else {
+           >             return operations
+           >                 .services()
+           >                 .createInstance(createServiceInstanceRequest)
+           >                 .then(createServiceInstanceResponseMono);
+           >         }
+           >    }
+           >
+           >     public class CreateServiceInstanceResponse {
+           >     
+           >     	private final String name;
+           >     }
+           > 
+           > org.cloudfoundry.operations.services.Services
+           >      Mono<Void> createInstance(CreateServiceInstanceRequest request);
+
+        => consider instead fetching the dashboard url from service instance once instanciated ??
+           
 - Fix &  Test propagation of brokered service binding params to backing service key params
             
             
