@@ -34,7 +34,6 @@ build/
 
 # lab credentials should be kept locally uncommited
 osb-cmdb-broker_manifest.yml
-test-in-cf.bash
 test-locally.bash
 *.bats
 recent.txt
