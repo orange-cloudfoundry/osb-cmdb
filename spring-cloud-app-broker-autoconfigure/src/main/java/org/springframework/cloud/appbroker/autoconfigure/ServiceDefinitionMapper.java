@@ -17,9 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 
-public class ServiceDefinitionMapper {
+public class ServiceDefinitionMapper extends BaseMapper {
 
-	private static final Logger logger = LoggerFactory.getLogger(ServiceDefinitionMapper.class);
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private final PlanMapper planMapper;
 	private ServiceDefinitionMapperProperties serviceDefinitionMapperProperties;
@@ -60,32 +60,6 @@ public class ServiceDefinitionMapper {
 			return Boolean.FALSE;
 		}
 		return field;
-	}
-
-	private Map<String, Object> toServiceMetaData(String extraJson) {
-		if (extraJson ==null) {
-			return new HashMap<>();
-		}
-		logger.info("extraJson {}", extraJson);
-		//enforce check keys can't be mapped to other java primitives: Boolean, Integers
-		//potentially customizing jackson deserialization
-		// See https://www.baeldung.com/jackson-map
-		TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
-		Map<String, Object> metadata = fromJson(extraJson, typeRef);
-		logger.info("metadata {}", metadata);
-		return metadata;
-	}
-
-	private <T> T fromJson(String json, TypeReference<HashMap<String, Object>> contentType) {
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-			return mapper.readerFor(contentType).readValue(json);
-		}
-		catch (IOException e) {
-			logger.error("Unable to parse json, caught: " + e, e);
-			throw new IllegalStateException(e);
-		}
 	}
 
 }

@@ -16,10 +16,17 @@
 
 package com.orange.oss.osbcmdb;
 
+import java.util.Collection;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orange.oss.osbcmdb.fixtures.CloudFoundryClientConfiguration;
 import com.orange.oss.osbcmdb.fixtures.TargetPropertiesConfiguration;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -27,13 +34,15 @@ import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogPropertie
 import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfiguration;
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
+import org.springframework.cloud.servicebroker.model.catalog.Plan;
+import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // Expects the Cf client properties to be injected as system properties
 // and the corresponding Cf marketplace to be non empty
 class DynamicServiceAutoConfigurationAcceptanceTest {
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withConfiguration(AutoConfigurations.of(
@@ -52,10 +61,39 @@ class DynamicServiceAutoConfigurationAcceptanceTest {
 				Catalog catalog = context.getBean(Catalog.class);
 				assertThat(catalog.getServiceDefinitions()).isNotEmpty();
 
+				List<ServiceDefinition> serviceDefinitions = catalog.getServiceDefinitions();
+				assertThat(serviceDefinitions).isNotEmpty();
+				serviceDefinitions.stream()
+					.map(ServiceDefinition::getPlans)
+					.flatMap(Collection::stream)
+					.forEach(this::assertPlanIsValid);
+
 				assertThat(context).hasSingleBean(Catalog.class);
 				assertThat(context).hasSingleBean(BrokeredServices.class);
 			});
 	}
+
+	private void assertPlanIsValid(Plan plan)  {
+		assertThat(plan.getId()).isNotNull(); // Plan id is required
+		assertPlanSerializesWithoutInvalidSchemas(plan);
+	}
+
+	private void assertPlanSerializesWithoutInvalidSchemas(Plan plan) {
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			String serializedSchemas = mapper.writeValueAsString(plan.getSchemas());
+			logger.info("serializedSchemas {}", serializedSchemas);
+			assertThat(serializedSchemas).doesNotContain(":null");
+			// Preventing CC message "Schema service_instance.create.parameters is not valid. Schema must have $schema key but was not present"
+			// in schemas like:
+			//               "create": { "parameters": {} }
+			assertThat(serializedSchemas).doesNotContain("\"parameters\": {}");
+		}
+		catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 
 	@Test
 	@Ignore

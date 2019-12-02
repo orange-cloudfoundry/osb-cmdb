@@ -1,28 +1,25 @@
 package org.springframework.cloud.appbroker.autoconfigure;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import org.cloudfoundry.client.v2.Metadata;
+import org.cloudfoundry.client.v2.serviceplans.Parameters;
+import org.cloudfoundry.client.v2.serviceplans.Schema;
 import org.cloudfoundry.client.v2.serviceplans.ServicePlanEntity;
 import org.cloudfoundry.client.v2.serviceplans.ServicePlanResource;
 import org.cloudfoundry.util.ResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.cloud.servicebroker.model.catalog.MethodSchema;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
+import org.springframework.cloud.servicebroker.model.catalog.Schemas;
+import org.springframework.cloud.servicebroker.model.catalog.ServiceBindingSchema;
+import org.springframework.cloud.servicebroker.model.catalog.ServiceInstanceSchema;
 
-public class PlanMapper {
+public class PlanMapper extends BaseMapper {
 
 	private static final Logger logger = LoggerFactory.getLogger(PlanMapper.class);
 
@@ -39,77 +36,131 @@ public class PlanMapper {
 	}
 
 	private Plan toPlan(ServicePlanResource resource) {
-		ServicePlanEntity entity = ResourceUtils.getEntity(resource);
-		String jsonDump = toJson(entity);
+		Plan.PlanBuilder planBuilder = Plan.builder();
 
-		logger.info("plan json {}", jsonDump);
-		Plan plan = fromJson(jsonDump, Plan.class);
+		Metadata metadata = resource.getMetadata();
+		if (metadata != null) { //mostly during lazy unit tests
+			planBuilder = planBuilder
+				.id(metadata.getId());
+		}
+		ServicePlanEntity entity = ResourceUtils.getEntity(resource);
+		planBuilder = planBuilder
+			.name(entity.getName())
+			.free(entity.getFree())
+			.bindable(entity.getBindable())
+			.description(entity.getDescription())
+			.metadata(toServiceMetaData(entity.getExtra()));
+		planBuilder = toSchemas(planBuilder, entity.getSchemas());
+
+		Plan plan = planBuilder.build();
+
 		logger.info("plan entity {}", plan);
 		return plan;
 	}
 
-	// Inspired from https://stackoverflow.com/questions/40631558/restructure-json-before-deserializing-with-jackson
-	public static class CustomPlanDeserializer extends StdDeserializer<Plan> {
-
-		private final ObjectMapper objectMapper = newMapperIgnoringUnknownProperties();
-
-		public CustomPlanDeserializer(Class<?> vc) {
-			super(vc);
+	private Plan.PlanBuilder toSchemas(Plan.PlanBuilder planBuilder, org.cloudfoundry.client.v2.serviceplans.Schemas entitySchemas) {
+		if (entitySchemas == null) {
+			return planBuilder;
 		}
-
-		@Override
-		public Plan deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-			final ObjectNode node = p.readValueAsTree();
-			migrate(node);
-			return objectMapper.treeToValue(node, Plan.class);
-		}
-
-		private void migrate(ObjectNode containerNode) throws IOException {
-			JsonNode extraNode = containerNode.remove("extra");
-			if (extraNode == null) {
-				return;
-			}
-			if (!(extraNode instanceof TextNode)) {
-				logger.warn("Ignoring unexpected extra node {} within {}", extraNode, containerNode);
-				return;
-			}
-			TextNode extraTextNode = (TextNode) extraNode;
-			String extraSerializedJson = extraTextNode.textValue();
-			if (extraSerializedJson == null || extraSerializedJson.isEmpty()) {return;}
-			JsonNode parsedExtraContent = objectMapper.readTree(extraSerializedJson);
-			containerNode.set("metadata", parsedExtraContent);
-		}
+		Schemas.SchemasBuilder builder = toBindingBuilder(Schemas.builder(), entitySchemas.getServiceBinding());
+		builder = toInstanceBuilder(builder, entitySchemas.getServiceInstance());
+		Schemas schemas = builder.build();
+		planBuilder= planBuilder.schemas(schemas);
+		return planBuilder;
 	}
 
-
-	public <T> T fromJson(String json, Class<T> contentType) {
-		try {
-			ObjectMapper mapper = newMapperIgnoringUnknownProperties();
-			SimpleModule module = new SimpleModule();
-			module.addDeserializer(Plan.class, new CustomPlanDeserializer(Plan.class));
-			mapper.registerModule(module);
-			return mapper.readerFor(contentType).readValue(json);
+	private Schemas.SchemasBuilder toInstanceBuilder(Schemas.SchemasBuilder builder, org.cloudfoundry.client.v2.serviceplans.ServiceInstanceSchema entitySchemas) {
+		if (entitySchemas == null) {
+			return builder;
 		}
-		catch (IOException e) {
-			logger.error("Unable to parse json, caught: " + e, e);
-			throw new IllegalStateException(e);
-		}
+		ServiceInstanceSchema.ServiceInstanceSchemaBuilder serviceInstanceSchemaBuilder =
+			ServiceInstanceSchema.builder();
+		serviceInstanceSchemaBuilder = toCreateServiceInstanceSchemaBuilder(serviceInstanceSchemaBuilder, entitySchemas.getCreate());
+		serviceInstanceSchemaBuilder = toUpdateServiceInstanceSchemaBuilder(serviceInstanceSchemaBuilder, entitySchemas.getUpdate());
+		builder = builder.serviceInstanceSchema(serviceInstanceSchemaBuilder.build());
+		return builder;
 	}
 
-	private static ObjectMapper newMapperIgnoringUnknownProperties() {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		return mapper;
+	private Schemas.SchemasBuilder toBindingBuilder(Schemas.SchemasBuilder builder, org.cloudfoundry.client.v2.serviceplans.ServiceBindingSchema entitySchemas) {
+		if (entitySchemas == null) {
+			return builder;
+		}
+		ServiceBindingSchema.ServiceBindingSchemaBuilder serviceBindingSchemaBuilder = ServiceBindingSchema.builder();
+		serviceBindingSchemaBuilder = toCreateServiceBindingSchemaBuilder(serviceBindingSchemaBuilder, entitySchemas.getCreate());
+
+		builder = builder.serviceBindingSchema(serviceBindingSchemaBuilder.build());
+		return builder;
 	}
 
-	private String toJson(Object object) {
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			return mapper.writeValueAsString(object);
+	private ServiceBindingSchema.ServiceBindingSchemaBuilder toCreateServiceBindingSchemaBuilder(
+		ServiceBindingSchema.ServiceBindingSchemaBuilder builder, Schema entitySchema) {
+		if (entitySchema == null) {
+			return builder;
 		}
-		catch (JsonProcessingException e) {
-			throw new IllegalStateException(e);
+		MethodSchema.MethodSchemaBuilder methodSchemaBuilder = toParameters(entitySchema.getParameters());
+		if (methodSchemaBuilder == null) {
+			return builder;
 		}
+		return builder
+			.createMethodSchema(methodSchemaBuilder
+				.build());
+	}
+
+	private ServiceInstanceSchema.ServiceInstanceSchemaBuilder toUpdateServiceInstanceSchemaBuilder(
+		ServiceInstanceSchema.ServiceInstanceSchemaBuilder builder, Schema entitySchema) {
+		if (entitySchema == null) {
+			return builder;
+		}
+		MethodSchema.MethodSchemaBuilder methodSchemaBuilder = toParameters(entitySchema.getParameters());
+		if (methodSchemaBuilder == null) {
+			return builder;
+		}
+		return builder
+			.updateMethodSchema(methodSchemaBuilder
+			.build());
+	}
+
+	private ServiceInstanceSchema.ServiceInstanceSchemaBuilder toCreateServiceInstanceSchemaBuilder(
+		ServiceInstanceSchema.ServiceInstanceSchemaBuilder builder, Schema entitySchema) {
+		if (entitySchema == null) {
+			return builder;
+		}
+		MethodSchema.MethodSchemaBuilder methodSchemaBuilder = toParameters(entitySchema.getParameters());
+		if (methodSchemaBuilder == null) {
+			return builder;
+		}
+		return builder
+			.createMethodSchema(methodSchemaBuilder
+				.build());
+	}
+
+	/**
+	 * maps a schema. Care to taken to avoid setting empty schema that CF rejects
+	 * @return a Builder if a schema should be set, or null otherwise
+	 */
+	private MethodSchema.MethodSchemaBuilder toParameters(Parameters parameters) {
+		if (parameters == null) {
+			return null;
+		}
+		Map<String, Object> properties = parameters.getProperties();
+		String jsonSchema = parameters.getJsonSchema();
+		String type = parameters.getType();
+		if (properties == null &&
+			jsonSchema == null &&
+			type == null) {
+			return null;
+		}
+		MethodSchema.MethodSchemaBuilder builder = MethodSchema.builder();
+		if (properties != null) {
+			builder = builder.parameters("properties", properties);
+		}
+		if (jsonSchema != null) {
+			builder = builder.parameters("$schema", jsonSchema);
+		}
+		if (type!= null) {
+			builder = builder.parameters("type", type);
+		}
+		return builder;
 	}
 
 }

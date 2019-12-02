@@ -1,3 +1,42 @@
+
+- Diagnose and fix invalid schema returned in catalog
+   >       Schema service_instance.create.parameters is not valid. Schema must have $schema key but was not present
+   >             "schemas": {
+   >               "service_instance": {
+   >                 "create": {
+   >                   "parameters": {
+   >                     "$schema": null,
+   >                     "type": null,
+   >                     "properties": null
+   >                   }
+   >                 },
+   - Hypothesis:
+      - Cf returns empty schemas that PlanMapper maps into nulls, that json serialization serializes as null
+      - Plan json serializations serializes extra object
+   - Diagnostics
+      - Reproduce with component tests       
+      - Reproduce with acceptance tests 
+   - Possible fixes: 
+      - post-process Plan object to remove Schemas object that are empty
+      - replace json serialize/deserialize with builder mapping:
+         - schemas        
+         - schemas        
+                                                     
+- Find a way to package build meta data in gradle for osb-cmdb.jar
+- Configure paas-templates:
+     - to provide the DEBUG env var to turn onn springboot debugging
+     - to display the osb-cmdb.jar
+     - to create the default backing space, as this fails DynamicCatalogService if missing
+     
+       >  Caused by: java.lang.IllegalArgumentException: Space osb-cmdb-services does not exist
+       >  	at org.cloudfoundry.util.ExceptionUtils.illegalArgument(ExceptionUtils.java:45) ~[cloudfoundry-util-3.16.0.RELEASE.jar!/:na]
+       >  	at org.cloudfoundry.operations._DefaultCloudFoundryOperations.lambda$getSpace$2(_DefaultCloudFoundryOperations.java:288) ~[cloudfoundry-operations-3.16.0.RELEASE.jar!/:na]
+       >  	at reactor.core.publisher.Mono.lambda$onErrorResume$25(Mono.java:3152) ~[reactor-core-3.2.12.RELEASE.jar!/:3.2.12.RELEASE]
+       >  	at reactor.core.publisher.FluxOnErrorResume$ResumeSubscriber.onError(FluxOnErrorResume.java:88) ~[reactor-core-3.2.12.RELEASE.jar!/:3.2.12.RELEASE]
+       >  	at reactor.core.publisher.FluxOnAssembly$OnAssemblySubscriber.onError(   
+
+
+
 Next step:
     - Add configuration
         - run paas-templates smoke tests
