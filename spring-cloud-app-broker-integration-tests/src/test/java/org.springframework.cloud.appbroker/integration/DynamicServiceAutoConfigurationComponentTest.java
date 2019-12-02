@@ -1,7 +1,11 @@
 package org.springframework.cloud.appbroker.integration;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -58,7 +62,7 @@ import static org.assertj.core.api.Assertions.entry;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) //throw away wiremock across each test
 class DynamicServiceAutoConfigurationComponentTest {
 
-	private static final Logger logger = LoggerFactory.getLogger(DynamicServiceAutoConfigurationComponentTest.class);
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	@Autowired
 	private WiremockServerFixture wiremockFixture;
@@ -185,9 +189,28 @@ class DynamicServiceAutoConfigurationComponentTest {
 				assertThat(brokeredServices).isNotEmpty();
 
 				Catalog catalog = context.getBean(Catalog.class);
-				assertThat(catalog.getServiceDefinitions()).isNotEmpty();
+				List<ServiceDefinition> serviceDefinitions = catalog.getServiceDefinitions();
+				assertThat(serviceDefinitions).isNotEmpty();
+				serviceDefinitions.stream()
+					.map(ServiceDefinition::getPlans)
+					.flatMap(Collection::stream)
+					.forEach(this::assertPlanSerializesWithoutPollutingWithNulls);
 			});
 	}
+
+	private void assertPlanSerializesWithoutPollutingWithNulls(Plan plan)  {
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			String serializedPlan = mapper.writeValueAsString(plan);
+			logger.info("serializedPlan {}", serializedPlan);
+			assertThat(serializedPlan).doesNotContain(":null");
+			assertThat(serializedPlan).doesNotContain("\"parameters\": {}");
+		}
+		catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 
 	@Test
 	@Ignore
