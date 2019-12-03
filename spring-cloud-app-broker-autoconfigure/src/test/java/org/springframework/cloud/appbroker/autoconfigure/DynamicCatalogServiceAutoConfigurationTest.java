@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,19 +38,18 @@ import org.springframework.context.annotation.Configuration;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class DynamicServiceAutoConfigurationTest {
+class DynamicCatalogServiceAutoConfigurationTest {
 
-	private static final Logger logger = LoggerFactory.getLogger(DynamicServiceAutoConfigurationTest.class);
+	private static final Logger logger = LoggerFactory.getLogger(DynamicCatalogServiceAutoConfigurationTest.class);
 
 	@Test
 	void contextFailsWhenOptInButMissingDependencies() {
 		ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
 			.withConfiguration(AutoConfigurations.of(DynamicCatalogServiceAutoConfiguration.class))
-			.withSystemProperties(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true");
+			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
 		applicationContextRunner.run(context -> {
 			assertThat(context).hasFailed();
 		});
@@ -76,7 +74,7 @@ class DynamicServiceAutoConfigurationTest {
 				DynamicCatalogServiceAutoConfiguration.class
 			))
 //			.withPropertyValues(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true") //Not sure why this seems ignored
-			.withSystemProperties(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true");
+			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
 		contextRunner.run(context -> {
 			Catalog catalog = context.getBean(Catalog.class);
 			assertThat(catalog.getServiceDefinitions()).isNotEmpty();
@@ -89,12 +87,32 @@ class DynamicServiceAutoConfigurationTest {
 	}
 
 	@Test
+	void ServiceDefinitionMapperPropertiesAreProperlyLoaded() {
+		ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+			.withConfiguration(AutoConfigurations.of(
+				SingleServiceDefinitionAnswerAutoConfig.class,
+				DynamicCatalogServiceAutoConfiguration.class
+			))
+//			.withPropertyValues(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true") //Not sure why this seems ignored
+			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true")
+			.withPropertyValues(ServiceDefinitionMapperProperties.PROPERTY_PREFIX
+				+ServiceDefinitionMapperProperties.SUFFIX_PROPERTY_KEY+ "=suffix")
+		;
+		contextRunner.run(context -> {
+			assertThat(context).hasSingleBean(ServiceDefinitionMapperProperties.class);
+			ServiceDefinitionMapperProperties serviceDefinitionMapperProperties
+				= context.getBean(ServiceDefinitionMapperProperties.class);
+			assertThat(serviceDefinitionMapperProperties.getSuffix()).isEqualTo("suffix");
+		});
+	}
+
+	@Test
 	void catalogFetchingFailuresTriggersContextFailure() {
 		ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
 			.withConfiguration(AutoConfigurations.of(
 				DynamicCatalogServiceAutoConfiguration.class,
 				ThrowingExceptionServiceDefinitionAnswerAutoConfig.class))
-			.withSystemProperties(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true");
+			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
 		applicationContextRunner.run(context -> {
 			assertThat(context).hasFailed();
 		});
@@ -106,7 +124,7 @@ class DynamicServiceAutoConfigurationTest {
 			.withConfiguration(AutoConfigurations.of(
 				DynamicCatalogServiceAutoConfiguration.class,
 				EmptyServiceDefinitionAnswerAutoConfig.class))
-			.withSystemProperties(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true");
+			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
 		applicationContextRunner.run(context -> {
 			assertThat(context).hasFailed();
 		});

@@ -54,7 +54,7 @@ public class PlanMapper extends BaseMapper {
 
 		Plan plan = planBuilder.build();
 
-		logger.info("plan entity {}", plan);
+		logger.debug("plan entity {}", plan);
 		return plan;
 	}
 

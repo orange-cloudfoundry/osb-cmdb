@@ -17,13 +17,13 @@ public class BaseMapper {
 		if (extraJson ==null) {
 			return new HashMap<>();
 		}
-		logger.info("extraJson {}", extraJson);
+		logger.debug("extraJson {}", extraJson);
 		//enforce check keys can't be mapped to other java primitives: Boolean, Integers
 		//potentially customizing jackson deserialization
 		// See https://www.baeldung.com/jackson-map
 		TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
 		Map<String, Object> metadata = fromJson(extraJson, typeRef);
-		logger.info("metadata {}", metadata);
+		logger.debug("metadata {}", metadata);
 		return metadata;
 	}
 
