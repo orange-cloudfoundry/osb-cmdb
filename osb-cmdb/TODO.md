@@ -1,5 +1,26 @@
 
-- Diagnose and fix invalid schema returned in catalog
+Next step:
+- Refine dynamic catalog configuration
+    - broker excludes
+       - DONE: prepare test case in DynamicServiceAutoConfigurationComponentTest
+       - DONE implement filtering in DynamicCatalogServiceImpl 
+       
+    - squash commit 
+    - run tests & static code analysis
+    - PR autoconfig small change (cherrypick)
+    - test the error case: should fail fast and clean
+    - dump catalog and backing services as yaml on disk & stdout ?
+    - conditionally trigger autoconfiguration depending on property
+    - add filtering controlled by properties
+    - add filtering based to service plan visibilities
+    - integration tests using recorded mocks that can run on circleci
+       - look at cf-java-client tests for inspiration ? 
+    - override target strategy for some services ??
+
+
+
+
+- DONE: Diagnose and fix invalid schema returned in catalog
    >       Schema service_instance.create.parameters is not valid. Schema must have $schema key but was not present
    >             "schemas": {
    >               "service_instance": {
@@ -22,39 +43,15 @@
          - schemas        
          - schemas        
                                                      
-- Find a way to package build meta data in gradle for osb-cmdb.jar
-- Configure paas-templates:
-     - to provide the DEBUG env var to turn onn springboot debugging
-     - to display the osb-cmdb.jar
-     - to create the default backing space, as this fails DynamicCatalogService if missing
-     
-       >  Caused by: java.lang.IllegalArgumentException: Space osb-cmdb-services does not exist
-       >  	at org.cloudfoundry.util.ExceptionUtils.illegalArgument(ExceptionUtils.java:45) ~[cloudfoundry-util-3.16.0.RELEASE.jar!/:na]
-       >  	at org.cloudfoundry.operations._DefaultCloudFoundryOperations.lambda$getSpace$2(_DefaultCloudFoundryOperations.java:288) ~[cloudfoundry-operations-3.16.0.RELEASE.jar!/:na]
-       >  	at reactor.core.publisher.Mono.lambda$onErrorResume$25(Mono.java:3152) ~[reactor-core-3.2.12.RELEASE.jar!/:3.2.12.RELEASE]
-       >  	at reactor.core.publisher.FluxOnErrorResume$ResumeSubscriber.onError(FluxOnErrorResume.java:88) ~[reactor-core-3.2.12.RELEASE.jar!/:3.2.12.RELEASE]
-       >  	at reactor.core.publisher.FluxOnAssembly$OnAssemblySubscriber.onError(   
 
 
-
-Next step:
-    - Add configuration
-        - run paas-templates smoke tests
-          - DONE missing strategy in PlanMapper
-          - DONE add suffixes to service names: -cmdb
-            - inject DynamicCatalogProperties to other beans
-               - Q: inject     
-          - adapt smoke tests to not expected suffix ?
-        - squash commit & run static code analysis
-        - PR autoconfig small change (cherrypick)
-        - test the error case: should fail fast and clean
-        - dump catalog and backing services as yaml on disk & stdout ?
-        - conditionally trigger autoconfiguration depending on property
-        - add filtering controlled by properties
-        - add filtering based to service plan visibilities
-        - integration tests using recorded mocks that can run on circleci
-           - look at cf-java-client tests for inspiration ? 
-        - override target strategy for some services ??
+- DONE launch paas-templates smoke tests
+  - DONE missing strategy in PlanMapper
+  - DONE add suffixes to service names: -cmdb
+    - inject DynamicCatalogProperties to other beans
+       - Q: inject     
+  - adapt smoke tests to not expected suffix ?
+          
 
           
        - DONE: Proceed with unit testing of autoconfig: https://www.baeldung.com/spring-boot-context-runner
@@ -86,7 +83,7 @@ Next step:
               - trying to have slf4j display its logs through has no effect https://stackoverflow.com/questions/3752921/is-it-possible-to-make-log4j-display-which-file-it-used-to-configure-itself
                   > -Dlog4j.debug=true
                   - runs into a distinct JVM ?
-                     > /usr/lib/jvm/java-8-openjdk-amd64/bin/java -ea  -D .. com.intellij.rt.execution.application.AppMainV2 com.intellij.rt.execution.junit.JUnitStarter -ideVersion5 -junit5 org.springframework.cloud.appbroker.autoconfigure.DynamicServiceAutoConfigurationTest
+                     > /usr/lib/jvm/java-8-openjdk-amd64/bin/java -ea  -D .. com.intellij.rt.execution.application.AppMainV2 com.intellij.rt.execution.junit.JUnitStarter -ideVersion5 -junit5 org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfigurationTest
                       - print system properties: they properly display
                   - logback config problems ?
                      - https://stackoverflow.com/questions/48458052/logback-configuration-file-not-loaded 
@@ -108,7 +105,7 @@ Next step:
        - DONE: DynamicCatalogService bean
           - depends on CF client
           - Catalog getCatalog(): Catalog
-       - ServiceDefinitionMapper bean
+       - DONE: ServiceDefinitionMapper bean
            > ServiceDefinition toServiceDefinition(ServiceResource resource,
            >  		List<ServicePlanResource> servicePlans)    
           - in the future, also takes an associated List<ServicePlanVisibilityEntity>                             
@@ -120,7 +117,9 @@ Next step:
            >      private final @Nullable String servicePlanUrl;                          
            >                              
           - DONE: controlled by an associated ServiceDefinitionMapperProperties class 
-             - brokers/service includes/excludes
+             - DONE brokers/service excludes
+             - brokers includes
+             - service includes/excludes
              - DONE: service offering suffix
              - service offering prefix
           - DONE: With associated unit test 

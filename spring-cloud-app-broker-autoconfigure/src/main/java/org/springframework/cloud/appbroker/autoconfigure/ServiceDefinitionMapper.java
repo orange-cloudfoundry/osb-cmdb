@@ -1,14 +1,9 @@
 package org.springframework.cloud.appbroker.autoconfigure;
 
-import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cloudfoundry.client.v2.serviceplans.ServicePlanResource;
 import org.cloudfoundry.client.v2.services.ServiceEntity;
 import org.cloudfoundry.client.v2.services.ServiceResource;
@@ -28,6 +23,29 @@ public class ServiceDefinitionMapper extends BaseMapper {
 		ServiceDefinitionMapperProperties serviceDefinitionMapperProperties) {
 		this.planMapper = planMapper;
 		this.serviceDefinitionMapperProperties = serviceDefinitionMapperProperties;
+	}
+
+	/**
+	 * Decides whether the specified entity should be mapped
+	 * @param entity
+	 * @return true if the entity should be preserved and mapped, false if the entity should be skipped
+	 */
+	public boolean shouldMapServiceEntity(ServiceEntity entity) {
+		String excludeBrokerNamesRegexp = serviceDefinitionMapperProperties.getExcludeBrokerNamesRegexp();
+		if (excludeBrokerNamesRegexp == null) {
+			return true;
+		}
+		String serviceBrokerName = entity.getServiceBrokerName();
+		if (serviceBrokerName == null) {
+			logger.error("Unexpected missing broker name in service {}, filtering it out", entity);
+			return false;
+		}
+		boolean shouldMapEntity = !Pattern.matches(excludeBrokerNamesRegexp, serviceBrokerName);
+		if (!shouldMapEntity) {
+			logger.info("Filtering out service {} as it is excluded by configured rexgexp {}", entity,
+				excludeBrokerNamesRegexp);
+		}
+		return shouldMapEntity;
 	}
 
 	public ServiceDefinition toServiceDefinition(ServiceResource resource,

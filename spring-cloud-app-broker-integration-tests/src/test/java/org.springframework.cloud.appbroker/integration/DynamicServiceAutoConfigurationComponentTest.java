@@ -20,8 +20,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogProperties;
+import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogConstants;
 import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfiguration;
+import org.springframework.cloud.appbroker.autoconfigure.ServiceDefinitionMapperProperties;
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.CloudFoundryClientConfiguration;
@@ -100,23 +101,28 @@ class DynamicServiceAutoConfigurationComponentTest {
 		wiremockFixture.verifyAllRequiredStubsUsed();
 	}
 
-	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-		.withPropertyValues(
-			"spring.cloud.appbroker.acceptancetest.cloudfoundry.api-host=localhost",
-			"spring.cloud.appbroker.acceptancetest.cloudfoundry.api-port=8080",
-			"spring.cloud.appbroker.acceptancetest.cloudfoundry.username=admin",
-			"spring.cloud.appbroker.acceptancetest.cloudfoundry.password=adminpass",
-			"spring.cloud.appbroker.acceptancetest.cloudfoundry.default-org=test",
-			"spring.cloud.appbroker.acceptancetest.cloudfoundry.default-space=development",
-			"spring.cloud.appbroker.acceptancetest.cloudfoundry.secure=false",
-			"spring.cloud.appbroker.acceptance-test.cloudfoundry.client-id=osb-cmdb-acceptance-test",
-			"spring.cloud.appbroker.acceptance-test.cloudfoundry.client-secret=IPN4500Bgf0fQhZrA0CBpIovYzAyhln",
-			DynamicCatalogProperties.OPT_IN_PROPERTY+"=true")
-		.withConfiguration(AutoConfigurations.of(
-			TargetPropertiesConfiguration.class,
-			CloudFoundryClientConfiguration.class,
-			DynamicCatalogServiceAutoConfiguration.class
-		));
+	private final ApplicationContextRunner contextRunner = setUpCommonApplicationContextRunner("");
+
+	private ApplicationContextRunner setUpCommonApplicationContextRunner(String extraProperty) {
+		return new ApplicationContextRunner()
+			.withPropertyValues(
+				"spring.cloud.appbroker.acceptancetest.cloudfoundry.api-host=localhost",
+				"spring.cloud.appbroker.acceptancetest.cloudfoundry.api-port=8080",
+				"spring.cloud.appbroker.acceptancetest.cloudfoundry.username=admin",
+				"spring.cloud.appbroker.acceptancetest.cloudfoundry.password=adminpass",
+				"spring.cloud.appbroker.acceptancetest.cloudfoundry.default-org=test",
+				"spring.cloud.appbroker.acceptancetest.cloudfoundry.default-space=development",
+				"spring.cloud.appbroker.acceptancetest.cloudfoundry.secure=false",
+				"spring.cloud.appbroker.acceptance-test.cloudfoundry.client-id=osb-cmdb-acceptance-test",
+				"spring.cloud.appbroker.acceptance-test.cloudfoundry.client-secret=IPN4500Bgf0fQhZrA0CBpIovYzAyhln",
+				DynamicCatalogConstants.OPT_IN_PROPERTY+"=true",
+				extraProperty)
+			.withConfiguration(AutoConfigurations.of(
+				TargetPropertiesConfiguration.class,
+				CloudFoundryClientConfiguration.class,
+				DynamicCatalogServiceAutoConfiguration.class
+			));
+	}
 
 	@Test
 	void catalogCreatedWithDetailedValidMetadata() {
@@ -157,6 +163,7 @@ class DynamicServiceAutoConfigurationComponentTest {
 				assertThat(plan.getSchemas().getServiceInstanceSchema().getCreateMethodSchema()).isNotNull();
 				assertThat(plan.getSchemas().getServiceInstanceSchema().getCreateMethodSchema().getParameters().size()).isEqualTo(3); //$schema, type, properties
 				assertThat(plan.getSchemas().getServiceInstanceSchema().getCreateMethodSchema().getParameters().size()).isEqualTo(3); //$schema, type, properties
+				//noinspection unchecked
 				Map<String, Object> properties = (Map<String, Object>) plan.getSchemas().getServiceInstanceSchema().getCreateMethodSchema().getParameters().get("properties");
 				assertThat(properties.get("baz")).isNotNull(); //$schema, type, properties
 				assertThat(plan.getSchemas().getServiceInstanceSchema().getUpdateMethodSchema()).isNotNull();
@@ -180,6 +187,58 @@ class DynamicServiceAutoConfigurationComponentTest {
 		cloudControllerFixture.stubSpaceServiceWithResponse("list-space-services");
 		cloudControllerFixture.stubServicePlanWithResponse("list-service-plans");
 		assertCatalogCreatesWithoutError();
+	}
+
+	@Test
+	void excludesBrokersMatchingRegexp() {
+		//Given a marketplace with 2 service definition
+		aStubbedMarketplaceWithTwoServiceOfferings();
+
+		//And a broker exclusion regexp configrued
+		String extraProperty = ServiceDefinitionMapperProperties.PROPERTY_PREFIX
+			+ ServiceDefinitionMapperProperties.EXCLUDE_BROKER_PROPERTY_KEY
+			+ "=service_broker_name2";
+		ApplicationContextRunner customContextRunner = setUpCommonApplicationContextRunner(extraProperty);
+
+		//when fetching marketplace
+		customContextRunner
+			.run(context -> {
+				//then
+				BrokeredServices brokeredServices = context.getBean(BrokeredServices.class);
+				assertThat(brokeredServices).hasSize(1);
+
+				Catalog catalog = context.getBean(Catalog.class);
+				assertThat(catalog.getServiceDefinitions()).hasSize(1);
+			});
+	}
+
+	private void aStubbedMarketplaceWithTwoServiceOfferings() {
+		cloudControllerFixture.stubSpaceServiceWithResponse("list-space-services-multiple");
+		cloudControllerFixture.stubServicePlanWithResponse("list-service-plans-detailed", "SERVICE-ID");
+		cloudControllerFixture.stubServicePlanWithResponse("list-service-plans-service2", "SERVICE-ID2");
+	}
+
+	@Test
+	void doesNotExcludeBrokersNotMatchingRegexp() {
+		//Given a marketplace with 2 service definition
+		aStubbedMarketplaceWithTwoServiceOfferings();
+
+		//And a broker exclusion regexp configrued
+		String extraProperty = ServiceDefinitionMapperProperties.PROPERTY_PREFIX
+			+ ServiceDefinitionMapperProperties.EXCLUDE_BROKER_PROPERTY_KEY
+			+ "=non_matching_broker_name";
+		ApplicationContextRunner customContextRunner = setUpCommonApplicationContextRunner(extraProperty);
+
+		//when fetching marketplace
+		customContextRunner
+			.run(context -> {
+				//then
+				BrokeredServices brokeredServices = context.getBean(BrokeredServices.class);
+				assertThat(brokeredServices).hasSize(2);
+
+				Catalog catalog = context.getBean(Catalog.class);
+				assertThat(catalog.getServiceDefinitions()).hasSize(2);
+			});
 	}
 
 	private void assertCatalogCreatesWithoutError() {

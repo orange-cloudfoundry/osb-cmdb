@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogProperties;
+import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogConstants;
 import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfiguration;
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
@@ -50,7 +50,7 @@ class DynamicServiceAutoConfigurationAcceptanceTest {
 			CloudFoundryClientConfiguration.class,
 			DynamicCatalogServiceAutoConfiguration.class
 		))
-		.withPropertyValues(DynamicCatalogProperties.OPT_IN_PROPERTY+"=true");
+		.withPropertyValues(DynamicCatalogConstants.OPT_IN_PROPERTY+"=true");
 
 	@Test
 	void contextLoadWithCatalogCreatedWhenPropertiesProvided() {

@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,6 +20,39 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ServiceDefinitionMapperTest {
+
+	@Test
+	void filtersOutServiceEntityMatchingExcludeRegexp() {
+		assertEntityIsFiltered(".*exclude", "brokerNameTo_exclude", false);
+	}
+
+	@Test
+	void filtersInServiceEntityNotMatchingExcludeRegexp() {
+		assertEntityIsFiltered(".*exclude", "brokerNameTo_include", true);
+	}
+
+	@Test
+	void filtersInAllServiceEntitiesWhenNoRegexpConfigured() {
+		assertEntityIsFiltered(null, "a random brokerName", true);
+	}
+
+	private void assertEntityIsFiltered(String excludeBrokerNamesRegexp, String serviceBrokerName,
+		boolean shouldMapEntity) {
+		//given
+		ServiceDefinitionMapperProperties serviceDefinitionMapperProperties = new ServiceDefinitionMapperProperties();
+		serviceDefinitionMapperProperties.setExcludeBrokerNamesRegexp(excludeBrokerNamesRegexp);
+		PlanMapper planMapper = mock(PlanMapper.class);
+		ServiceDefinitionMapper serviceDefinitionMapper = new ServiceDefinitionMapper(
+			planMapper, serviceDefinitionMapperProperties);
+
+		//when
+		ServiceEntity entity = ServiceEntity.builder()
+			.serviceBrokerName(serviceBrokerName)
+			.build();
+
+		//then
+		assertThat(serviceDefinitionMapper.shouldMapServiceEntity(entity)).isEqualTo(shouldMapEntity);
+	}
 
 	@Test
 	void mapsToServiceDefinition() {

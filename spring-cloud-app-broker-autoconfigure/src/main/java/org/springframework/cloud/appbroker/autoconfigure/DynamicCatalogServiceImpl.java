@@ -5,6 +5,7 @@ import java.util.List;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.serviceplans.ListServicePlansRequest;
 import org.cloudfoundry.client.v2.serviceplans.ServicePlanResource;
+import org.cloudfoundry.client.v2.services.ServiceEntity;
 import org.cloudfoundry.client.v2.services.ServiceResource;
 import org.cloudfoundry.client.v2.spaces.ListSpaceServicesRequest;
 import org.cloudfoundry.operations.CloudFoundryOperations;
@@ -59,11 +60,16 @@ public class DynamicCatalogServiceImpl implements DynamicCatalogService {
 				Mono.just(resource),
 				getServicePlans(cloudFoundryClient, ResourceUtils.getId(resource))
 			)))
+			.filter(t-> filterServiceEntity(t.getT1().getEntity()))
 			.map(function(
 				(resource1, servicePlans) -> serviceDefinitionMapper.toServiceDefinition(resource1, servicePlans)))
 			.transform(OperationsLogging.log("List Service Definitions"))
 			.checkpoint()
 			.collectList().block();
+	}
+
+	private boolean filterServiceEntity(ServiceEntity entity) {
+		return serviceDefinitionMapper.shouldMapServiceEntity(entity);
 	}
 
 

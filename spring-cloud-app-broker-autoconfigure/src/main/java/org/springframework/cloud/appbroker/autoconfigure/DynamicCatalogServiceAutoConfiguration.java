@@ -19,31 +19,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.Assert;
 
-import static org.cloudfoundry.util.tuple.TupleUtils.function;
-
 @Configuration
 @AutoConfigureBefore(AppBrokerAutoConfiguration.class)
-@ConditionalOnProperty(value=DynamicCatalogProperties.OPT_IN_PROPERTY)
+@ConditionalOnProperty(value= DynamicCatalogConstants.OPT_IN_PROPERTY)
 public class DynamicCatalogServiceAutoConfiguration {
 
-	private static final Logger logger = LoggerFactory.getLogger(DynamicCatalogServiceAutoConfiguration.class);
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private BrokeredServices brokeredServices;
 	private Catalog catalog;
 
 	@Bean
-	@ConfigurationProperties(DynamicCatalogProperties.PROPERTY_PREFIX)
-	public DynamicCatalogProperties dynamicCatalogProperties() {
-		return new DynamicCatalogProperties();
-	}
-
-	@Bean
-	@ConfigurationProperties(PlanMapperProperties.PROPERTY_PREFIX)
+	@ConfigurationProperties(prefix=PlanMapperProperties.PROPERTY_PREFIX, ignoreUnknownFields = false)
 	public PlanMapperProperties planMapperProperties() {
 		return new PlanMapperProperties();
 	}
 
 	@Bean
-	@ConfigurationProperties(ServiceDefinitionMapperProperties.PROPERTY_PREFIX)
+	@ConfigurationProperties(prefix=ServiceDefinitionMapperProperties.PROPERTY_PREFIX, ignoreUnknownFields = false)
 	public ServiceDefinitionMapperProperties serviceDefinitionMapperProperties() {
 		return new ServiceDefinitionMapperProperties();
 	}
@@ -66,6 +58,9 @@ public class DynamicCatalogServiceAutoConfiguration {
 		CloudFoundryClient cloudFoundryClient,
 		CloudFoundryTargetProperties targetProperties,
 		ServiceDefinitionMapper serviceDefinitionMapper) {
+
+		logger.info("Will be fetching catalog from org {} and space {}",
+			targetProperties.getDefaultOrg(), targetProperties.getDefaultSpace());
 
 		return new DynamicCatalogServiceImpl(
 			defaultDeploymentProperties,
@@ -100,6 +95,9 @@ public class DynamicCatalogServiceAutoConfiguration {
 			brokeredServices = brokeredServicesCatalogMapper.toBrokeredServices(this.catalog);
 			Assert.notEmpty(catalog.getServiceDefinitions(),
 				"Unexpected empty list of brokered services, check configured filters");
+
+			logger.info("Mapped catalog is: {}", catalog);
+			logger.info("Mapped brokered services are: {}", brokeredServices);
 		}
 	}
 
