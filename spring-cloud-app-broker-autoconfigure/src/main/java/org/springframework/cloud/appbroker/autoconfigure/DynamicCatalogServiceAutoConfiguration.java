@@ -1,5 +1,6 @@
 package org.springframework.cloud.appbroker.autoconfigure;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.cloudfoundry.client.CloudFoundryClient;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryTargetProperties;
@@ -22,6 +24,7 @@ import org.springframework.util.Assert;
 @Configuration
 @AutoConfigureBefore(AppBrokerAutoConfiguration.class)
 @ConditionalOnProperty(value= DynamicCatalogConstants.OPT_IN_PROPERTY)
+@EnableConfigurationProperties
 public class DynamicCatalogServiceAutoConfiguration {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -98,6 +101,23 @@ public class DynamicCatalogServiceAutoConfiguration {
 
 			logger.info("Mapped catalog is: {}", catalog);
 			logger.info("Mapped brokered services are: {}", brokeredServices);
+
+			dumpCatalogToDisk();
+		}
+	}
+
+	private void dumpCatalogToDisk() {
+		try {
+			ServiceConfigurationYamlDumper serviceConfigurationYamlDumper = new ServiceConfigurationYamlDumper();
+			serviceConfigurationYamlDumper.dumpToYamlFile(catalog, brokeredServices);
+			if (logger.isDebugEnabled()) {
+				String yamlDebug = serviceConfigurationYamlDumper.dumpToYamlString(catalog, brokeredServices);
+				logger.debug("Mapped catalog yml is {}", yamlDebug);
+			}
+		}
+		catch (IOException e) {
+			//Don't fail application start
+			logger.error("Unable to dump dynamic catalog to disk, caught: " + e, e);
 		}
 	}
 

@@ -26,10 +26,6 @@ public class BrokeredServicesCatalogMapper {
 		return builder.build();
 	}
 
-	public String dumpToYaml() {
-		return null;
-	}
-
 	private BrokeredServices toBrokeredServices(ServiceDefinition serviceDefinition) {
 		BrokeredServices.BrokeredServicesBuilder builder = BrokeredServices.builder();
 		serviceDefinition.getPlans().stream().sequential()
