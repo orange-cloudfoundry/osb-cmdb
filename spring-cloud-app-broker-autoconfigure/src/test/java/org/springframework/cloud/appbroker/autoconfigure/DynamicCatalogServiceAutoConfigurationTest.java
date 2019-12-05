@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,15 +88,15 @@ class DynamicCatalogServiceAutoConfigurationTest {
 	}
 
 	@Test
-	void ServiceDefinitionMapperPropertiesAreProperlyLoaded() {
+	void serviceDefinitionMapperPropertiesAreProperlyLoaded() {
 		ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 			.withConfiguration(AutoConfigurations.of(
 				SingleServiceDefinitionAnswerAutoConfig.class,
 				DynamicCatalogServiceAutoConfiguration.class
 			))
 //			.withPropertyValues(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true") //Not sure why this seems ignored
-			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true")
-			.withPropertyValues(ServiceDefinitionMapperProperties.PROPERTY_PREFIX
+			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true",
+				ServiceDefinitionMapperProperties.PROPERTY_PREFIX
 				+ServiceDefinitionMapperProperties.SUFFIX_PROPERTY_KEY+ "=suffix")
 		;
 		contextRunner.run(context -> {

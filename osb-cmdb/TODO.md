@@ -1,3 +1,14 @@
+Status: 
+- finish dump writing to disk + echo message on stdout
+   - 
+- pause on debugging the test
+   - later, ask support on stack overflow:
+      - "how to debug spring binder issues in tests ?"
+         - https://spring.io/blog/2018/03/28/property-binding-in-spring-boot-2-0
+      - "how to test application.yml in unit tests ?"
+      - "how to test & debug springboot configuration binding in unit tests ?"
+- squash & release 
+
 
 Next step:
 - Refine dynamic catalog configuration
@@ -10,6 +21,10 @@ Next step:
     - PR autoconfig small change (cherrypick)
     - test the error case: should fail fast and clean
     - dump catalog and backing services as yaml on disk & stdout ?
+       - Pb: enable to load generated yml into config properties (same pb as for ContextRunner) with SCPSB context code
+       - same syntax
+       - different classpath / lib versions ?
+       - different imports ? 
     - conditionally trigger autoconfiguration depending on property
     - add filtering controlled by properties
     - add filtering based to service plan visibilities

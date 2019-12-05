@@ -7,7 +7,7 @@ public class ServiceDefinitionMapperProperties {
 	/**
 	 * Adds a suffix to service names
 	 */
-	public static final String SUFFIX_PROPERTY_KEY="suffix";
+	public static final String SUFFIX_PROPERTY_KEY=".suffix";
 
 	/**
 	 * Excludes some broker whose name matches the regexp.
