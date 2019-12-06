@@ -97,7 +97,7 @@ class DynamicCatalogServiceAutoConfigurationTest {
 //			.withPropertyValues(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true") //Not sure why this seems ignored
 			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true",
 				ServiceDefinitionMapperProperties.PROPERTY_PREFIX
-				+ServiceDefinitionMapperProperties.SUFFIX_PROPERTY_KEY+ "=suffix")
+					+ServiceDefinitionMapperProperties.SUFFIX_PROPERTY_KEY+ "=suffix")
 		;
 		contextRunner.run(context -> {
 			assertThat(context).hasSingleBean(ServiceDefinitionMapperProperties.class);

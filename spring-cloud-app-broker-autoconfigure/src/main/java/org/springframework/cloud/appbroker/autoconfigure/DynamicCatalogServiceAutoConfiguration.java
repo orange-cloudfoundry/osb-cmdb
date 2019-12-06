@@ -32,16 +32,17 @@ public class DynamicCatalogServiceAutoConfiguration {
 	private Catalog catalog;
 
 	@Bean
-	@ConfigurationProperties(prefix=PlanMapperProperties.PROPERTY_PREFIX, ignoreUnknownFields = false)
+	@ConfigurationProperties(prefix = PlanMapperProperties.PROPERTY_PREFIX, ignoreUnknownFields = false)
 	public PlanMapperProperties planMapperProperties() {
 		return new PlanMapperProperties();
 	}
 
 	@Bean
-	@ConfigurationProperties(prefix=ServiceDefinitionMapperProperties.PROPERTY_PREFIX, ignoreUnknownFields = false)
+	@ConfigurationProperties(prefix = ServiceDefinitionMapperProperties.PROPERTY_PREFIX, ignoreUnknownFields = false)
 	public ServiceDefinitionMapperProperties serviceDefinitionMapperProperties() {
 		return new ServiceDefinitionMapperProperties();
 	}
+
 	@Bean
 	public ServiceDefinitionMapper serviceDefinitionMapper(
 		PlanMapper planMapper,
@@ -74,18 +75,28 @@ public class DynamicCatalogServiceAutoConfiguration {
 	}
 
 	@Bean
-	public Catalog catalog(DynamicCatalogService dynamicCatalogService) {
-		initializeCatalog(dynamicCatalogService);
+	public BrokeredServicesCatalogMapper brokeredServicesCatalogMapper(
+		ServiceDefinitionMapperProperties serviceDefinitionMapperProperties) {
+		return new BrokeredServicesCatalogMapper(serviceDefinitionMapperProperties);
+	}
+
+	@Bean
+	public Catalog catalog(DynamicCatalogService dynamicCatalogService,
+		BrokeredServicesCatalogMapper brokeredServicesCatalogMapper) {
+		brokeredServices = brokeredServices(dynamicCatalogService,
+			brokeredServicesCatalogMapper);
 		return catalog;
 	}
 
 	@Bean
-	public BrokeredServices brokeredServices(DynamicCatalogService dynamicCatalogService) {
-		initializeCatalog(dynamicCatalogService);
+	public BrokeredServices brokeredServices(DynamicCatalogService dynamicCatalogService,
+		BrokeredServicesCatalogMapper brokeredServicesCatalogMapper) {
+		initializeCatalog(dynamicCatalogService, brokeredServicesCatalogMapper);
 		return brokeredServices;
 	}
 
-	private void initializeCatalog(DynamicCatalogService dynamicCatalogService) {
+	private void initializeCatalog(DynamicCatalogService dynamicCatalogService,
+		BrokeredServicesCatalogMapper brokeredServicesCatalogMapper) {
 		if (catalog == null || brokeredServices == null) {
 			List<ServiceDefinition> serviceDefinitions = dynamicCatalogService.fetchServiceDefinitions();
 			Assert.notEmpty(serviceDefinitions, "Unexpected empty marketplace dynamically fetched");
@@ -93,7 +104,6 @@ public class DynamicCatalogServiceAutoConfiguration {
 			this.catalog = Catalog.builder().serviceDefinitions(serviceDefinitions).build();
 			Assert.notEmpty(catalog.getServiceDefinitions(),
 				"Unexpected empty mapped catalog, check configured filters");
-			BrokeredServicesCatalogMapper brokeredServicesCatalogMapper = new BrokeredServicesCatalogMapper();
 
 			brokeredServices = brokeredServicesCatalogMapper.toBrokeredServices(this.catalog);
 			Assert.notEmpty(catalog.getServiceDefinitions(),

@@ -35,7 +35,7 @@ public class SampleServicesBuilderBaseTest {
 			.build();
 	}
 
-	private BackingService buildBackingService(String serviceName, String planName) {
+	protected BackingService buildBackingService(String serviceName, String planName) {
 		return BackingService.builder()
 			.name(serviceName)
 			.plan(planName)
@@ -43,7 +43,7 @@ public class SampleServicesBuilderBaseTest {
 			.build();
 	}
 
-	private Plan[] buildPlan(String[] planNames) {
+	protected Plan[] buildPlan(String[] planNames) {
 		return Stream.of(planNames)
 			.map(planName-> Plan.builder()
 				.id(planName + "-id")
