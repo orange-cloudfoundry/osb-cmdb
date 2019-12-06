@@ -1,6 +1,5 @@
 Status: 
-- finish dump writing to disk + echo message on stdout
-   - 
+- DONE: finish dump writing to disk + echo message on stdout
 - pause on debugging the test
    - later, ask support on stack overflow:
       - "how to debug spring binder issues in tests ?"
