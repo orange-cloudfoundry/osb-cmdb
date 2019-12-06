@@ -25,6 +25,10 @@ buildscript {
 	}
 }
 
+plugins {
+	id "com.gorylenko.gradle-git-properties" version "2.2.0"
+}
+
 description = "Osb Cmdb"
 
 // don't publish the jar for the acceptance tests project
@@ -61,4 +65,19 @@ test {
 	systemProperty "tests.broker-app-path", "${buildDir}/libs/osb-cmdb.jar"
 	// Pass relevant java properties to the test task
 	systemProperties << System.properties.findAll { it.key.startsWith("spring.") }
+}
+
+gitProperties {
+	extProperty = 'gitProps' // git properties will be put in a map at project.ext.gitProps
+}
+generateGitProperties.outputs.upToDateWhen { false } // make sure the generateGitProperties task always executes (even when git.properties is not changed)
+
+//Add SCM information to jar.
+//See https://github.com/n0mer/gradle-git-properties#other-usages
+bootJar {
+	manifest {
+		attributes(
+			'SCM-Revision': "${-> project.ext.gitProps['git.commit.id.describe']} with message ${-> project.ext.gitProps['git.commit.message.short']} from branch=${-> project.ext.gitProps['git.branch']} user.name=${-> project.ext.gitProps['git.commit.user.name']} at time=${-> project.ext.gitProps['git.commit.time']}"  // Use GString lazy evaluation to delay until git properties are populated
+		)
+	}
 }

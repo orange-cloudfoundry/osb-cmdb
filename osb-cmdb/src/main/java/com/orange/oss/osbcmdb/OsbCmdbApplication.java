@@ -2,16 +2,21 @@ package com.orange.oss.osbcmdb;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfiguration;
 import org.springframework.cloud.appbroker.deployer.*;
+import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
+import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryOperationsUtils;
+import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryTargetProperties;
 import org.springframework.cloud.appbroker.extensions.credentials.CredentialProviderService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceAppBindingWorkflow;
-import org.springframework.cloud.appbroker.service.CreateServiceInstanceWorkflow;
 import org.springframework.cloud.appbroker.service.DeleteServiceInstanceBindingWorkflow;
-import org.springframework.cloud.appbroker.service.DeleteServiceInstanceWorkflow;
 import org.springframework.context.annotation.Bean;
+
+import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.operations.CloudFoundryOperations;
 import reactor.core.publisher.Hooks;
 
 @SpringBootApplication
@@ -48,4 +53,5 @@ public class OsbCmdbApplication {
 
 		return new AppDeploymentDeleteServiceBindingWorkflow(brokeredServices, backingAppDeploymentService, backingServicesProvisionService, appsParametersTransformationService, servicesParametersTransformationService, credentialProviderService, targetService);
 	}
+
 }
