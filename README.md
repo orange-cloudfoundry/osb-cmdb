@@ -7,7 +7,10 @@ cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc -
 -->
 
  * [Functional overview](#functional-overview)
- * [Technical details](#technical-details)
+    * [Manual catalog of Brokered and backing services](#manual-catalog-of-brokered-and-backing-services)
+       * [Backing service instance target strategies](#backing-service-instance-target-strategies)
+    * [Dynamic catalog](#dynamic-catalog)
+  * [Technical details](#technical-details)
 	* [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
 	* [Future support for additional meta-data](#future-support-for-additional-meta-data)
 	* [Dashboard AuthN and AuthZ support (WIP)](#dashboard-authn-and-authz-support-wip)
@@ -51,6 +54,101 @@ PUT /v2/service_instances/:instance_id/service_bindings/:binding_id | cf create-
 GET /v2/service_instances/:instance_id/service_bindings/:binding_id/last_operation | cf get-service-key (WIP)
 GET /v2/service_instances/:instance_id/service_bindings/:binding_id | cf get-service-key
 DELETE /v2/service_instances/:instance_id/service_bindings/:binding_id | cf delete-service-key
+
+### Getting started
+
+Osb-cmdb ships as a spring-boot jar which is configured using properties.
+
+The SCAB properties are documented at https://docs.spring.io/spring-cloud-app-broker/docs/current/reference/html5/
+
+Osb-cmdb adds support for additional properties which are illustrated below. Source of truth is associated unit tests
+
+#### Manual catalog of Brokered and backing services 
+
+SCAB support by default user-provided catalog of brokered services, and associated backing services.
+
+Following is an example of a simple configuration
+
+```yaml
+#### Manual catalog and brokered service configuration
+  spring:
+    cloud:
+      openservicebroker:
+        catalog:
+          services:
+            - name: p-mysql-cmdb
+              id: ebca66fd-461d-415b-bba3-5e379d671c88
+              description: A useful service
+              bindable: true
+              plan_updateable: true
+              tags:
+                - example
+              plans:
+                - name: 10mb
+                  id: p-mysql-cmdb-10mb
+                  description: A standard plan
+                  free: true
+                - name: 20mb
+                  id: p-mysql-cmdb-20mb
+                  description: A standard plan
+                  free: true
+      appbroker:
+        services:
+          - service-name: p-mysql-cmdb
+            plan-name: 10mb
+            target:
+              name: SpacePerServiceDefinition
+            services:
+              - service-instance-name: p-mysql
+                name: p-mysql
+                plan: 10mb
+          - service-name: p-mysql-cmdb
+            plan-name: 20mb
+            target:
+              name: SpacePerServiceDefinition
+            services:
+              - service-instance-name: p-mysql
+                name: p-mysql
+                plan: 20mb
+```
+
+
+##### Backing service instance target strategies
+
+This configures where backing service instances are created and how they get named.
+
+Beyond built-in [SCAB strategies](https://docs.spring.io/spring-cloud-app-broker/docs/current/reference/html5/#_backing_application_target), Osb-cmdb brings the following additional strategies:
+* `SpacePerServicePlan`: 
+    * backing service instances are created in dynamically created spaces in the default org, named `${service-definition-name}-${service-plan-name}` 
+    * This is useful to apply quota per service plans. However, associated brokered service instances don't support anymore service plan upgrades.   
+* `SpacePerServiceDefinition`: 
+    * backing service instances are created in dynamically created spaces in the default org, named `${service-definition-name}` 
+    * This is useful to apply quota per service definitions.   
+
+#### Dynamic catalog
+
+With large marketplace being brokered, manually maintainaing the catalog might be a tedious task.
+
+Osb-Cmdb brings the feature of dynamic catalog generation which can be opted-in as follows. 
+
+At start up, the broker will fetch the service definitions from the target CF instance, as visible from the default organization and space (the equivalent of the `cf marketplace`command). For now service plan visibility is not fetched.
+
+As a result, a catalog of Brokered services is generated with a one-to-one mapping between brokered services and backing services. 
+The following properties can be used to tune this mapping:
+
+```yaml
+  osbcmdb:
+    dynamic-catalog:
+      enabled: "true" #Turn on dynamic catalog. Catalog and brokered services properties 
+      catalog:
+        services:
+          suffix: "-cmdb" #Suffix to add each service definition
+          excludeBrokerNamesRegexp: ".*cmdb.*" # Excludes broker names matching this regexp. Good to excluding osb-cmdb itself to avoid brokering itself. 
+```
+
+Additionally, the generated catalog is dumped on disk onto `/tmp/osb-cmdb-dynamicCatalog.yml` (see org.springframework.cloud.appbroker.autoconfigure.ServiceConfigurationYamlDumper)
+
+This can be used as a baseline for manually tuned catalog when supported tunings in automated generation are insufficient.  
 
 ### Technical details
 
