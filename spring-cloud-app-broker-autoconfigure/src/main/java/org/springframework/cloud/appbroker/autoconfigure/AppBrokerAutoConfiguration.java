@@ -104,6 +104,7 @@ public class AppBrokerAutoConfiguration {
 
 	@Bean
 	@ConfigurationProperties(PROPERTY_PREFIX + ".services")
+	@ConditionalOnMissingBean
 	public BrokeredServices brokeredServices() {
 		return BrokeredServices.builder().build();
 	}
