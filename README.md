@@ -1,6 +1,25 @@
 
 ## Osb-cmdb-spike
 
+<!-- 
+ TOC generated during https://github.com/ekalinin/github-markdown-toc
+cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc - 
+-->
+
+ * [Functional overview](#functional-overview)
+ * [Technical details](#technical-details)
+	* [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
+	* [Future support for additional meta-data](#future-support-for-additional-meta-data)
+	* [Dashboard AuthN and AuthZ support (WIP)](#dashboard-authn-and-authz-support-wip)
+	   * [Discovery of the OIDC endpoint](#discovery-of-the-oidc-endpoint)
+	   * [Discovery of the OAuth client_id and client_secret to provision](#discovery-of-the-oauth-client_id-and-client_secret-to-provision)
+	   * [Dashboard AuthN using OIDC](#dashboard-authn-using-oidc)
+	   * [Dashboard AuthZ using CF service instance permission](#dashboard-authz-using-cf-service-instance-permission)
+	   * [Dashboard AuthZ using K8S API](#dashboard-authz-using-k8s-api)
+	   * [Interaction flow diagram](#interaction-flow-diagram)
+ * [Releasing](#releasing)
+
+
 This repo contains a spike for the osb-cmdb project.
 
 This project provides a configuration management for Open Service Broker API broker implementations. See [orange-cloudfoundry/paas-templates#492](https://github.com/orange-cloudfoundry/paas-templates/issues/492) for more background around use-cases and considered alternatives.
