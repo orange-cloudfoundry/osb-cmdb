@@ -4,7 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.cloud.appbroker.deployer.BackingServices;
+import org.springframework.cloud.appbroker.deployer.BrokeredService;
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
+import org.springframework.cloud.appbroker.deployer.TargetSpec;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 
 import static java.util.Arrays.asList;
@@ -21,12 +24,42 @@ class BrokeredServicesCatalogMapperTest extends SampleServicesBuilderBaseTest {
 				buildServiceDefinition("noop", "default")))
 			.build();
 
-		BrokeredServices brokeredServices = new BrokeredServicesCatalogMapper().toBrokeredServices(catalog);
+		BrokeredServices brokeredServices = new BrokeredServicesCatalogMapper(new ServiceDefinitionMapperProperties()).toBrokeredServices(catalog);
 		logger.info("brokered services: {}", brokeredServices);
 		BrokeredServices expectedBrokeredServices = BrokeredServices.builder()
 			.service(buildBrokeredService("mysql", "10mb"))
 			.service(buildBrokeredService("mysql", "20mb"))
 			.service(buildBrokeredService("noop", "default"))
+			.build();
+		assertThat(brokeredServices).isEqualTo(expectedBrokeredServices);
+	}
+
+	@Test
+	void mapsSuffixedCatalogToUnsuffixedBrokeredServices() {
+		//given
+		Catalog catalog = Catalog.builder()
+			.serviceDefinitions(asList(
+				buildServiceDefinition("mysql-suffixed", "10mb")))
+			.build();
+		ServiceDefinitionMapperProperties serviceDefinitionMapperProperties = new ServiceDefinitionMapperProperties();
+		serviceDefinitionMapperProperties.setSuffix("-suffixed");
+
+		//when
+		BrokeredServices brokeredServices = new BrokeredServicesCatalogMapper(serviceDefinitionMapperProperties).toBrokeredServices(catalog);
+
+		//then
+		logger.info("brokered services: {}", brokeredServices);
+		BrokeredServices expectedBrokeredServices = BrokeredServices.builder()
+			.service(BrokeredService.builder()
+				.serviceName("mysql-suffixed")
+				.planName("10mb")
+				.services(BackingServices.builder()
+					.backingService(buildBackingService("mysql", "10mb"))
+					.build())
+				.target(TargetSpec.builder()
+					.name("SpacePerServiceDefinition")
+					.build())
+				.build())
 			.build();
 		assertThat(brokeredServices).isEqualTo(expectedBrokeredServices);
 	}

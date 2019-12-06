@@ -1,3 +1,33 @@
+Bug:
+ - symtom 
+    > Finished creating backing service onError(java.lang.IllegalArgumentException: Service p-mysql-cmdb does not exist
+ - diagnostics
+    - invalid BrokeredServices definition
+                                                 >
+    >    - serviceName: "p-redis-cmdb"
+    >      planName: "dedicated-vm"
+    >      apps: null
+    >      services:
+    >      - serviceInstanceName: "p-redis-cmdb"
+    >        name: "p-redis-cmdb"
+    >        plan: "dedicated-vm"
+    >        parameters: {}
+    >        properties: {}
+    >        parametersTransformers: []
+    >        rebindOnUpdate: false
+    >      target:
+    >        name: "SpacePerServiceDefinition"
+    >
+
+    - wrong jar deployed ?
+       - add SCM to gradle-built jar
+    - error during rebase
+       - cherry picked lost commit
+          - error during conflict handling ?
+       - autoconfig test case checks suffix is propertly loaded in properties
+       - sdmapper test asserts suffix is removed
+           
+
 Status: 
 - DONE: finish dump writing to disk + echo message on stdout
 - pause on debugging the test
@@ -7,6 +37,49 @@ Status:
       - "how to test application.yml in unit tests ?"
       - "how to test & debug springboot configuration binding in unit tests ?"
 - squash & release 
+
+
+- DONE: understand and fix why ServiceDefinitionMapperProperties isn't filled in org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfigurationTest.serviceDefinitionMapperPropertiesAreProperlyLoaded
+    - the bean is defined but not filled with its value "prefix"
+    - diagnostics
+        - tried triggering context loading failure with @NotBlank without luck https://www.baeldung.com/configuration-properties-in-spring-boot
+        - try with real context loader to make this also reproduces 
+    - test fixes
+        - tried with property value and system properties
+    - fix: missing @EnableConfigurationProperties
+  
+
+Bug: 
+CF-ServiceBrokerRequestRejected(10001): The service broker rejected the request to https://osb-cmdb-broker.redacted-domain.org/v2/service_instances/2579ab08-3194-4de3-b9db-1f416092f317?accepts_incomplete=true. Status Code: 404 Not Found, Body: 404 Not Found: Requested route ('osb-cmdb-broker.redacted-domain.org') does not exist.
+
+Can cloudfoundry send the request to the wrong broker ?
+
+$ cf create-service p-mysql-cmdb 10mb osb-cmdb-broker-0-smoketest-1575470504 -b osb-cmdb-broker-0
+
+ 2019-12-04T14:41:51.31+0000 [APP/PROC/WEB/0] OUT 2019-12-04 14:41:51.311 ERROR 6 --- [ry-client-nio-8] o.s.c.appbroker.deployer.DeployerClient  : Error creating backing service p-mysql-cmdb with error 'CF-ServiceBrokerRequestRejected(10001): The service broker rejected the request to https://osb-cmdb-broker.redacted-domain.org/v2/service_instances/2579ab08-3194-4de3-b9db-1f416092f317?accepts_incomplete=true. Status Code: 404 Not Found, Body: 404 Not Found: Requested route ('osb-cmdb-broker.redacted-domain.org') does not exist.
+
+- Q: could be brokered services be incorrect when suffix is provided ? 
+- A: yes :-( missing component test
+- Options
+    - Add a suffix after the ServiceDefinitions were created. i.e. clone them
+       - Pb: SCOSB's builder are missing a from()
+          - contribute to SCOSB
+          - factor this copy constructor in ServiceDefinitionMapper
+       - Pb: suffix also needs to be applied to BrokeredService 
+    - Fetch the service definitions a 2nd time for brokered services
+    - Modify DynamicServiceImpl to map the ServiceEntity twice: once for catalog and brokered services (with suffix) and once for backend services (without suffix)
+       - also need to match brokered service to backend service
+       - which return values ?
+           - two lists ?
+           - a list of Tuples ?
+    - **Remove the suffix in the BrokeredServicesCatalogMapper**
+       - what about plan suffixes ? same post proccessing 
+       - pros: 
+        - simpler than complexifying DynamicCatalogServiceImpl#fetchServiceDefinitions() which is already complex
+       - cons
+        - feels a bit hacky 
+
+
 
 
 Next step:

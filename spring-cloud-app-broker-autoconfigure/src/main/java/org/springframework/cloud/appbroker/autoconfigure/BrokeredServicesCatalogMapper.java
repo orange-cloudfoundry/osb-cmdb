@@ -14,6 +14,12 @@ import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 
 public class BrokeredServicesCatalogMapper {
 
+	private final ServiceDefinitionMapperProperties serviceDefinitionMapperProperties;
+
+	public BrokeredServicesCatalogMapper(ServiceDefinitionMapperProperties serviceDefinitionMapperProperties) {
+		this.serviceDefinitionMapperProperties = serviceDefinitionMapperProperties;
+	}
+
 	public BrokeredServices toBrokeredServices(Catalog catalog) {
 		List<BrokeredServices> services = catalog.getServiceDefinitions().stream()
 			.map(this::toBrokeredServices)
@@ -34,17 +40,28 @@ public class BrokeredServicesCatalogMapper {
 	}
 
 	private BrokeredService toBrokeredService(String serviceName, String planName) {
+		String originalBackingServiceName = removePreprocessingIfAny(serviceName);
 		return
 			BrokeredService.builder()
 				.serviceName(serviceName)
 				.planName(planName)
 				.services(BackingServices.builder()
-					.backingService(toBackingService(serviceName, planName))
+					.backingService(toBackingService(originalBackingServiceName, planName))
 					.build())
 				.target(TargetSpec.builder()
 					.name(SpacePerServiceDefinition.class.getSimpleName())
 					.build())
 				.build();
+	}
+
+	private String removePreprocessingIfAny(String serviceName) {
+		String suffix = this.serviceDefinitionMapperProperties.getSuffix();
+		if (suffix == null) {
+			return serviceName;
+		}
+		//noinspection UnnecessaryLocalVariable
+		String serviceNameWithoutSuffix = serviceName.substring(0, serviceName.length() - suffix.length());
+		return serviceNameWithoutSuffix;
 	}
 
 	private BackingService toBackingService(String serviceName, String planName) {

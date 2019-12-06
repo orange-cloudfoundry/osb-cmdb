@@ -17,7 +17,7 @@ public class ServiceDefinitionMapperProperties {
 
 	private String suffix ="";
 
-	private String excludeBrokerNamesRegexp;
+	private String excludeBrokerNamesRegexp = null;
 
 	public String getSuffix() { return suffix; }
 
