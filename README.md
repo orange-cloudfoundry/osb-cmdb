@@ -7,19 +7,21 @@ cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc -
 -->
 
  * [Functional overview](#functional-overview)
+ * [Getting started](#getting-started)
     * [Manual catalog of Brokered and backing services](#manual-catalog-of-brokered-and-backing-services)
        * [Backing service instance target strategies](#backing-service-instance-target-strategies)
+    * [Typical CMDB content](#typical-cmdb-content)
     * [Dynamic catalog](#dynamic-catalog)
-  * [Technical details](#technical-details)
-	* [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
-	* [Future support for additional meta-data](#future-support-for-additional-meta-data)
-	* [Dashboard AuthN and AuthZ support (WIP)](#dashboard-authn-and-authz-support-wip)
-	   * [Discovery of the OIDC endpoint](#discovery-of-the-oidc-endpoint)
-	   * [Discovery of the OAuth client_id and client_secret to provision](#discovery-of-the-oauth-client_id-and-client_secret-to-provision)
-	   * [Dashboard AuthN using OIDC](#dashboard-authn-using-oidc)
-	   * [Dashboard AuthZ using CF service instance permission](#dashboard-authz-using-cf-service-instance-permission)
-	   * [Dashboard AuthZ using K8S API](#dashboard-authz-using-k8s-api)
-	   * [Interaction flow diagram](#interaction-flow-diagram)
+ * [Technical details](#technical-details)
+    * [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
+    * [Future support for additional meta-data](#future-support-for-additional-meta-data)
+    * [Dashboard AuthN and AuthZ support (WIP)](#dashboard-authn-and-authz-support-wip)
+       * [Discovery of the OIDC endpoint](#discovery-of-the-oidc-endpoint)
+       * [Discovery of the OAuth client_id and client_secret to provision](#discovery-of-the-oauth-client_id-and-client_secret-to-provision)
+       * [Dashboard AuthN using OIDC](#dashboard-authn-using-oidc)
+       * [Dashboard AuthZ using CF service instance permission](#dashboard-authz-using-cf-service-instance-permission)
+       * [Dashboard AuthZ using K8S API](#dashboard-authz-using-k8s-api)
+       * [Interaction flow diagram](#interaction-flow-diagram)
  * [Releasing](#releasing)
 
 
@@ -89,6 +91,8 @@ The SCAB properties are documented at https://docs.spring.io/spring-cloud-app-br
 
 Osb-cmdb adds support for additional properties which are illustrated below. Source of truth is associated unit tests
 
+Osb-Cmdb is expected to be deployed once per OSB client, each having its own basic authentication, its own brokered services catalog, and backend services organization.
+
 #### Manual catalog of Brokered and backing services 
 
 SCAB supports by default user-provided catalog of brokered services, and associated backing services.
@@ -150,6 +154,46 @@ Beyond built-in [SCAB strategies](https://docs.spring.io/spring-cloud-app-broker
 * `SpacePerServiceDefinition`: 
     * backing service instances are created in dynamically created spaces in the default org, named `${service-definition-name}` 
     * This is useful to apply quota per service definitions.   
+
+#### Typical CMDB content
+
+The following figure displays a hiearchical cloudfoundry org/space/service instance|binding|key organization before osb-cmdb startups with `SpacePerServiceDefinition` strategy 
+
+```
+01    ├── osb-cmdb-backend-services-org-client-0 
+02    │   ├── default
+03    ├── osb-cmdb-brokered-services-org-client-0 # used by embedded CF users
+04    └── osb-cmdb-smoke-test-brokered-services-org-client-0 # used by paas-templates smoke tests. Would be emptied at each test execution. 
+```
+
+* 01 holds backend service instances resulting from the client. Expected to be available at startup
+* 02 is used by dynamic catalog feature to fetch expected catalog to be brokered for client 0. Expected to be available at startup
+* 03 may be used by the embedded CF instance to consume brokered services
+* 04 is typically used by paas-templates smoke tests. Would be emptied at each test execution. 
+
+Osb-cmdb provides smoke tests in the paas-templates repo that use CF as an OSB client to send OSB API calls to osb-cmdb.
+
+Following consumption of brokered services by smoke tests, spaces/service instances and service keys are dynamically created as described into [Functional overview](#functional-overview) 
+
+```
+01    ├── osb-cmdb-backend-services-org-client-0 
+02    │   ├── default
+03    │   ├── cassandra
+04    │   └── mysql
+05    │       ├── mysql-service-instance-guid1
+06    │       └── mysql-service-key-guid1
+07    ├── osb-cmdb-brokered-services-org-client-0 
+08    └── osb-cmdb-smoke-test-brokered-services-org-client-0  
+09        ├── mysql-service-instance-1
+10        └── mysql-service-binding-1
+```
+
+* 03, 04 are dynamically created by osb-cmdb
+* 09 is a service instance request made with `cf create-service instance mysql-cmdb 10mb myinstance` by a CF OSB client
+    * 05 is the associated backend service in the cmdb
+* 09 is a service instance request made with `cf bind-service myapp myinstance` by a CF OSB client
+    * 06 is the associated service key in the cmdb
+ 
 
 #### Dynamic catalog
 
