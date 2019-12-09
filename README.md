@@ -163,13 +163,14 @@ The following figure displays a hiearchical cloudfoundry org/space/service insta
 01    ├── osb-cmdb-backend-services-org-client-0 
 02    │   ├── default
 03    ├── osb-cmdb-brokered-services-org-client-0 # used by embedded CF users
-04    └── osb-cmdb-smoke-test-brokered-services-org-client-0 # used by paas-templates smoke tests. Would be emptied at each test execution. 
+04    └── osb-cmdb-smoke-test-brokered-services-org-client-0 # used by paas-templates smoke tests. Would be emptied at each test execution.
+05        └── default
 ```
 
 * 01 holds backend service instances resulting from the client. Expected to be available at startup
 * 02 is used by dynamic catalog feature to fetch expected catalog to be brokered for client 0. Expected to be available at startup
 * 03 may be used by the embedded CF instance to consume brokered services
-* 04 is typically used by paas-templates smoke tests. Would be emptied at each test execution. 
+* 04 is typically used by paas-templates smoke tests. 05 would be emptied at each test execution. 
 
 Osb-cmdb provides smoke tests in the paas-templates repo that use CF as an OSB client to send OSB API calls to osb-cmdb.
 
@@ -184,14 +185,15 @@ Following consumption of brokered services by smoke tests, spaces/service instan
 06    │       └── mysql-service-key-guid1
 07    ├── osb-cmdb-brokered-services-org-client-0 
 08    └── osb-cmdb-smoke-test-brokered-services-org-client-0  
-09        ├── mysql-service-instance-1
-10        └── mysql-service-binding-1
+09        └── default
+10            ├── mysql-service-instance-1
+11            └── mysql-service-binding-1
 ```
 
 * 03, 04 are dynamically created by osb-cmdb
-* 09 is a service instance request made with `cf create-service instance mysql-cmdb 10mb myinstance` by a CF OSB client
+* 10 is a service instance request made with `cf create-service instance mysql-cmdb 10mb myinstance` by a CF OSB client
     * 05 is the associated backend service in the cmdb
-* 09 is a service instance request made with `cf bind-service myapp myinstance` by a CF OSB client
+* 11 is a service instance request made with `cf bind-service myapp myinstance` by a CF OSB client
     * 06 is the associated service key in the cmdb
  
 
