@@ -59,15 +59,41 @@ DELETE /v2/service_instances/:instance_id/service_bindings/:binding_id | cf dele
 
 Osb-cmdb ships as a spring-boot jar which is configured using properties.
 
+```bash         
+curl -L https://github.com/orange-cloudfoundry/osb-cmdb-spike/releases/download/v0.2.0/osb-cmdb-0.2.0.jar -o ./osb-cmdb.jar 
+java \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.api-host=api.redacted-domain.org \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.api-port=443 \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.default-org=osb-cmdb-services-org-client-0 \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.default-space=p-mysql \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.username=redacted \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.password=redacted \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.properties.health-check=http \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.properties.health-check-http-endpoint=health \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.properties.health-check-timeout=180 \
+ -Dspring.cloud.appbroker.deployer.cloudfoundry.properties.memory=1G \
+ -Dspring.security.user.name=user \
+ -Dspring.security.user.password=password \
+ -Dosbcmdb.dynamic-catalog.enabled=true \
+ -Dosbcmdb.dynamic-catalog.catalog.services.suffix=suffix \
+ -Dosbcmdb.dynamic-catalog.catalog.services.excludeBrokerNamesRegexp=".*cmdb.*" \
+ -Dlogging.level.cloudfoundry-client=DEBUG \
+ -Dlogging.level.cloudfoundry-client.operations=DEBUG \
+ -Dlogging.level.org.springframework.cloud.appbroker=debug \
+ -Dlogging.level.org.springframework.cloud.appbroker.deployer.cloudfoundry=debug \
+ -Dlogging.level.org.springframework.cloud.servicebroker=debug \
+    -jar ./osb-cmdb.jar 
+```
+
 The SCAB properties are documented at https://docs.spring.io/spring-cloud-app-broker/docs/current/reference/html5/
 
 Osb-cmdb adds support for additional properties which are illustrated below. Source of truth is associated unit tests
 
 #### Manual catalog of Brokered and backing services 
 
-SCAB support by default user-provided catalog of brokered services, and associated backing services.
+SCAB supports by default user-provided catalog of brokered services, and associated backing services.
 
-Following is an example of a simple configuration
+Following is an example of a simple SCAB configuration (without detailed catalog customization)
 
 ```yaml
 #### Manual catalog and brokered service configuration
