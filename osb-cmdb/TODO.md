@@ -1,5 +1,60 @@
-Bug:
- - symtom 
+- Bug catalog yml serialization due to spring-cloud-open-service-broker. Catalog fails to load with message
+    >     Schemas
+    >        Schema service_binding.create.parameters is not valid. Schema must have $schema key but was not present
+
+   - where to make the fix ?
+      - once serialized as json string
+             - **as a plain string replace**
+                 - might be fragile as sensitive to changes in json pretty print. 
+                    - However protected by unit tests 
+             - as a rexexp ignoring white spaces
+                 - more complex and error prone 
+      - before as a JsonTree by walking on it
+         - more complex and error prone 
+
+- Bug:
+    > java.lang.IndexOutOfBoundsException: Source emitted more than one item
+    > Error has been observed by the following operator(s):
+    >	Flux.single ⇢ org.cloudfoundry.operations.services.DefaultServices.getSpaceService(DefaultServices.java:608)
+    >	FluxMap$MapSubscriber.onNext ⇢ reactor.ipc.netty.channel.FluxReceive.drainReceiver(FluxReceive.java:213)
+    >	Mono.onErrorResume ⇢ org.cloudfoundry.operations.services.DefaultServices.getSpaceService(DefaultServices.java:609)
+    >	Mono.map ⇢ org.cloudfoundry.operations.services.DefaultServices.getServiceIdByName(DefaultServices.java:570)
+    >	Mono.zip ⇢ org.cloudfoundry.operations.services.DefaultServices.lambda$createInstance$5(DefaultServices.java:159)
+    >	Mono.flatMap ⇢ org.cloudfoundry.operations.services.DefaultServices.createInstance(DefaultServices.java:159)
+    >	Mono.flatMap ⇢ org.cloudfoundry.operations.services.DefaultServices.createInstance(DefaultServices.java:164)
+    >	Mono.flatMap ⇢ org.cloudfoundry.operations.services.DefaultServices.createInstance(DefaultServices.java:169)
+    >	Mono.flatMap ⇢ org.cloudfoundry.operations.services.DefaultServices.createInstance(DefaultServices.java:174)
+    >	Mono.doOnSubscribe ⇢ org.cloudfoundry.operations.util.OperationsLogging.lambda$log$3(OperationsLogging.java:60)
+    >	Mono.doFinally ⇢ org.cloudfoundry.operations.util.OperationsLogging.lambda$log$3(OperationsLogging.java:61)
+    >	Mono.transform ⇢ org.cloudfoundry.operations.services.DefaultServices.createInstance(DefaultServices.java:175)
+    >	Mono.checkpoint ⇢ org.cloudfoundry.operations.services.DefaultServices.createInstance(DefaultServices.java:176)
+    >	Mono.then ⇢ org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryAppDeployer.lambda$createServiceInstance$104(CloudFoundryAppDeployer.java:1012)
+    >	Mono.flatMap ⇢ org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryAppDeployer.createServiceInstance(CloudFoundryAppDeployer.java:1010)
+    >	Mono.then ⇢ org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryAppDeployer.createServiceInstance(CloudFoundryAppDeployer.java:1008)
+    >	Mono.doOnRequest ⇢ org.springframework.cloud.appbroker.deployer.DeployerClient.createServiceInstance(DeployerClient.java:104)
+    >	Mono.doOnSuccess ⇢ org.springframework.cloud.appbroker.deployer.DeployerClient.createServiceInstance(DeployerClient.java:105)
+    >	Mono.doOnError ⇢ org.springframework.cloud.appbroker.deployer.DeployerClient.createServiceInstance(DeployerClient.java:106)
+    >	Mono.map ⇢ org.springframework.cloud.appbroker.deployer.DeployerClient.createServiceInstance(DeployerClient.java:108)
+    >	ParallelFlux.flatMap ⇢ org.springframework.cloud.appbroker.deployer.DefaultBackingServicesProvisionService.createServiceInstance(DefaultBackingServicesProvisionService.java:42)
+    >	ParallelFlux.sequential ⇢ org.springframework.cloud.appbroker.deployer.DefaultBackingServicesProvisionService.createServiceInstance(DefaultBackingServicesProvisionService.java:43)
+    >	Flux.doOnRequest ⇢ org.springframework.cloud.appbroker.deployer.DefaultBackingServicesProvisionService.createServiceInstance(DefaultBackingServicesProvisionService.java:44)
+    >	Flux.doOnEach ⇢ org.springframework.cloud.appbroker.deployer.DefaultBackingServicesProvisionService.createServiceInstance(DefaultBackingServicesProvisionService.java:45)
+    >	Flux.doOnComplete ⇢ org.springframework.cloud.appbroker.deployer.DefaultBackingServicesProvisionService.createServiceInstance(DefaultBackingServicesProvisionService.java:46)
+    >	Flux.doOnError ⇢ org.springframework.cloud.appbroker.deployer.DefaultBackingServicesProvisionService.createServiceInstance(DefaultBackingServicesProvisionService.java:47)
+    >	Mono.flatMapMany ⇢ org.springframework.cloud.appbroker.workflow.instance.AppDeploymentCreateServiceInstanceWorkflow.createBackingServices(AppDeploymentCreateServiceInstanceWorkflow.java:83)
+    >	Flux.doOnRequest ⇢ org.springframework.cloud.appbroker.workflow.instance.AppDeploymentCreateServiceInstanceWorkflow.createBackingServices(AppDeploymentCreateServiceInstanceWorkflow.java:84)
+    >	Flux.doOnComplete ⇢ org.springframework.cloud.appbroker.workflow.instance.AppDeploymentCreateServiceInstanceWorkflow.createBackingServices(AppDeploymentCreateServiceInstanceWorkflow.java:86)
+    >	Flux.doOnError ⇢ org.springframework.cloud.appbroker.workflow.instance.AppDeploymentCreateServiceInstanceWorkflow.createBackingServices(AppDeploymentCreateServiceInstanceWorkflow.java:88)
+    >	Flux.thenMany ⇢ org.springframework.cloud.appbroker.workflow.instance.AppDeploymentCreateServiceInstanceWorkflow.create(AppDeploymentCreateServiceInstanceWorkflow.java:70)
+    >	Flux.thenMany ⇢ org.springframework.cloud.appbroker.workflow.instance.AppDeploymentCreateServiceInstanceWorkflow.create(AppDeploymentCreateServiceInstanceWorkflow.java:70)
+    >	Flux.then ⇢ org.springframework.cloud.appbroker.workflow.instance.AppDeploymentCreateServiceInstanceWorkflow.create(AppDeploymentCreateServiceInstanceWorkflow.java:71)
+    >	Flux.concatMap ⇢ org.springframework.cloud.appbroker.service.WorkflowServiceInstanceService.invokeCreateWorkflows(WorkflowServiceInstanceService.java:118)
+    >	Flux.doOnRequest ⇢ org.springframework.cloud.appbroker.service.WorkflowServiceInstanceService.create(WorkflowServiceInstanceService.java:102)
+    >	Flux.doOnComplete ⇢ org.springframework.cloud.appbroker.service.WorkflowServiceInstanceService.create(WorkflowServiceInstanceService.java:103)
+
+
+- DONE Bug:
+ - symptom 
     > Finished creating backing service onError(java.lang.IllegalArgumentException: Service p-mysql-cmdb does not exist
  - diagnostics
     - invalid BrokeredServices definition

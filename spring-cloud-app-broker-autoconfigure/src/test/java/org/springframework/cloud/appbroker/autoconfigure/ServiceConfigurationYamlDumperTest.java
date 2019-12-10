@@ -3,11 +3,17 @@ package org.springframework.cloud.appbroker.autoconfigure;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
+import org.springframework.cloud.servicebroker.model.catalog.MethodSchema;
+import org.springframework.cloud.servicebroker.model.catalog.Plan;
+import org.springframework.cloud.servicebroker.model.catalog.Schemas;
+import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
+import org.springframework.cloud.servicebroker.model.catalog.ServiceInstanceSchema;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -107,12 +113,101 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 		serviceConfigurationYamlDumper.dumpToYamlFile(catalog, brokeredServices);
 
 		//then
-		String readYamlFromFile = new String(
-			Files.readAllBytes(
-				FileSystems.getDefault().getPath(
-					ServiceConfigurationYamlDumper.CATALOG_DUMP_PATH)));
+		String readYamlFromFile = readFileFromDisk();
 		assertThat(readYamlFromFile).isEqualTo(expectedYaml);
 	}
 
+	/**
+	 * Spring cloud osb has a specific syntax to support catalog config schemas
+	 * See https://github.com/spring-cloud/spring-cloud-open-service-broker/blob/fe7cea3df1222d6acacdaec670852bf484d8aa60/spring-cloud-open-service-broker-autoconfigure/src/test/resources/catalog-full.yml#L76
+	 */
+	@Test
+	void dumpsBrokeredServicesWithValidSchemaToYamlStringAndDisk() throws IOException {
+		//given
+		Catalog catalog = Catalog.builder()
+			.serviceDefinitions(asList(
+				ServiceDefinition.builder()
+					.id("noop" + "-id")
+					.name("noop")
+					.description("description " + "noop")
+					.plans(
+						Stream.of(new String[] {"default"})
+							.map(planName -> Plan.builder()
+								.id(planName + "-id")
+								.name(planName)
+								.description("description " + planName)
+								.schemas(Schemas.builder()
+									.serviceInstanceSchema(ServiceInstanceSchema.builder()
+										.createMethodSchema(MethodSchema.builder()
+											.parameters("$schema", "http://json-schema.org/draft-04/schema#")
+											.parameters("type", "object")
+											.build())
+										.build())
+									.build())
+								.build())
+							.toArray(Plan[]::new))
+					.build()))
+			.build();
+
+		BrokeredServices brokeredServices = BrokeredServices.builder()
+			.service(buildBrokeredService("noop", "default"))
+			.build();
+
+		//when
+		ServiceConfigurationYamlDumper serviceConfigurationYamlDumper = new ServiceConfigurationYamlDumper();
+		String applicationYml = serviceConfigurationYamlDumper.dumpToYamlString(catalog, brokeredServices);
+
+		//then
+		String expectedYaml
+			= "---\n" +
+			"spring.cloud:\n" +
+			"  appbroker.services:\n" +
+			"  - serviceName: \"noop\"\n" +
+			"    planName: \"default\"\n" +
+			"    apps: null\n" +
+			"    services:\n" +
+			"    - serviceInstanceName: \"noop\"\n" +
+			"      name: \"noop\"\n" +
+			"      plan: \"default\"\n" +
+			"      parameters: {}\n" +
+			"      properties: {}\n" +
+			"      parametersTransformers: []\n" +
+			"      rebindOnUpdate: false\n" +
+			"    target:\n" +
+			"      name: \"SpacePerServiceDefinition\"\n" +
+			"  openservicebroker.catalog:\n" +
+			"    services:\n" +
+			"    - id: \"noop-id\"\n" +
+			"      name: \"noop\"\n" +
+			"      description: \"description noop\"\n" +
+			"      bindable: false\n" +
+			"      plans:\n" +
+			"      - id: \"default-id\"\n" +
+			"        name: \"default\"\n" +
+			"        description: \"description default\"\n" +
+			"        schemas:\n" +
+			"          service_instance:\n" +
+			"            create:\n" +
+			"              parameters[$schema]: \"http://json-schema.org/draft-04/schema#\"\n" +
+			"              parameters:\n" +
+			"                type: \"object\"\n" +
+			"        free: true\n";
+		assertThat(applicationYml).isEqualTo(expectedYaml);
+
+		//and when
+		serviceConfigurationYamlDumper.dumpToYamlFile(catalog, brokeredServices);
+
+		//then
+		String readYamlFromFile = readFileFromDisk();
+		assertThat(readYamlFromFile).doesNotContain("$schema:");
+		assertThat(readYamlFromFile).isEqualTo(expectedYaml);
+	}
+
+	private String readFileFromDisk() throws IOException {
+		return new String(
+				Files.readAllBytes(
+					FileSystems.getDefault().getPath(
+						ServiceConfigurationYamlDumper.CATALOG_DUMP_PATH)));
+	}
 
 }
