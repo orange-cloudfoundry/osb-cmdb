@@ -6,9 +6,12 @@ import java.io.Writer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,8 +68,15 @@ public class ServiceConfigurationYamlDumper {
 
 	private ObjectWriter getYamlWriter() {
 		YAMLFactory yamlFactory = new YAMLFactory();
+		//Disable yaml document header to make it easier to copy/paste. See https://www.baeldung.com/jackson-yaml
+		yamlFactory.disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER);
 		ObjectMapper objectMapper = new ObjectMapper(yamlFactory);
-		return objectMapper.writer().withRootName("spring.cloud");
+		//Try to make the output somewhat deterministic as to make diffs among version easier
+		//still lacking sorting the array
+		// https://www.stubbornjava.com/posts/creating-a-somewhat-deterministic-jackson-objectmapper
+		objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+		objectMapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+	return objectMapper.writer().withRootName("spring.cloud");
 	}
 
 	//	@JsonRootName("spring.cloud") //Seems to be ignored
