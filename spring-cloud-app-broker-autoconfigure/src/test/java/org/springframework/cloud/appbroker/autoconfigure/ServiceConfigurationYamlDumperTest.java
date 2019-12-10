@@ -142,6 +142,10 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 											.parameters("$schema", "http://json-schema.org/draft-04/schema#")
 											.parameters("type", "object")
 											.build())
+										.updateMethodSchema(MethodSchema.builder()
+											.parameters("$schema", "http://json-schema.org/draft-06/schema#")
+											.parameters("type", "string")
+											.build())
 										.build())
 									.build())
 								.build())
@@ -191,6 +195,10 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 			"              parameters[$schema]: \"http://json-schema.org/draft-04/schema#\"\n" +
 			"              parameters:\n" +
 			"                type: \"object\"\n" +
+			"            update:\n" +
+			"              parameters[$schema]: \"http://json-schema.org/draft-06/schema#\"\n" +
+			"              parameters:\n" +
+			"                type: \"string\"\n" +
 			"        free: true\n";
 		assertThat(applicationYml).isEqualTo(expectedYaml);
 
