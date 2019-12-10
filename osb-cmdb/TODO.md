@@ -6,7 +6,8 @@
       - once serialized as json string
              - **as a plain string replace**
                  - might be fragile as sensitive to changes in json pretty print. 
-                    - However protected by unit tests 
+                    - However protected by unit tests
+                 - **would be missing invalid schema URIs** 
              - as a rexexp ignoring white spaces
                  - more complex and error prone 
       - before as a JsonTree by walking on it
