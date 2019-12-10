@@ -20,17 +20,33 @@ public class ServiceConfigurationYamlDumper {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	public static final String CATALOG_DUMP_PATH = "/tmp/osb-cmdb-dynamicCatalog.yml";
 
+	private static String TO =
+		"              parameters[$schema]: \"http://json-schema.org/draft-04/schema#\"\n" +
+		"              parameters:\n";
+	private static String FROM =
+		"              parameters:\n" +
+		"                $schema: \"http://json-schema.org/draft-04/schema#\"\n";
+
 	public String dumpToYamlString(Catalog catalog, BrokeredServices brokeredServices) throws JsonProcessingException {
 		ObjectWriter objectWriter = getYamlWriter();
 		ApplicationYaml yamlToDump = new ApplicationYaml(catalog, brokeredServices);
-		return objectWriter.writeValueAsString(yamlToDump);
+		String yamlString = objectWriter.writeValueAsString(yamlToDump);
+		return applyScOsbYamlWorkaround(yamlString);
+	}
+
+	/**
+	 * Spring cloud osb has a specific syntax to support catalog config schemas
+	 * See https://github.com/spring-cloud/spring-cloud-open-service-broker/blob/fe7cea3df1222d6acacdaec670852bf484d8aa60/spring-cloud-open-service-broker-autoconfigure/src/test/resources/catalog-full.yml#L76
+	 */
+	private String applyScOsbYamlWorkaround(String yamlString) {
+		return yamlString.replace(FROM, TO);
 	}
 
 	public void dumpToYamlFile(Catalog catalog, BrokeredServices brokeredServices) throws IOException {
-		ObjectWriter objectWriter = getYamlWriter();
-		ApplicationYaml yamlToDump = new ApplicationYaml(catalog, brokeredServices);
-		Writer writer= buildFileWriter();
-		objectWriter.writeValue(writer, yamlToDump);
+		String yamlString = dumpToYamlString(catalog, brokeredServices);
+		try (Writer writer = buildFileWriter()) {
+			writer.write(yamlString);
+		}
 		logger.info("Dumped dynamic catalog to {}", CATALOG_DUMP_PATH);
 	}
 
