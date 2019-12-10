@@ -41,72 +41,71 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 
 		//then
 		String expectedYaml
-			= "---\n" +
-			"spring.cloud:\n" +
+			= "spring.cloud:\n" +
 			"  appbroker.services:\n" +
-			"  - serviceName: \"mysql\"\n" +
+			"  - apps: null\n" +
 			"    planName: \"10mb\"\n" +
-			"    apps: null\n" +
+			"    serviceName: \"mysql\"\n" +
 			"    services:\n" +
-			"    - serviceInstanceName: \"mysql\"\n" +
-			"      name: \"mysql\"\n" +
+			"    - name: \"mysql\"\n" +
+			"      parameters: {}\n" +
+			"      parametersTransformers: []\n" +
 			"      plan: \"10mb\"\n" +
-			"      parameters: {}\n" +
 			"      properties: {}\n" +
-			"      parametersTransformers: []\n" +
 			"      rebindOnUpdate: false\n" +
+			"      serviceInstanceName: \"mysql\"\n" +
 			"    target:\n" +
 			"      name: \"SpacePerServiceDefinition\"\n" +
-			"  - serviceName: \"mysql\"\n" +
+			"  - apps: null\n" +
 			"    planName: \"20mb\"\n" +
-			"    apps: null\n" +
+			"    serviceName: \"mysql\"\n" +
 			"    services:\n" +
-			"    - serviceInstanceName: \"mysql\"\n" +
-			"      name: \"mysql\"\n" +
-			"      plan: \"20mb\"\n" +
+			"    - name: \"mysql\"\n" +
 			"      parameters: {}\n" +
-			"      properties: {}\n" +
 			"      parametersTransformers: []\n" +
+			"      plan: \"20mb\"\n" +
+			"      properties: {}\n" +
 			"      rebindOnUpdate: false\n" +
+			"      serviceInstanceName: \"mysql\"\n" +
 			"    target:\n" +
 			"      name: \"SpacePerServiceDefinition\"\n" +
-			"  - serviceName: \"noop\"\n" +
+			"  - apps: null\n" +
 			"    planName: \"default\"\n" +
-			"    apps: null\n" +
+			"    serviceName: \"noop\"\n" +
 			"    services:\n" +
-			"    - serviceInstanceName: \"noop\"\n" +
-			"      name: \"noop\"\n" +
-			"      plan: \"default\"\n" +
+			"    - name: \"noop\"\n" +
 			"      parameters: {}\n" +
-			"      properties: {}\n" +
 			"      parametersTransformers: []\n" +
+			"      plan: \"default\"\n" +
+			"      properties: {}\n" +
 			"      rebindOnUpdate: false\n" +
+			"      serviceInstanceName: \"noop\"\n" +
 			"    target:\n" +
 			"      name: \"SpacePerServiceDefinition\"\n" +
 			"  openservicebroker.catalog:\n" +
 			"    services:\n" +
-			"    - id: \"mysql-id\"\n" +
-			"      name: \"mysql\"\n" +
+			"    - bindable: false\n" +
 			"      description: \"description mysql\"\n" +
-			"      bindable: false\n" +
+			"      id: \"mysql-id\"\n" +
+			"      name: \"mysql\"\n" +
 			"      plans:\n" +
-			"      - id: \"10mb-id\"\n" +
+			"      - description: \"description 10mb\"\n" +
+			"        free: true\n" +
+			"        id: \"10mb-id\"\n" +
 			"        name: \"10mb\"\n" +
-			"        description: \"description 10mb\"\n" +
+			"      - description: \"description 20mb\"\n" +
 			"        free: true\n" +
-			"      - id: \"20mb-id\"\n" +
+			"        id: \"20mb-id\"\n" +
 			"        name: \"20mb\"\n" +
-			"        description: \"description 20mb\"\n" +
-			"        free: true\n" +
-			"    - id: \"noop-id\"\n" +
-			"      name: \"noop\"\n" +
+			"    - bindable: false\n" +
 			"      description: \"description noop\"\n" +
-			"      bindable: false\n" +
+			"      id: \"noop-id\"\n" +
+			"      name: \"noop\"\n" +
 			"      plans:\n" +
-			"      - id: \"default-id\"\n" +
-			"        name: \"default\"\n" +
-			"        description: \"description default\"\n" +
-			"        free: true\n";
+			"      - description: \"description default\"\n" +
+			"        free: true\n" +
+			"        id: \"default-id\"\n" +
+			"        name: \"default\"\n";
 		assertThat(applicationYml).isEqualTo(expectedYaml);
 
 		//and when
@@ -163,32 +162,32 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 
 		//then
 		String expectedYaml
-			= "---\n" +
-			"spring.cloud:\n" +
+			= "spring.cloud:\n" +
 			"  appbroker.services:\n" +
-			"  - serviceName: \"noop\"\n" +
+			"  - apps: null\n" +
 			"    planName: \"default\"\n" +
-			"    apps: null\n" +
+			"    serviceName: \"noop\"\n" +
 			"    services:\n" +
-			"    - serviceInstanceName: \"noop\"\n" +
-			"      name: \"noop\"\n" +
-			"      plan: \"default\"\n" +
+			"    - name: \"noop\"\n" +
 			"      parameters: {}\n" +
-			"      properties: {}\n" +
 			"      parametersTransformers: []\n" +
+			"      plan: \"default\"\n" +
+			"      properties: {}\n" +
 			"      rebindOnUpdate: false\n" +
+			"      serviceInstanceName: \"noop\"\n" +
 			"    target:\n" +
 			"      name: \"SpacePerServiceDefinition\"\n" +
 			"  openservicebroker.catalog:\n" +
 			"    services:\n" +
-			"    - id: \"noop-id\"\n" +
-			"      name: \"noop\"\n" +
+			"    - bindable: false\n" +
 			"      description: \"description noop\"\n" +
-			"      bindable: false\n" +
+			"      id: \"noop-id\"\n" +
+			"      name: \"noop\"\n" +
 			"      plans:\n" +
-			"      - id: \"default-id\"\n" +
+			"      - description: \"description default\"\n" +
+			"        free: true\n" +
+			"        id: \"default-id\"\n" +
 			"        name: \"default\"\n" +
-			"        description: \"description default\"\n" +
 			"        schemas:\n" +
 			"          service_instance:\n" +
 			"            create:\n" +
@@ -198,8 +197,7 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 			"            update:\n" +
 			"              parameters[$schema]: \"http://json-schema.org/draft-06/schema#\"\n" +
 			"              parameters:\n" +
-			"                type: \"string\"\n" +
-			"        free: true\n";
+			"                type: \"string\"\n";
 		assertThat(applicationYml).isEqualTo(expectedYaml);
 
 		//and when
