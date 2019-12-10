@@ -109,8 +109,8 @@ public class DynamicCatalogServiceAutoConfiguration {
 			Assert.notEmpty(catalog.getServiceDefinitions(),
 				"Unexpected empty list of brokered services, check configured filters");
 
-			logger.info("Mapped catalog is: {}", catalog);
-			logger.info("Mapped brokered services are: {}", brokeredServices);
+			logger.debug("Mapped catalog is: {}", catalog);
+			logger.debug("Mapped brokered services are: {}", brokeredServices);
 
 			dumpCatalogToDisk();
 		}
