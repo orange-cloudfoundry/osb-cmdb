@@ -71,9 +71,10 @@ configure(allprojects) {
 		maven { url "https://repo.spring.io/libs-release" }
 	}
 
-	dependencies {
-		testRuntimeOnly("io.spring.nohttp:nohttp:0.0.3.RELEASE")
-	}
+	// Disable http-only checkstyle rule as false positive are too costly to fix for now
+//	dependencies {
+//		testRuntimeOnly("io.spring.nohttp:nohttp:0.0.3.RELEASE")
+//	}
 
 	if (project.hasProperty("springVersion") || project.hasProperty("springBootVersion") || project.hasProperty("reactorVersion")) {
 		repositories {

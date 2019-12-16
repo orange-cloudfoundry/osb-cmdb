@@ -289,7 +289,7 @@ Clients are expected to provision an OAuth2 client matching the id/secret and re
 
 ##### Dashboard AuthN using OIDC
 
-The OSB-CMDB directs users into an Oauth2 authorization grant flow (see https://tools.ietf.org/html/rfc6749#section-4.1 and CF UAA implementation at http://docs.cloudfoundry.org/api/uaa/version/74.4.0/index.html#authorization-code-grant ) with the following authorize endpoint parameters
+The OSB-CMDB directs users into an Oauth2 authorization grant flow (see https://tools.ietf.org/html/rfc6749#section-4.1 and CF UAA implementation at https://docs.cloudfoundry.org/api/uaa/version/74.4.0/index.html#authorization-code-grant ) with the following authorize endpoint parameters
 
     response_type= code
     client_id: the oauth client claimed in the catalog cloudfoundry extension described above.
