@@ -6,7 +6,7 @@ import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryTar
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+//@Configuration // try to exclude from classpath scan as to avoid false negative regressions on SCAB tests
 public class TargetPropertiesConfiguration {
 
 	//Inspired from spring-cloud-app-broker-autoconfigure/src/main/java/org/springframework/cloud/appbroker/autoconfigure/CloudFoundryAppDeployerAutoConfiguration.java

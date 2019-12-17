@@ -38,7 +38,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+//@Configuration // try to exclude from classpath scan as to avoid false negative regressions on SCAB tests
 @EnableConfigurationProperties(CloudFoundryProperties.class)
 //Inspired from spring-cloud-app-broker-acceptance-tests
 public class CloudFoundryClientConfiguration {
