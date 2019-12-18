@@ -12,6 +12,10 @@ jobs:
       # Customize the JVM maximum heap limit
       JVM_OPTS: -Xmx3200m
       TERM: dumb
+      # Workaround gradle lack of memory. Inspired from SCAB .travis-ci
+      JAVA_TOOL_OPTIONS: "-Xms512m -Xmx2048m"
+      GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx512m -Xmx2048m" -Dorg.gradle.daemon=false'
+
     steps:
       - checkout
       # Download and cache dependencies as advised by the circleci ui when adding gradle project
@@ -34,7 +38,7 @@ jobs:
 #          #Workaround OpenJdk8 regression which crashes JVM. See https://stackoverflow.com/a/53085816
 #          - _JAVA_OPTIONS: "-Djdk.net.URLClassPath.disableClassPathURLCheck=true"
           command: |
-            ./gradlew --continue check :osb-cmdb:assemble -x checkstyleNohttp -x checkstyleMain -x checkstyleTest -x pmdMain -x pmdTest
+            ./gradlew --continue check :osb-cmdb:assemble -x checkstyleNohttp -x checkstyleMain -x checkstyleTest -x pmdMain -x pmdTest --stacktrace 
 #            mvn install --settings settings.xml
 #      - run:
 #          name: Save test results
