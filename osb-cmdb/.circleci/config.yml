@@ -13,6 +13,7 @@ jobs:
       JVM_OPTS: -Xmx3200m
       TERM: dumb
       # Workaround gradle lack of memory. Inspired from SCAB .travis-ci
+      JAVA_TOOL_OPTIONS: "-Xms512m -Xmx2048m"
       GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx512m -Xmx2048m" -Dorg.gradle.daemon=false'
 
     steps:
