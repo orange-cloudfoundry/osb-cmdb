@@ -54,6 +54,7 @@ import org.cloudfoundry.operations.services.Services;
 import org.cloudfoundry.operations.services.UnbindServiceInstanceRequest;
 import org.cloudfoundry.operations.spaces.Spaces;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
@@ -694,6 +695,7 @@ class CloudFoundryAppDeployerTest {
 	}
 
 	@Test
+	@Disabled(value="broken in fork. Always updates. Optimization disabled")
 	void updateServiceInstanceRebindsWhenRequired() {
 		when(operationsServices.updateInstance(
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
@@ -750,6 +752,7 @@ class CloudFoundryAppDeployerTest {
 	}
 
 	@Test
+	@Disabled(value="broken in fork. Always updates. Optimization disabled")
 	void updateServiceInstanceDoesNothingWithoutParameters() {
 		when(operationsServices.updateInstance(
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
