@@ -26,6 +26,8 @@ import org.springframework.cloud.appbroker.deployer.BackingServicesProvisionServ
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.UpdateBackingServicesMetadataTransformationService;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.UpdateServiceInstanceWorkflow;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceRequest;
@@ -44,6 +46,8 @@ public class AppDeploymentUpdateServiceInstanceWorkflow
 	private final BackingServicesProvisionService backingServicesProvisionService;
 	private final BackingApplicationsParametersTransformationService appsParametersTransformationService;
 	private final BackingServicesParametersTransformationService servicesParametersTransformationService;
+	private final UpdateBackingServicesMetadataTransformationService updateBackingServicesMetadataTransformationService = new UpdateBackingServicesMetadataTransformationService();
+
 	private final TargetService targetService;
 
 	public AppDeploymentUpdateServiceInstanceWorkflow(BrokeredServices brokeredServices,
@@ -75,6 +79,7 @@ public class AppDeploymentUpdateServiceInstanceWorkflow
 			.flatMap(backingServices ->
 				servicesParametersTransformationService.transformParameters(backingServices,
 					request.getParameters()))
+			.flatMap(backingServices1 -> updateBackingServicesMetadataTransformationService.transformMetadata(backingServices1, request))
 			.flatMapMany(backingServicesProvisionService::updateServiceInstance)
 			.doOnRequest(l -> log.debug("Updating backing services for {}/{}",
 				request.getServiceDefinition().getName(), request.getPlan().getName()))
