@@ -28,17 +28,23 @@ public class CreateServiceInstanceRequest {
 	private final String plan;
 	private final Map<String, Object> parameters;
 	private final Map<String, String> properties;
+	private final Map<String, String> annotations;
+	private final Map<String, String> labels;
 
 	CreateServiceInstanceRequest(String serviceInstanceName,
-								 String name,
-								 String plan,
-								 Map<String, Object> parameters,
-								 Map<String, String> properties) {
+		String name,
+		String plan,
+		Map<String, Object> parameters,
+		Map<String, String> properties,
+		Map<String, String> annotations,
+		Map<String, String> labels) {
 		this.serviceInstanceName = serviceInstanceName;
 		this.name = name;
 		this.plan = plan;
 		this.parameters = parameters;
 		this.properties = properties;
+		this.annotations = annotations;
+		this.labels = labels;
 	}
 
 	public static CreateServiceInstanceRequestBuilder builder() {
@@ -65,6 +71,14 @@ public class CreateServiceInstanceRequest {
 		return properties;
 	}
 
+	public Map<String, String> getLabels() {
+		return labels;
+	}
+
+	public Map<String, String> getAnnotations() {
+		return annotations;
+	}
+
 	public static class CreateServiceInstanceRequestBuilder {
 
 		private String serviceInstanceName;
@@ -72,6 +86,8 @@ public class CreateServiceInstanceRequest {
 		private String plan;
 		private final Map<String, Object> parameters = new HashMap<>();
 		private final Map<String, String> properties = new HashMap<>();
+		private final Map<String, String> annotations = new HashMap<>();
+		private final Map<String, String> labels = new HashMap<>();
 
 		CreateServiceInstanceRequestBuilder() {
 		}
@@ -112,8 +128,22 @@ public class CreateServiceInstanceRequest {
 			return this;
 		}
 
+		public CreateServiceInstanceRequestBuilder annotations(Map<String, String> annotations) {
+			if (!CollectionUtils.isEmpty(annotations)) {
+				this.properties.putAll(annotations);
+			}
+			return this;
+		}
+
+		public CreateServiceInstanceRequestBuilder labels(Map<String, String> labels) {
+			if (!CollectionUtils.isEmpty(labels)) {
+				this.properties.putAll(labels);
+			}
+			return this;
+		}
+
 		public CreateServiceInstanceRequest build() {
-			return new CreateServiceInstanceRequest(serviceInstanceName, name, plan, parameters, properties);
+			return new CreateServiceInstanceRequest(serviceInstanceName, name, plan, parameters, properties, annotations, labels);
 		}
 	}
 
