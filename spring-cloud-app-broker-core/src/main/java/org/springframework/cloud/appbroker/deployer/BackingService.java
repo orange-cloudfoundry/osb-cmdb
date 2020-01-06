@@ -32,6 +32,8 @@ public class BackingService {
 	private String plan;
 	private Map<String, Object> parameters;
 	private Map<String, String> properties;
+	private Map<String, String> annotations;
+	private Map<String, String> labels;
 	private List<ParametersTransformerSpec> parametersTransformers;
 	private boolean rebindOnUpdate;
 
@@ -39,12 +41,14 @@ public class BackingService {
 	}
 
 	BackingService(String serviceInstanceName,
-				   String name,
-				   String plan,
-				   Map<String, Object> parameters,
-				   Map<String, String> properties,
-				   List<ParametersTransformerSpec> parametersTransformers,
-				   boolean rebindOnUpdate) {
+		String name,
+		String plan,
+		Map<String, Object> parameters,
+		Map<String, String> properties,
+		List<ParametersTransformerSpec> parametersTransformers,
+		boolean rebindOnUpdate,
+		Map<String, String> annotations,
+		Map<String, String> labels) {
 		this.serviceInstanceName = serviceInstanceName;
 		this.name = name;
 		this.plan = plan;
@@ -52,6 +56,8 @@ public class BackingService {
 		this.properties = properties;
 		this.parametersTransformers = parametersTransformers;
 		this.rebindOnUpdate = rebindOnUpdate;
+		this.annotations = annotations;
+		this.labels = labels;
 	}
 
 	public String getServiceInstanceName() {
@@ -98,6 +104,14 @@ public class BackingService {
 		this.properties = properties;
 	}
 
+	public Map<String, String> getAnnotations() { return annotations; }
+
+	public void setAnnotations(Map<String, String> annotations) { this.annotations = annotations; }
+
+	public Map<String, String> getLabels() { return labels; }
+
+	public void setLabels(Map<String, String> labels) { this.labels = labels; }
+
 	public List<ParametersTransformerSpec> getParametersTransformers() {
 		return parametersTransformers;
 	}
@@ -128,13 +142,16 @@ public class BackingService {
 			Objects.equals(plan, that.plan) &&
 			Objects.equals(parameters, that.parameters) &&
 			Objects.equals(properties, that.properties) &&
+			Objects.equals(annotations, that.annotations) &&
+			Objects.equals(labels, that.labels) &&
 			Objects.equals(parametersTransformers, that.parametersTransformers) &&
 			rebindOnUpdate == that.rebindOnUpdate;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(serviceInstanceName, name, plan, parameters, properties, parametersTransformers, rebindOnUpdate);
+		return Objects.hash(serviceInstanceName, name, plan, parameters, properties, parametersTransformers,
+			rebindOnUpdate, annotations, labels);
 	}
 
 	@Override
@@ -145,6 +162,8 @@ public class BackingService {
 			", plan='" + plan + '\'' +
 			", parameters=" + parameters +
 			", properties=" + properties +
+			", annotations=" + annotations +
+			", labels=" + labels +
 			", parametersTransformers=" + parametersTransformers +
 			", rebindOnUpdate=" + rebindOnUpdate +
 			'}';
@@ -161,6 +180,8 @@ public class BackingService {
 		private String plan;
 		private final Map<String, Object> parameters = new HashMap<>();
 		private final Map<String, String> properties = new HashMap<>();
+		private final Map<String, String> annotations = new HashMap<>();
+		private final Map<String, String> labels = new HashMap<>();
 		private final List<ParametersTransformerSpec> parameterTransformers = new ArrayList<>();
 		private boolean rebindOnUpdate;
 
@@ -174,7 +195,9 @@ public class BackingService {
 				.parameters(backingService.getParameters())
 				.properties(backingService.getProperties())
 				.parameterTransformers(backingService.getParametersTransformers())
-				.rebindOnUpdate(backingService.isRebindOnUpdate());
+				.rebindOnUpdate(backingService.isRebindOnUpdate())
+				.annotations(annotations)
+				.labels(labels);
 		}
 
 		public BackingServiceBuilder serviceInstanceName(String serviceInstanceName) {
@@ -206,6 +229,20 @@ public class BackingService {
 			return this;
 		}
 
+		public BackingServiceBuilder annotations(Map<String, String> annotations) {
+			if (!CollectionUtils.isEmpty(annotations)) {
+				this.properties.putAll(annotations);
+			}
+			return this;
+		}
+
+		public BackingServiceBuilder labels(Map<String, String> labels) {
+			if (!CollectionUtils.isEmpty(labels)) {
+				this.properties.putAll(labels);
+			}
+			return this;
+		}
+
 		public BackingServiceBuilder parameterTransformers(List<ParametersTransformerSpec> parameterTransformers) {
 			if (!CollectionUtils.isEmpty(parameterTransformers)) {
 				this.parameterTransformers.addAll(parameterTransformers);
@@ -226,7 +263,8 @@ public class BackingService {
 		}
 
 		public BackingService build() {
-			return new BackingService(serviceInstanceName, name, plan, parameters, properties, parameterTransformers, rebindOnUpdate);
+			return new BackingService(serviceInstanceName, name, plan, parameters, properties, parameterTransformers,
+				rebindOnUpdate, annotations, labels);
 		}
 	}
 
