@@ -40,12 +40,14 @@ import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.appbroker.deployer.TargetSpec;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
+import org.springframework.cloud.servicebroker.model.CloudFoundryContext;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse;
 
 import static java.util.Collections.singletonMap;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -137,10 +139,10 @@ class AppDeploymentUpdateServiceInstanceWorkflowTest {
 			.verifyComplete();
 
 		verify(appDeploymentService).update(backingApps, request.getServiceInstanceId());
-		verify(servicesProvisionService).updateServiceInstance(backingServices);
+		verify(servicesProvisionService).updateServiceInstance(anyList());
 
 		final String expectedServiceId = "service-instance-id";
-		verify(targetService).addToBackingServices(backingServices, targetSpec, expectedServiceId);
+		verify(targetService).addToBackingServices(anyList(), eq(targetSpec), eq(expectedServiceId));
 		verify(targetService).addToBackingApplications(backingApps, targetSpec, expectedServiceId);
 
 		verifyNoMoreInteractionsWithServices();
@@ -178,17 +180,17 @@ class AppDeploymentUpdateServiceInstanceWorkflowTest {
 	private void setupMocks(UpdateServiceInstanceRequest request) {
 		given(this.appDeploymentService.update(eq(backingApps), eq(request.getServiceInstanceId())))
 			.willReturn(Flux.just("app1", "app2"));
-		given(this.servicesProvisionService.updateServiceInstance(eq(backingServices)))
+		given(this.servicesProvisionService.updateServiceInstance(anyList()))
 			.willReturn(Flux.just("my-service-instance"));
 
 		given(this.appsParametersTransformationService.transformParameters(eq(backingApps), eq(request.getParameters())))
 			.willReturn(Mono.just(backingApps));
-		given(this.servicesParametersTransformationService.transformParameters(eq(backingServices), eq(request.getParameters())))
+		given(this.servicesParametersTransformationService.transformParameters(anyList(), eq(request.getParameters())))
 			.willReturn(Mono.just(backingServices));
 
 		given(this.targetService.addToBackingApplications(eq(backingApps), eq(targetSpec), eq("service-instance-id")))
 			.willReturn(Mono.just(backingApps));
-		given(this.targetService.addToBackingServices(eq(backingServices), eq(targetSpec), eq(request.getServiceInstanceId())))
+		given(this.targetService.addToBackingServices(anyList(), eq(targetSpec), eq(request.getServiceInstanceId())))
 			.willReturn(Mono.just(backingServices));
 	}
 
@@ -224,6 +226,9 @@ class AppDeploymentUpdateServiceInstanceWorkflowTest {
 				.name(planName)
 				.build())
 			.parameters(parameters == null ? new HashMap<>() : parameters)
+			.context(CloudFoundryContext.builder()
+				.property("instance_name", "instance-name-here")
+				.build())
 			.build();
 	}
 }
