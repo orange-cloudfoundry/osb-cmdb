@@ -1,3 +1,20 @@
+Metadata impl
+- Modified workflow 
+   - breaks tests that asserts strictly BackendServices content
+       - remove annotations from equals/hashcode
+       - duplicate BackendServices in transformer ?
+       - complexify tests to have passing asserts
+       - **simplify tests to not assert BackingServices content**
+          - mock return constant
+          - mock return captured argument
+          - replace mock with fake
+   - how to assert the metadata is set ?
+      - assert the mutation in a specific unit test
+      - only assert invocation to AbstractBackingServicesMetadataTransformationService ??
+      - assert the resulting backing service has annotations  
+      - **don't test it within SCAB, plan to move this code out of SCAB**    
+      
+
 - Bug catalog yml serialization due to spring-cloud-open-service-broker. Catalog fails to load with message
     >     Schemas
     >        Schema service_binding.create.parameters is not valid. Schema must have $schema key but was not present
