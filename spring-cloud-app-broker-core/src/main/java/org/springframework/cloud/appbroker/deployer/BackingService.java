@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.springframework.util.CollectionUtils;
 
 public class BackingService {
@@ -32,7 +34,9 @@ public class BackingService {
 	private String plan;
 	private Map<String, Object> parameters;
 	private Map<String, String> properties;
+	@JsonIgnore // no need to expose this in backing services configuration
 	private Map<String, String> annotations;
+	@JsonIgnore // no need to expose this in backing services configuration
 	private Map<String, String> labels;
 	private List<ParametersTransformerSpec> parametersTransformers;
 	private boolean rebindOnUpdate;
