@@ -1029,6 +1029,9 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 				.metadata(Metadata.builder()
 					.annotations(request.getAnnotations())
 					.labels(request.getLabels())
+					.label("backing_service_instance_guid", serviceInstance.getId()) //Ideally should be assigned
+					// within AbstractBackingServicesMetadataTransformationService, but this would create circular
+					//project dependency
 					.build())
 				.build())
 				.flatMap(client.serviceInstancesV3()::update);
