@@ -16,19 +16,11 @@
 
 package org.springframework.cloud.appbroker.extensions.parameters;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.appbroker.deployer.BackingService;
-import org.springframework.cloud.appbroker.deployer.ParametersTransformerSpec;
-import org.springframework.cloud.appbroker.extensions.ExtensionLocator;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 
 public class CreateBackingServicesMetadataTransformationService extends AbstractBackingServicesMetadataTransformationService {
@@ -36,8 +28,8 @@ public class CreateBackingServicesMetadataTransformationService extends Abstract
 
 	public Mono<List<BackingService>> transformMetadata(List<BackingService> backingServices,
 		CreateServiceInstanceRequest request) {
-		Map<String, Object> contextProperties = request.getContext().getProperties();
-		return setMetadata(backingServices, contextProperties);
+		return setMetadata(backingServices, request, request.getServiceInstanceId(),
+			request.getContext());
 	}
 
 }

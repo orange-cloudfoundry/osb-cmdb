@@ -17,7 +17,6 @@
 package org.springframework.cloud.appbroker.extensions.parameters;
 
 import java.util.List;
-import java.util.Map;
 
 import reactor.core.publisher.Mono;
 
@@ -28,8 +27,7 @@ public class UpdateBackingServicesMetadataTransformationService extends Abstract
 
 	public Mono<List<BackingService>> transformMetadata(List<BackingService> backingServices,
 		UpdateServiceInstanceRequest request) {
-		Map<String, Object> contextProperties = request.getContext().getProperties();
-		return setMetadata(backingServices, contextProperties);
+		return setMetadata(backingServices, request, request.getServiceInstanceId(), request.getContext());
 	}
 
 }

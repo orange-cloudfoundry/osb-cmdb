@@ -1,3 +1,12 @@
+
+ - Refine annotations to store additional annotations (when available to SCOSB, marked as X):
+    - X-Broker-Api-Version
+    - X-Api-Info-Location (X)
+    - User-Agent
+    - X-Broker-API-Request-Identity 
+ - Fill in annotations and labels for K8S client
+ - Implement and test for cf update-service
+
 Metadata impl
 - Modified workflow 
    - breaks tests that asserts strictly BackendServices content
@@ -13,6 +22,10 @@ Metadata impl
       - only assert invocation to AbstractBackingServicesMetadataTransformationService ??
       - assert the resulting backing service has annotations  
       - **don't test it within SCAB, plan to move this code out of SCAB**    
+   - how to assign `backing_service_instance_guid` (since the id is only known in CloudfoundryDeployer) ?
+      - directly in CloudfoundryDeployer.createService()
+         - using a constant defined in a collaborator
+      - in collaborator
       
 
 - Bug catalog yml serialization due to spring-cloud-open-service-broker. Catalog fails to load with message
