@@ -130,14 +130,14 @@ public class CreateServiceInstanceRequest {
 
 		public CreateServiceInstanceRequestBuilder annotations(Map<String, String> annotations) {
 			if (!CollectionUtils.isEmpty(annotations)) {
-				this.properties.putAll(annotations);
+				this.annotations.putAll(annotations);
 			}
 			return this;
 		}
 
 		public CreateServiceInstanceRequestBuilder labels(Map<String, String> labels) {
 			if (!CollectionUtils.isEmpty(labels)) {
-				this.properties.putAll(labels);
+				this.labels.putAll(labels);
 			}
 			return this;
 		}
