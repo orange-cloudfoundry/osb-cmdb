@@ -1,11 +1,31 @@
 
- - Refine annotations to store additional annotations (when available to SCOSB, marked as X):
+ - DONE: Refine annotations to store additional annotations (when available to SCOSB, marked as X):
     - X-Broker-Api-Version
     - X-Api-Info-Location (X)
     - User-Agent
-    - X-Broker-API-Request-Identity 
+    - X-Broker-API-Request-Identity
+ - Handle circle ci test failures:
+    - org.springframework.cloud.appbroker.integration.CreateInstanceWithServiceInstanceGuidSuffixTargetComponentTest 
+    
+        >  -----------------------------------------------------------------------------------------------------------------------
+        >  | Closest stub                                             | Request                                                  |
+        >  -----------------------------------------------------------------------------------------------------------------------
+        >                                                             |
+        >  GET                                                        | GET
+        >  /v2/service_plans                                          | /v2/service_bindings?q=service_instance_guid:my-db-servic<<<<< URL does not match
+        >                                                             | e-instance-id-GUID&page=1
+
+        - caused by `Mono.checkpoint ⇢ org.cloudfoundry.operations.services.DefaultServices.getInstance(DefaultServices.java:257)`
+        - options:
+           - disable meta-data assignement to preserve existing tests
+              - Noop CreateBackingServicesMetadataTransformationService
+              - Inject as Bean
+           - refine exising tests to support metadata assignement
+           - disable broken tests
+    
  - Fill in annotations and labels for K8S client
  - Implement and test for cf update-service
+ - Test metadata are also assigned when the service creation fails
 
 Metadata impl
 - Modified workflow 

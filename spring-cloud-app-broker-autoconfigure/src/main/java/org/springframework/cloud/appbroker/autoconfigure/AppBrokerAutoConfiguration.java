@@ -40,6 +40,8 @@ import org.springframework.cloud.appbroker.extensions.credentials.SpringSecurity
 import org.springframework.cloud.appbroker.extensions.credentials.SpringSecurityOAuth2CredentialProviderFactory;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceNoOp;
 import org.springframework.cloud.appbroker.extensions.parameters.EnvironmentMappingParametersTransformerFactory;
 import org.springframework.cloud.appbroker.extensions.parameters.ParameterMappingParametersTransformerFactory;
 import org.springframework.cloud.appbroker.extensions.parameters.ParametersTransformerFactory;
@@ -198,6 +200,12 @@ public class AppBrokerAutoConfiguration {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean
+	public CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService() {
+		return new CreateBackingServicesMetadataTransformationServiceNoOp();
+	}
+
+	@Bean
 	public CreateServiceInstanceWorkflow appDeploymentCreateServiceInstanceWorkflow(
 		BrokeredServices brokeredServices,
 		BackingAppDeploymentService backingAppDeploymentService,
@@ -205,7 +213,8 @@ public class AppBrokerAutoConfiguration {
 		BackingServicesParametersTransformationService servicesParametersTransformationService,
 		CredentialProviderService credentialProviderService,
 		TargetService targetService,
-		BackingServicesProvisionService backingServicesProvisionService) {
+		BackingServicesProvisionService backingServicesProvisionService,
+		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService) {
 		return new AppDeploymentCreateServiceInstanceWorkflow(
 			brokeredServices,
 			backingAppDeploymentService,
@@ -213,7 +222,8 @@ public class AppBrokerAutoConfiguration {
 			appsParametersTransformationService,
 			servicesParametersTransformationService,
 			credentialProviderService,
-			targetService);
+			targetService,
+			createBackingServicesMetadataTransformationService);
 	}
 
 	@Bean

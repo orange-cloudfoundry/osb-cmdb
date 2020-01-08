@@ -130,6 +130,7 @@ import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 @SuppressWarnings("PMD.GodClass")
@@ -1017,6 +1018,12 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 				.services()
 				.createInstance(createServiceInstanceRequest);
 		}
+
+		//Return early if no meta-data need to be set
+		if (ObjectUtils.isEmpty(request.getAnnotations()) && ObjectUtils.isEmpty(request.getLabels())) {
+			return createInstance.then(createServiceInstanceResponseMono);
+		}
+
 		Mono<ServiceInstance> lookUpServiceFromGuid = createInstance.then(
 			operationsUtils.getOperations(request.getProperties())
 				.flatMap(cfOperations -> cfOperations.services()
@@ -1035,6 +1042,7 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 					.build())
 				.build())
 				.flatMap(client.serviceInstancesV3()::update);
+
 		return updateMetadata.then(createServiceInstanceResponseMono);
 	}
 

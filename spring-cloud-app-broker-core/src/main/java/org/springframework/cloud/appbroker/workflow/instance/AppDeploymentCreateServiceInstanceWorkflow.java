@@ -27,6 +27,7 @@ import org.springframework.cloud.appbroker.extensions.credentials.CredentialProv
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceNoOp;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceWorkflow;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
@@ -46,17 +47,18 @@ public class AppDeploymentCreateServiceInstanceWorkflow
 	private final BackingServicesProvisionService backingServicesProvisionService;
 	private final BackingApplicationsParametersTransformationService appsParametersTransformationService;
 	private final BackingServicesParametersTransformationService servicesParametersTransformationService;
-	private final CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService = new CreateBackingServicesMetadataTransformationService();
+	private final CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService;
 	private final CredentialProviderService credentialProviderService;
 	private final TargetService targetService;
 
 	public AppDeploymentCreateServiceInstanceWorkflow(BrokeredServices brokeredServices,
-													  BackingAppDeploymentService deploymentService,
-													  BackingServicesProvisionService backingServicesProvisionService,
-													  BackingApplicationsParametersTransformationService appsParametersTransformationService,
-													  BackingServicesParametersTransformationService servicesParametersTransformationService,
-													  CredentialProviderService credentialProviderService,
-													  TargetService targetService) {
+		BackingAppDeploymentService deploymentService,
+		BackingServicesProvisionService backingServicesProvisionService,
+		BackingApplicationsParametersTransformationService appsParametersTransformationService,
+		BackingServicesParametersTransformationService servicesParametersTransformationService,
+		CredentialProviderService credentialProviderService,
+		TargetService targetService,
+		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService) {
 		super(brokeredServices);
 		this.deploymentService = deploymentService;
 		this.backingServicesProvisionService = backingServicesProvisionService;
@@ -64,6 +66,8 @@ public class AppDeploymentCreateServiceInstanceWorkflow
 		this.servicesParametersTransformationService = servicesParametersTransformationService;
 		this.credentialProviderService = credentialProviderService;
 		this.targetService = targetService;
+		this.createBackingServicesMetadataTransformationService =
+			createBackingServicesMetadataTransformationService;
 	}
 
 	@Override
