@@ -1,10 +1,8 @@
 package org.springframework.cloud.appbroker.extensions.parameters;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,7 +64,7 @@ class CreateBackingServicesMetadataTransformationServiceTest {
 			.apiInfoLocation("api.my-cf.org/v2/info")
 			.build();
 
-		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService = new CreateBackingServicesMetadataTransformationService();
+		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService = new CreateBackingServicesMetadataTransformationServiceImpl();
 
 		//when
 		createBackingServicesMetadataTransformationService.transformMetadata(backingServices, request);

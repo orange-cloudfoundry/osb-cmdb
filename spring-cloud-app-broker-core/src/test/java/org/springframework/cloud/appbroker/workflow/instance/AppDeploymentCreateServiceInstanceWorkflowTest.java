@@ -40,10 +40,10 @@ import org.springframework.cloud.appbroker.deployer.TargetSpec;
 import org.springframework.cloud.appbroker.extensions.credentials.CredentialProviderService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceNoOp;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceWorkflow;
 import org.springframework.cloud.servicebroker.model.CloudFoundryContext;
-import org.springframework.cloud.servicebroker.model.Context;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
@@ -51,7 +51,6 @@ import org.springframework.cloud.servicebroker.model.instance.CreateServiceInsta
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -133,7 +132,7 @@ class AppDeploymentCreateServiceInstanceWorkflowTest {
 			appsParametersTransformationService,
 			servicesParametersTransformationService,
 			credentialProviderService,
-			targetService);
+			targetService, new CreateBackingServicesMetadataTransformationServiceNoOp());
 	}
 
 	@Test
