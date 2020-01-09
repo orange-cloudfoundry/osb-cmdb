@@ -4,7 +4,7 @@
     - X-Api-Info-Location (X)
     - User-Agent
     - X-Broker-API-Request-Identity
- - Handle circle ci test failures:
+ - DONE: Handle circle ci test failures:
     - org.springframework.cloud.appbroker.integration.CreateInstanceWithServiceInstanceGuidSuffixTargetComponentTest 
     
         >  -----------------------------------------------------------------------------------------------------------------------
@@ -25,7 +25,8 @@
     
  - Fill in annotations and labels for K8S client
  - Implement and test for cf update-service
- - Test metadata are also assigned when the service creation fails
+ - Ensure metadata are also assigned when the service creation fails:
+    - would need duplicating the metadata assignment sequence with a doOnError https://projectreactor.io/docs/core/release/reference/#_log_or_react_on_the_side 
 
 Metadata impl
 - Modified workflow 
