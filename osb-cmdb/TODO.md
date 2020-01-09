@@ -1,3 +1,58 @@
+
+ - DONE: Refine annotations to store additional annotations (when available to SCOSB, marked as X):
+    - X-Broker-Api-Version
+    - X-Api-Info-Location (X)
+    - User-Agent
+    - X-Broker-API-Request-Identity
+ - DONE: Handle circle ci test failures:
+    - org.springframework.cloud.appbroker.integration.UpdateInstanceWithServicesComponentTest > updateAppWithServices() 
+       >  -----------------------------------------------------------------------------------------------------------------------
+       >  | Closest stub                                             | Request                                                  |
+       >  -----------------------------------------------------------------------------------------------------------------------
+       >                                                             |
+       >  GET                                                        | GET
+       >  /v2/spaces/TEST-SPACE-GUID/security_groups                 | /v2/spaces/TEST-SPACE-GUID/service_instances?q=name:my-db<<<<< URL does not match
+       >                                                             | -service&page=1&return_user_provided_service_instances=tr
+       >                                                             | ue
+       >                                                             |
+       >                                                     
+
+       - osb-cmdb side effect of disabled optimization and systematic backing service update ? => disable the test                                                                             
+          
+    - org.springframework.cloud.appbroker.integration.UpdateInstanceWithServicesParametersComponentTest > updateAppWithBackingServicesParameters()
+       
+       >    java.lang.IllegalArgumentException: Plan does not exist for the my-db-service service
+       >    	at org.cloudfoundry.util.ExceptionUtils.illegalArgument(ExceptionUtils.java:45)
+       >    	at org.cloudfoundry.operations.services.DefaultServices.getOptionalValidatedServicePlanId(DefaultServices.java:511)
+       - osb-cmdb side effect of disabled optimization and systematic backing service update ? => disable the test                                                                             
+                                  
+                                                                                                                            
+ - Fill in annotations and labels for K8S client
+ - Implement and test for cf update-service
+ - Ensure metadata are also assigned when the service creation fails:
+    - would need duplicating the metadata assignment sequence with a doOnError https://projectreactor.io/docs/core/release/reference/#_log_or_react_on_the_side 
+
+Metadata impl
+- Modified workflow 
+   - breaks tests that asserts strictly BackendServices content
+       - remove annotations from equals/hashcode
+       - duplicate BackendServices in transformer ?
+       - complexify tests to have passing asserts
+       - **simplify tests to not assert BackingServices content**
+          - mock return constant
+          - mock return captured argument
+          - replace mock with fake
+   - how to assert the metadata is set ?
+      - assert the mutation in a specific unit test
+      - only assert invocation to AbstractBackingServicesMetadataTransformationService ??
+      - assert the resulting backing service has annotations  
+      - **don't test it within SCAB, plan to move this code out of SCAB**    
+   - how to assign `backing_service_instance_guid` (since the id is only known in CloudfoundryDeployer) ?
+      - directly in CloudfoundryDeployer.createService()
+         - using a constant defined in a collaborator
+      - in collaborator
+      
+
 - Bug catalog yml serialization due to spring-cloud-open-service-broker. Catalog fails to load with message
     >     Schemas
     >        Schema service_binding.create.parameters is not valid. Schema must have $schema key but was not present

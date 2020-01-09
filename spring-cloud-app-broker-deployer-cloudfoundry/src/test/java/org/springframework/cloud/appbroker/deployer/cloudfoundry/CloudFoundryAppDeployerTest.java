@@ -694,9 +694,10 @@ class CloudFoundryAppDeployerTest {
 			.verifyComplete();
 	}
 
-	@Disabled // would be restored once https://github.com/spring-cloud/spring-cloud-app-broker/pull/290 gets merged
-	// and we rebase against it
 	@Test
+	@Disabled(value="broken in fork. Always updates. Optimization disabled")
+		// would be restored once https://github.com/spring-cloud/spring-cloud-app-broker/pull/290 gets merged
+		// and we rebase against it
 	void updateServiceInstanceRebindsWhenRequired() {
 		when(operationsServices.updateInstance(
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
@@ -753,7 +754,8 @@ class CloudFoundryAppDeployerTest {
 	}
 
 	@Test
-	@Disabled // would be restored once https://github.com/spring-cloud/spring-cloud-app-broker/pull/290 gets merged
+	@Disabled(value="broken in fork. Always updates. Optimization disabled")
+		// would be restored once https://github.com/spring-cloud/spring-cloud-app-broker/pull/290 gets merged
 		// and we rebase against it
 	void updateServiceInstanceDoesNothingWithoutParameters() {
 		when(operationsServices.updateInstance(

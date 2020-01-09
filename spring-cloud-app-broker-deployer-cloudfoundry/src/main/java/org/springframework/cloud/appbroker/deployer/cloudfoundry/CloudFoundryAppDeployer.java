@@ -48,6 +48,7 @@ import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperRequest;
 import org.cloudfoundry.client.v2.spaces.CreateSpaceRequest;
 import org.cloudfoundry.client.v2.spaces.DeleteSpaceRequest;
 import org.cloudfoundry.client.v2.spaces.SpaceEntity;
+import org.cloudfoundry.client.v3.Metadata;
 import org.cloudfoundry.client.v3.Relationship;
 import org.cloudfoundry.client.v3.ToOneRelationship;
 import org.cloudfoundry.client.v3.applications.ListApplicationPackagesRequest;
@@ -129,6 +130,7 @@ import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 @SuppressWarnings("PMD.GodClass")
@@ -1003,20 +1005,46 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 				.name(request.getServiceInstanceName())
 				.build());
 
+		Mono<Void> createInstance;
 		if (request.getProperties().containsKey(DeploymentProperties.TARGET_PROPERTY_KEY)) {
-			return createSpace(request.getProperties().get(DeploymentProperties.TARGET_PROPERTY_KEY))
-				.then(
-					operationsUtils.getOperations(request.getProperties())
-						.flatMap(cfOperations -> cfOperations.services()
-							.createInstance(createServiceInstanceRequest)
-							.then(createServiceInstanceResponseMono)));
+			Mono<String> space = createSpace(request.getProperties().get(DeploymentProperties.TARGET_PROPERTY_KEY));
+			createInstance = space.then(
+				operationsUtils.getOperations(request.getProperties())
+					.flatMap(cfOperations -> cfOperations.services()
+						.createInstance(createServiceInstanceRequest)));
 		}
 		else {
-			return operations
+			createInstance = operations
 				.services()
-				.createInstance(createServiceInstanceRequest)
-				.then(createServiceInstanceResponseMono);
+				.createInstance(createServiceInstanceRequest);
 		}
+
+		//Return early if no meta-data need to be set. This preserves existings tests that lack mocks for supporting
+		//assignment of metadata
+		if (ObjectUtils.isEmpty(request.getAnnotations()) && ObjectUtils.isEmpty(request.getLabels())) {
+			return createInstance.then(createServiceInstanceResponseMono);
+		}
+
+		Mono<ServiceInstance> lookUpServiceFromGuid = createInstance.then(
+			operationsUtils.getOperations(request.getProperties())
+				.flatMap(cfOperations -> cfOperations.services()
+					.getInstance(org.cloudfoundry.operations.services.GetServiceInstanceRequest.builder()
+						.name(request.getServiceInstanceName())
+						.build())));
+		Mono<org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceResponse> updateMetadata =
+			lookUpServiceFromGuid.map(serviceInstance -> org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceRequest.builder()
+				.serviceInstanceId(serviceInstance.getId())
+				.metadata(Metadata.builder()
+					.annotations(request.getAnnotations())
+					.labels(request.getLabels())
+					.label("backing_service_instance_guid", serviceInstance.getId()) //Ideally should be assigned
+					// within AbstractBackingServicesMetadataTransformationService, but this would create circular
+					//project dependency
+					.build())
+				.build())
+				.flatMap(client.serviceInstancesV3()::update);
+
+		return updateMetadata.then(createServiceInstanceResponseMono);
 	}
 
 	@Override
