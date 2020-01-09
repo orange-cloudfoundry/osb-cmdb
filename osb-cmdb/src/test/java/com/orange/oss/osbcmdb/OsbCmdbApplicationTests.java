@@ -1,7 +1,7 @@
 package com.orange.oss.osbcmdb;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -10,7 +10,9 @@ import org.springframework.boot.test.context.SpringBootTest;
  */
 @SuppressWarnings("WeakerAccess")
 @SpringBootTest
-@EnabledIfEnvironmentVariable(named = "acceptanceTests", matches = "true")
+// Expects the Cf client properties to be injected as system properties
+// and the corresponding Cf marketplace to be non empty
+@EnabledIfSystemProperty(named = "ACCEPTANCE_TEST", matches = "TRUE")
 public class OsbCmdbApplicationTests {
 
     @Test

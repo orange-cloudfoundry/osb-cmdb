@@ -122,8 +122,8 @@ configure(subprojects - [project(":spring-cloud-starter-app-broker"),
 		"-Xlint:rawtypes",
 		"-Xlint:deprecation",
 		"-Xlint:unchecked",
-		"-Xlint:-options",
-//		"-Werror" // compiler warnings such as unchecked casts are not reported as errors (timeconsumming false negatives in DynamicServiceAutoConfigurationComponentTest to clean up later)
+		"-Xlint:-options"
+//		"-Werror"  //Don't fail on warnings in osb-cmdb https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javac.html
 	]
 
 	sourceSets.test.resources.srcDirs = [

@@ -100,8 +100,10 @@ public class DeployerClient {
 					.plan(backingService.getPlan())
 					.parameters(backingService.getParameters())
 					.properties(backingService.getProperties())
+					.annotations(backingService.getAnnotations())
+					.labels(backingService.getLabels())
 					.build())
-			.doOnRequest(l -> log.debug("Creating backing service {}", backingService.getName()))
+			.doOnRequest(l -> log.debug("Creating backing service {}", backingService))
 			.doOnSuccess(response -> log.debug("Finished creating backing service {}", backingService.getName()))
 			.doOnError(exception -> log.error(String.format("Error creating backing service %s with error '%s'",
 				backingService.getName(), exception.getMessage()), exception))

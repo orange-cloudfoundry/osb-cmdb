@@ -56,9 +56,10 @@ class UpdateInstanceWithServicesComponentTest extends WiremockComponentTest {
 	@Autowired
 	private CloudControllerStubFixture cloudControllerFixture;
 
-	@Disabled // would be restored once https://github.com/spring-cloud/spring-cloud-app-broker/pull/290 gets merged
-	// and we rebase against it
 	@Test
+	@Disabled(value="osb-cmdb likely side effect of disabled optimization and systematic backing service update")
+		// would be restored once https://github.com/spring-cloud/spring-cloud-app-broker/pull/290 gets merged
+		// and we rebase against it
 	void updateAppWithServices() {
 		cloudControllerFixture.stubAppExists(APP_NAME);
 		cloudControllerFixture.stubUpdateApp(APP_NAME);
