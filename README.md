@@ -47,7 +47,7 @@ The osb-cdmb service broker translates received osb calls into equivalent CF CC 
 OSB API endpoint | eq CF CLI UX
 ------------ | -------------
 GET /v2/catalog | cf marketplace
-PUT /v2/service_instances/:instance_id | cf create-space ; cf create-service
+PUT /v2/service_instances/:instance_id | cf create-space ; cf create-service; cf7 set-label; cf7 set-annotation
 GET /v2/service_instances/:instance_id/last_operation | cf service
 GET /v2/service_instances/:instance_id | cf service (WIP)
 PATCH /v2/service_instances/:instance_id | cf update-service
@@ -195,7 +195,55 @@ Following consumption of brokered services by smoke tests, spaces/service instan
     * 05 is the associated backend service in the cmdb
 * 11 is a service instance request made with `cf bind-service myapp myinstance` by smoke tests
     * 06 is the associated service key in the cmdb
- 
+
+#### Metadata attached to backing services
+
+In order to provide traceability from backing services to brokered services, the backing service instances are attached the following metadata:
+
+Label name | Label value | Query usage | Read usage
+-- | -- | -- | --
+backing_service_instance_guid | backing-service-instance-guid | workaround lack of service instance read endpoint |  | 
+brokered_service_instance_guid | brokered-service-guid | find a backend service by brokered-service-guid in all orgs/spaces | (redundant with backend service instance name)  | 
+brokered_service_context_organization_guid | brokered-service-meta-org-guid | find all backing services for a brokered_service_context_organization_guid | lookup org guid for a given backing service | 
+brokered_service_context_space_guid | brokered-service-meta-space-guid | find all backing services for a brokered-service-space-guid | lookup space guid for a given backing service | 
+brokered_service_originating_identity_user_id | brokered-service [X-Broker-API-Originating-Identity](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#originating-identity-header) | find all backing services for a brokered-service-user-guid | lookup user guid for a given backing service | 
+
+Annotation name | Annotation value | ~~Query usage~~ (*) | Read usage
+-- | -- | -- | --
+brokered_service_context_organization_name |  | N/A | lookup org name for a given backing service | 
+brokered_service_context_space_name |  | N/A |  lookup space name for a given backing service| 
+brokered_service_context_instance_name | | N/A | lookup service instance name for a given backing service | 
+brokered_service_api_info_location | [X-Api-Info-Location header](https://docs.cloudfoundry.org/services/supporting-multiple-cf-instances.html#x-api-info-location) | N/A | enforce dashboards authN and authZ | 
+
+(*) annotations can not be queried in CF
+
+To lookup metadata attached to a backing service instance, scripts is available at https://github.com/orange-cloudfoundry/cf-cli-cmdb-scripts to workaround incomplete CF V3 API and CF V7 CLI:
+
+```bash
+# Example of a backing service being looked up
+$ cf s
+Getting services in org osb-cmdb-backend-services-org-client-0 / space p-mysql as xx...
+
+name                                           service   plan   bound apps   last operation     broker    upgrade available
+p-mysql-3aa96c94-1d01-4389-ab4f-260d99257215   p-mysql   10mb                create succeeded   p-mysql 
+
+$ cf_labels_service p-mysql-80134f9b-b6fd-48e2-8ca5-e185c4cb5ce0
+{
+    "labels": {
+        "brokered_service_instance_guid": "3aa96c94-1d01-4389-ab4f-260d99257215",
+        "brokered_service_context_organization_guid": "c2169b61-9360-4d67-968c-575f3a10edf5",
+        "brokered_service_originating_identity_user_id": "0d02117b-aa21-43e2-b35e-8ad6f8223519",
+        "brokered_service_context_space_guid": "1a603476-a3a1-4c32-8021-d2a7b9b7c6b4",
+        "backing_service_instance_guid": "191260bb-3477-422d-8f40-bf053ccf6930"
+    },
+    "annotations": {
+        "brokered_service_context_instance_name": "osb-cmdb-broker-0-smoketest-1578565892",
+        "brokered_service_context_space_name": "smoke-tests",
+        "brokered_service_api_info_location": "api.mycf.org/v2/info",
+        "brokered_service_context_organization_name": "osb-cmdb-brokered-services-org-client-0"
+    }
+}
+```
 
 #### Dynamic catalog
 
