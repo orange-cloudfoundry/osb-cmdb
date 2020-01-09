@@ -1019,7 +1019,8 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 				.createInstance(createServiceInstanceRequest);
 		}
 
-		//Return early if no meta-data need to be set
+		//Return early if no meta-data need to be set. This preserves existings tests that lack mocks for supporting
+		//assignment of metadata
 		if (ObjectUtils.isEmpty(request.getAnnotations()) && ObjectUtils.isEmpty(request.getLabels())) {
 			return createInstance.then(createServiceInstanceResponseMono);
 		}
