@@ -1021,30 +1021,53 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 
 		//Return early if no meta-data need to be set. This preserves existings tests that lack mocks for supporting
 		//assignment of metadata
-		if (ObjectUtils.isEmpty(request.getAnnotations()) && ObjectUtils.isEmpty(request.getLabels())) {
+		Map<String, String> annotations = request.getAnnotations();
+		Map<String, String> labels = request.getLabels();
+		if (ObjectUtils.isEmpty(annotations) && ObjectUtils.isEmpty(labels)) {
 			return createInstance.then(createServiceInstanceResponseMono);
 		}
 
+		Map<String, String> properties = request.getProperties();
+		String serviceInstanceName = request.getServiceInstanceName();
 		Mono<ServiceInstance> lookUpServiceFromGuid = createInstance.then(
-			operationsUtils.getOperations(request.getProperties())
-				.flatMap(cfOperations -> cfOperations.services()
-					.getInstance(org.cloudfoundry.operations.services.GetServiceInstanceRequest.builder()
-						.name(request.getServiceInstanceName())
-						.build())));
+			lookUpServiceGuidFromName(properties, serviceInstanceName));
+
 		Mono<org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceResponse> updateMetadata =
-			lookUpServiceFromGuid.map(serviceInstance -> org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceRequest.builder()
-				.serviceInstanceId(serviceInstance.getId())
-				.metadata(Metadata.builder()
-					.annotations(request.getAnnotations())
-					.labels(request.getLabels())
-					.label("backing_service_instance_guid", serviceInstance.getId()) //Ideally should be assigned
-					// within AbstractBackingServicesMetadataTransformationService, but this would create circular
-					//project dependency
-					.build())
-				.build())
-				.flatMap(client.serviceInstancesV3()::update);
+			updateMetadata(lookUpServiceFromGuid, annotations, labels);
 
 		return updateMetadata.then(createServiceInstanceResponseMono);
+	}
+
+	Mono<org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceResponse> updateMetadata(
+		Mono<ServiceInstance> lookUpServiceFromGuid,
+		Map<String, String> annotations,
+		Map<String, String> labels) {
+		return lookUpServiceFromGuid.map(serviceInstance -> org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceRequest.builder()
+			.serviceInstanceId(serviceInstance.getId())
+			.metadata(Metadata.builder()
+				.annotations(annotations)
+				.labels(labels)
+				.label("backing_service_instance_guid", serviceInstance.getId()) //Ideally should be assigned
+				// within AbstractBackingServicesMetadataTransformationService, but this would create circular
+				//project dependency
+				.build())
+			.build())
+			.flatMap(client.serviceInstancesV3()::update);
+	}
+
+	Mono<ServiceInstance> lookUpServiceGuidFromName(Map<String, String> properties, String serviceInstanceName) {
+		//Could be optimized: currently the code is looking up way too much information:
+		//the service instance, its bindings, ...
+		//This makes extra unneeed CCAPI requests which slow down provisionning
+		//Instead, the lower level api call should be used to lookup the service by name:
+		//1- lookup space by name as specified in properties target
+		//2- use /v2/spaces/d929411b-5eaa-46a9-a1f5-5d9d6fb37843/service_instances?q=name%3Agberche
+		//&return_user_provided_service_instances=false endpoint
+		return operationsUtils.getOperations(properties)
+			.flatMap(cfOperations -> cfOperations.services()
+				.getInstance(org.cloudfoundry.operations.services.GetServiceInstanceRequest.builder()
+					.name(serviceInstanceName)
+					.build()));
 	}
 
 	@Override
