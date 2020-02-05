@@ -1027,15 +1027,27 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 			return createInstance.then(createServiceInstanceResponseMono);
 		}
 
+
 		Map<String, String> properties = request.getProperties();
 		String serviceInstanceName = request.getServiceInstanceName();
-		Mono<ServiceInstance> lookUpServiceFromGuid = createInstance.then(
-			lookUpServiceGuidFromName(properties, serviceInstanceName));
-
+		Mono<ServiceInstance> lookUpServiceFromGuid = lookUpServiceGuidFromName(properties, serviceInstanceName);
 		Mono<org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceResponse> updateMetadata =
 			updateMetadata(lookUpServiceFromGuid, annotations, labels);
 
-		return updateMetadata.then(createServiceInstanceResponseMono);
+		return createInstance
+			.doOnError(e -> {
+					logger.error(
+						"Unable to create service instance. Will try to update metadata to failed service instance, " +
+							"caught:" + e);
+					lookUpServiceFromGuid
+						.then(updateMetadata)
+						.doOnError(t -> logger.error("Unable to update metadata following failed CSI, caught: " + t))
+						.subscribe();
+				}
+			)
+			.then(lookUpServiceFromGuid)
+			.then(updateMetadata)
+			.then(createServiceInstanceResponseMono);
 	}
 
 	Mono<org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceResponse> updateMetadata(
