@@ -30,7 +30,10 @@
  - Fill in annotations and labels for K8S client
  - Implement and test for cf update-service
  - Ensure metadata are also assigned when the service creation fails:
-    - would need duplicating the metadata assignment sequence with a doOnError https://projectreactor.io/docs/core/release/reference/#_log_or_react_on_the_side 
+    - would need duplicating the metadata assignment sequence with a doOnError https://projectreactor.io/docs/core/release/reference/#_log_or_react_on_the_side
+    - Q: how to test ?
+       - Component test
+          - Inject Metadata transformer: CreateBackingServicesMetadataTransformationService 
 
 Metadata impl
 - Modified workflow 
