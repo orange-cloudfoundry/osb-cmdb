@@ -495,8 +495,10 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 	public void stubUpdateServiceInstanceMetadata(String serviceInstanceName,
 		Map<String, Object> labels, Map<String, Object> annotations) {
 		stubFor(patch(urlPathEqualTo("/v3/service_instances/" + serviceInstanceGuid(serviceInstanceName)))
-//			.withRequestBody(matchingJsonPath("$.[?(@metadata.labels == " + new JSONObject(labels) + ")]"))
-//			.withRequestBody(matchingJsonPath("$.[?(@metadata.annotations == " + new JSONObject(annotations) + ")]"))
+			.withRequestBody(
+				matchingJsonPath("$.[?(@.metadata.labels == " + new JSONObject(labels) + ")]")
+			)
+			.withRequestBody(matchingJsonPath("$.[?(@.metadata.annotations == " + new JSONObject(annotations) + ")]"))
 			.willReturn(ok()));
 	}
 

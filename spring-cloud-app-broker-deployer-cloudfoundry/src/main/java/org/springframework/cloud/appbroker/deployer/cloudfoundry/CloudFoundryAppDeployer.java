@@ -1034,6 +1034,11 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 		Mono<org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceResponse> updateMetadata =
 			updateMetadata(lookUpServiceFromGuid, annotations, labels);
 
+		logger.debug("Assigning metadata to service instance with name={} annotations={} + " +
+				"backing_service_instance_guid " +
+				"and labels={}", serviceInstanceName,
+			request.getAnnotations(), request.getLabels());
+
 		return createInstance
 			.doOnError(e -> {
 					logger.error(
@@ -1054,6 +1059,7 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 		Mono<ServiceInstance> lookUpServiceFromGuid,
 		Map<String, String> annotations,
 		Map<String, String> labels) {
+
 		return lookUpServiceFromGuid.map(serviceInstance -> org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceRequest.builder()
 			.serviceInstanceId(serviceInstance.getId())
 			.metadata(Metadata.builder()
