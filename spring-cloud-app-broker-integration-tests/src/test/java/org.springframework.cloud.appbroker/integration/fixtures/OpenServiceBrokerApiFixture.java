@@ -81,6 +81,32 @@ public class OpenServiceBrokerApiFixture implements ApplicationListener<Applicat
 				"}\n");
 	}
 
+	public RequestSpecification serviceInstanceRequestWithCfOsbContext(String context) {
+		return serviceBrokerSpecification()
+			.body("{" +
+				"\"service_id\": \"" + serviceDefinitionId + "\"," +
+				"\"plan_id\": \"" + planId + "\"," +
+				"\"organization_guid\": \"" + ORG_ID + "\"," +
+				"\"space_guid\": \"" + SPACE_ID + "\"," +
+				context +
+				"}\n")
+			.header("X-Broker-API-Originating-Identity", "cloudfoundry " +
+				"eyANCiAgInVzZXJfaWQiOiAiNjgzZWE3NDgtMzA5Mi00ZmY0LWI2NTYtMzljYWNjNGQ1MzYwIg0KfQ==");
+	}
+
+	public RequestSpecification serviceInstanceRequestWithK8sOsbContext(String context) {
+		return serviceBrokerSpecification()
+			.body("{" +
+				"\"service_id\": \"" + serviceDefinitionId + "\"," +
+				"\"plan_id\": \"" + planId + "\"," +
+				"\"organization_guid\": \"" + ORG_ID + "\"," +
+				"\"space_guid\": \"" + SPACE_ID + "\"," +
+				context +
+				"}\n")
+			.header("X-Broker-API-Originating-Identity" , "kubernetes " +
+				"ew0KICAidXNlcm5hbWUiOiAiZHVrZSIsDQogICJ1aWQiOiAiYzJkZGUyNDItNWNlNC0xMWU3LTk4OGMtMDAwYzI5NDZmMTRmIiwNCiAgImdyb3VwcyI6IFsgImFkbWluIiwgImRldiIgXSwNCiAgImV4dHJhIjogew0KICAgICJteWRhdGEiOiBbICJkYXRhMSIsICJkYXRhMyIgXQ0KICB9DQp9");
+	}
+
 	public RequestSpecification serviceInstanceRequest(Map<String, Object> params) {
 		String stringParams = new JSONObject(params).toString();
 		return serviceBrokerSpecification()

@@ -31,8 +31,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.patch;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.serverError;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 
@@ -468,6 +470,13 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 			.willReturn(ok()));
 	}
 
+	public void stubCreateServiceInstanceFailure(String serviceInstanceName) {
+		stubFor(post(urlPathEqualTo("/v2/service_instances"))
+			.withQueryParam("accepts_incomplete", equalTo("true"))
+			.withRequestBody(matchingJsonPath("$.[?(@.name == '" + serviceInstanceName + "')]"))
+			.willReturn(serverError()));
+	}
+
 	public void stubCreateServiceInstanceWithParameters(String serviceInstanceName, Map<String, Object> params) {
 		stubFor(post(urlPathEqualTo("/v2/service_instances"))
 			.withQueryParam("accepts_incomplete", equalTo("true"))
@@ -480,6 +489,16 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 		stubFor(put(urlPathEqualTo("/v2/service_instances/" + serviceInstanceGuid(serviceInstanceName)))
 			.withQueryParam("accepts_incomplete", equalTo("true"))
 			.withRequestBody(matchingJsonPath("$.[?(@.parameters == " + new JSONObject(params) + ")]"))
+			.willReturn(ok()));
+	}
+
+	public void stubUpdateServiceInstanceMetadata(String serviceInstanceName,
+		Map<String, Object> labels, Map<String, Object> annotations) {
+		stubFor(patch(urlPathEqualTo("/v3/service_instances/" + serviceInstanceGuid(serviceInstanceName)))
+			.withRequestBody(
+				matchingJsonPath("$.[?(@.metadata.labels == " + new JSONObject(labels) + ")]")
+			)
+			.withRequestBody(matchingJsonPath("$.[?(@.metadata.annotations == " + new JSONObject(annotations) + ")]"))
 			.willReturn(ok()));
 	}
 
@@ -524,6 +543,16 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 					replace("@guid", serviceBindingGuid),
 					replace("@app-guid", appGuid(appName)),
 					replace("@service-instance-guid", serviceInstanceGuid)))));
+	}
+
+	public void stubListServiceBindingsWithNoResult(String serviceInstanceName) {
+		String serviceInstanceGuid = serviceInstanceGuid(serviceInstanceName);
+
+		stubFor(get(urlPathEqualTo("/v2/service_bindings"))
+			.withQueryParam("q", equalTo("service_instance_guid:" + serviceInstanceGuid))
+			.withQueryParam("page", equalTo("1"))
+			.willReturn(ok()
+				.withBody(cc("empty-query-results"))));
 	}
 
 	public void stubServiceBindingExists(String appName, String serviceInstanceName) {

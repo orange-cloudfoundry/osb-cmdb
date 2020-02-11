@@ -5,12 +5,15 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
 import org.springframework.cloud.appbroker.deployer.BackingService;
 import org.springframework.cloud.appbroker.deployer.BackingServices;
 import org.springframework.cloud.servicebroker.model.CloudFoundryContext;
+import org.springframework.cloud.servicebroker.model.KubernetesContext;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
@@ -18,7 +21,7 @@ import org.springframework.cloud.servicebroker.model.instance.CreateServiceInsta
 class CreateBackingServicesMetadataTransformationServiceTest {
 
 	@Test
-	void populates_expected_labels_and_annotations() {
+	void populates_expected_labels_and_annotations_for_null_profile() {
 		//given
 		BackingServices backingServices = BackingServices
 			.builder()
@@ -48,7 +51,55 @@ class CreateBackingServicesMetadataTransformationServiceTest {
 				.id("10mb" + "-id")
 				.name("10mb")
 				.build())
-			.parameters(null == null ? new HashMap<>() : null)
+			.parameters(new HashMap<>())
+			.build();
+
+		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService = new CreateBackingServicesMetadataTransformationServiceImpl();
+
+		//when
+		createBackingServicesMetadataTransformationService.transformMetadata(backingServices, request);
+
+		//then
+		BackingService backingService = backingServices.get(0);
+		Map<String, String> annotations = backingService.getAnnotations();
+		Map<String, String> labels = backingService.getLabels();
+		assertThat(labels).containsOnly(
+			entry("brokered_service_instance_guid", "service-instance-id")
+		);
+		assertThat(annotations).isEmpty();
+	}
+	@Test
+	void populates_expected_labels_and_annotations_for_cf_profile() {
+		//given
+		BackingServices backingServices = BackingServices
+			.builder()
+			.backingService(BackingService
+				.builder()
+				.name("my-service")
+				.plan("a-plan")
+				.serviceInstanceName("my-service-instance")
+				.build())
+			.build();
+
+		CreateServiceInstanceRequest request = CreateServiceInstanceRequest
+			.builder()
+			.serviceInstanceId("service-instance-id")
+			.serviceDefinitionId("p-mysql" + "-id")
+			.planId("10mb" + "-id")
+			.serviceDefinition(ServiceDefinition
+				.builder()
+				.id("p-mysql" + "-id")
+				.name("p-mysql")
+				.plans(Plan.builder()
+					.id("10mb" + "-id")
+					.name("10mb")
+					.build())
+				.build())
+			.plan(Plan.builder()
+				.id("10mb" + "-id")
+				.name("10mb")
+				.build())
+			.parameters(new HashMap<>())
 			.context(CloudFoundryContext.builder()
 //				.property("organization_guid", "organization-guid-here")  // SCOSB mangles the original property name
 				.property("organizationGuid", "organization-guid-here")
@@ -84,6 +135,75 @@ class CreateBackingServicesMetadataTransformationServiceTest {
 			entry("brokered_service_context_space_name", "space-name-here"),
 			entry("brokered_service_context_instance_name", "instance-name-here"),
 			entry("brokered_service_api_info_location", "api.my-cf.org/v2/info")
+		);
+	}
+
+
+	@Test
+	void populates_expected_labels_and_annotations_for_kubernetes_profile() {
+		//given
+		BackingServices backingServices = BackingServices
+			.builder()
+			.backingService(BackingService
+				.builder()
+				.name("my-service")
+				.plan("a-plan")
+				.serviceInstanceName("my-service-instance")
+				.build())
+			.build();
+
+		CreateServiceInstanceRequest request = CreateServiceInstanceRequest
+			.builder()
+			.serviceInstanceId("service-instance-id")
+			.serviceDefinitionId("p-mysql" + "-id")
+			.planId("10mb" + "-id")
+			.serviceDefinition(ServiceDefinition
+				.builder()
+				.id("p-mysql" + "-id")
+				.name("p-mysql")
+				.plans(Plan.builder()
+					.id("10mb" + "-id")
+					.name("10mb")
+					.build())
+				.build())
+			.plan(Plan.builder()
+				.id("10mb" + "-id")
+				.name("10mb")
+				.build())
+			.parameters(new HashMap<>())
+			.context(KubernetesContext.builder()
+				.namespace("a-namespace")
+				.property("clusterid", "a-cluster-id")
+				.property("instance_name", "an-instance-name")
+				.build())
+			.originatingIdentity(KubernetesContext.builder()
+				.property("username", "a-user-name")
+				.property("uid", "a-user-id")
+				.property("groups", asList("admin", "dev"))
+				.property("extra", singletonMap("mydata", asList("data1", "data3")))
+				.build())
+			.build();
+
+		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService = new CreateBackingServicesMetadataTransformationServiceImpl();
+
+		//when
+		createBackingServicesMetadataTransformationService.transformMetadata(backingServices, request);
+
+		//then
+		BackingService backingService = backingServices.get(0);
+		Map<String, String> annotations = backingService.getAnnotations();
+		Map<String, String> labels = backingService.getLabels();
+		assertThat(labels).containsOnly(
+			entry("brokered_service_instance_guid", "service-instance-id"),
+			entry("brokered_service_context_namespace", "a-namespace"),
+			entry("brokered_service_context_instance_name", "an-instance-name"),
+			entry("brokered_service_context_clusterid", "a-cluster-id"),
+			entry("brokered_service_originating_identity_uid", "a-user-id")
+		);
+		assertThat(annotations).containsOnly(
+			entry("brokered_service_originating_identity_username", "a-user-name"),
+			entry("brokered_service_originating_identity_groups", "[\"admin\",\"dev\"]"),
+			entry("brokered_service_originating_identity_extra", "{\"mydata\":[\"data1\",\"data3\"]}")
 		);
 	}
 
