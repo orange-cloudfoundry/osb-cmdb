@@ -31,12 +31,15 @@ public class SpacePerServicePlan extends TargetFactory<SpacePerServicePlan.Confi
 		return this::apply;
 	}
 
-	private ArtifactDetails apply(Map<String, String> properties, String name, String brokeredServiceInstanceId, String backingServiceName, String backingServicePlanName) {
+	protected ArtifactDetails apply(Map<String, String> properties, String name,
+		String brokeredServiceInstanceId,
+		String backingServiceName, String backingServicePlanName) {
 		properties.put(DeploymentProperties.TARGET_PROPERTY_KEY, backingServiceName + "-" + backingServicePlanName);
+		//space names are unlimited in CF
 		properties.put(DeploymentProperties.KEEP_TARGET_ON_DELETE_PROPERTY_KEY, "true");
 
 		return ArtifactDetails.builder()
-			.name(name + "-" + brokeredServiceInstanceId)
+			.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(brokeredServiceInstanceId))
 			.properties(properties)
 			.build();
 	}
