@@ -34,4 +34,5 @@ public abstract class TargetFactory<C> extends AbstractExtensionFactory<Target, 
 	public String getName() {
 		return getShortName(TargetFactory.class);
 	}
+
 }
