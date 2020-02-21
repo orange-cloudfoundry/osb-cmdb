@@ -52,6 +52,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
@@ -91,6 +92,8 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void createServiceInstance() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.error(new IllegalArgumentException(
+			"Unknown service instance ID ")));
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
@@ -159,7 +162,7 @@ class WorkflowServiceInstanceServiceTest {
 			})
 			.expectComplete()
 			.verifyThenAssertThat()
-			.tookLessThan(Duration.ofMillis(250));
+			.tookLessThan(Duration.ofMillis(2500));
 
 		lowerOrderFlow.complete();
 		lowerOrderFlow.assertWasNotRequested();
@@ -175,6 +178,8 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void createServiceInstanceWithAsyncError() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.error(new IllegalArgumentException(
+			"Unknown service instance ID ")));
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
@@ -230,6 +235,8 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void createServiceInstanceWithResponseError() {
+		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.error(new IllegalArgumentException(
+			"Unknown service instance ID ")));
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
 			.build();
@@ -255,6 +262,8 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void createServiceInstanceWithNoAcceptsDoesNothing() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.error(new IllegalArgumentException(
+			"Unknown service instance ID ")));
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
@@ -363,7 +372,7 @@ class WorkflowServiceInstanceServiceTest {
 			})
 			.expectComplete()
 			.verifyThenAssertThat()
-			.tookLessThan(Duration.ofMillis(250));
+			.tookLessThan(Duration.ofMillis(2500));
 
 		lowerOrderFlow.complete();
 		lowerOrderFlow.assertWasNotRequested();
@@ -570,7 +579,7 @@ class WorkflowServiceInstanceServiceTest {
 			})
 			.expectComplete()
 			.verifyThenAssertThat()
-			.tookLessThan(Duration.ofMillis(250));
+			.tookLessThan(Duration.ofMillis(2500));
 
 		lowerOrderFlow.complete();
 		lowerOrderFlow.assertWasNotRequested();
