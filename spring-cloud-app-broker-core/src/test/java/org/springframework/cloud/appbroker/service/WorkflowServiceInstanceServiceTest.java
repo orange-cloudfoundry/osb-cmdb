@@ -92,8 +92,12 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void createServiceInstance() throws InterruptedException {
-		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.error(new IllegalArgumentException(
-			"Unknown service instance ID ")));
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.error(new IllegalArgumentException("Unknown service instance ID ")));
+		assertCreateServiceInstance();
+	}
+
+	private void assertCreateServiceInstance() throws InterruptedException {
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
@@ -130,7 +134,7 @@ class WorkflowServiceInstanceServiceTest {
 				.flatMap(value -> {
 					try {
 						Thread.sleep(500);
-					} catch (InterruptedException e) {
+					}catch (InterruptedException e) {
 					}
 					return higherOrderFlow.mono();
 				}));
@@ -174,6 +178,38 @@ class WorkflowServiceInstanceServiceTest {
 		createOrder.verify(createServiceInstanceWorkflow2).create(request, responseBuilder.build());
 		createOrder.verify(createServiceInstanceWorkflow1).create(request, responseBuilder.build());
 		createOrder.verifyNoMoreInteractions();
+	}
+
+	@Test
+	void createServiceInstanceWithConcurrentK8SRequestTriggersNoWorkflow() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.just(
+			new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started", new Timestamp(Instant.now().toEpochMilli()))));
+		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
+				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli())))); //should be scheduled but never executed
+
+
+		CreateServiceInstanceRequest request = CreateServiceInstanceRequest.builder()
+			.serviceInstanceId("foo")
+			.build();
+
+		StepVerifier.create(workflowServiceInstanceService.createServiceInstance(request))
+			.assertNext(response -> {
+				assertThat(response).isNotNull();
+				assertThat(response.isAsync()).isTrue();
+			})
+			.expectComplete()
+			.verifyThenAssertThat()
+			.tookLessThan(Duration.ofMillis(2500));
+	}
+
+	@Test
+	void createServiceInstanceWithConcurrentAndCompletedK8SRequestStillTriggerAWorkflow() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "delete service instance " +
+				"completed",
+				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))));
+		assertCreateServiceInstance();
 	}
 
 	@Test
@@ -235,11 +271,15 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void createServiceInstanceWithResponseError() {
-		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.error(new IllegalArgumentException(
-			"Unknown service instance ID ")));
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
 			.build();
+
+		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.error(new IllegalArgumentException(
+			"Unknown service instance ID ")));
+		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
+				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))));
 
 		CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
 
@@ -307,6 +347,44 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void deleteServiceInstance() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.error(new IllegalArgumentException("Unknown service instance ID ")));
+		assertDelete();
+	}
+
+	@Test
+	void deleteServiceInstanceWithConcurrentK8SRequestTriggersNoWorkflow() {
+		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.just(
+			new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
+				new Timestamp(Instant.now().toEpochMilli()))));
+		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
+				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli())))); //should be scheduled but never executed
+
+		DeleteServiceInstanceRequest request = DeleteServiceInstanceRequest.builder()
+			.serviceInstanceId("foo")
+			.build();
+
+		StepVerifier.create(workflowServiceInstanceService.deleteServiceInstance(request))
+			.assertNext(response -> {
+				assertThat(response).isNotNull();
+				assertThat(response.isAsync()).isTrue();
+			})
+			.expectComplete()
+			.verifyThenAssertThat()
+			.tookLessThan(Duration.ofMillis(2500));
+
+	}
+	@Test
+	void deleteServiceInstanceWithConcurrentAndCompletedK8SRequestStillTriggerAWorkflow() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "delete service instance " +
+				"completed",
+				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))));
+		assertDelete();
+	}
+
+	private void assertDelete() throws InterruptedException {
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
@@ -388,6 +466,8 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void deleteServiceInstanceWithAsyncError() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.error(new IllegalArgumentException("Unknown service instance ID ")));
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
@@ -443,6 +523,12 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void deleteServiceInstanceWithResponseError() {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.error(new IllegalArgumentException("Unknown service instance ID ")));
+		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
+				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))));
+
 		DeleteServiceInstanceRequest request = DeleteServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
 			.build();
@@ -468,6 +554,8 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void deleteServiceInstanceWithNoAcceptsDoesNothing() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.error(new IllegalArgumentException("Unknown service instance ID ")));
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "delete service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
@@ -511,6 +599,46 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void updateServiceInstance() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.error(new IllegalArgumentException("Unknown service instance ID ")));
+		assertUpdateService();
+	}
+
+	@Test
+	void updateServiceInstanceWithConcurrentK8SRequestTriggersNoWorkflow() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString())).thenReturn(Mono.just(
+			new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started", new Timestamp(Instant.now().toEpochMilli()))));
+		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "create service instance started",
+				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli())))); //should be scheduled but never executed
+
+
+		UpdateServiceInstanceRequest request = UpdateServiceInstanceRequest.builder()
+			.serviceInstanceId("foo")
+			.build();
+
+		StepVerifier.create(workflowServiceInstanceService.updateServiceInstance(request))
+			.assertNext(response -> {
+				assertThat(response).isNotNull();
+				assertThat(response.isAsync()).isTrue();
+			})
+			.expectComplete()
+			.verifyThenAssertThat()
+			.tookLessThan(Duration.ofMillis(2500));
+	}
+
+	@Test
+	void updateServiceInstanceWithConcurrentAndCompletedK8SRequestStillTriggerAWorkflow() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.SUCCEEDED, "delete service instance " +
+				"completed",
+				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))));
+		assertUpdateService();
+	}
+
+
+
+	private void assertUpdateService() throws InterruptedException {
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
@@ -595,6 +723,8 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void updateServiceInstanceWithAsyncError() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.error(new IllegalArgumentException("Unknown service instance ID ")));
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
@@ -650,6 +780,12 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void updateServiceInstanceWithResponseError() {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.error(new IllegalArgumentException("Unknown service instance ID ")));
+		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
+			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
+				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))));
+
 		UpdateServiceInstanceRequest request = UpdateServiceInstanceRequest.builder()
 			.serviceInstanceId("foo")
 			.build();
@@ -675,6 +811,8 @@ class WorkflowServiceInstanceServiceTest {
 
 	@Test
 	void updateServiceInstanceWithNoAcceptsDoesNothing() throws InterruptedException {
+		when(serviceInstanceStateRepository.getState(anyString()))
+			.thenReturn(Mono.error(new IllegalArgumentException("Unknown service instance ID ")));
 		when(serviceInstanceStateRepository.saveState(anyString(), any(OperationState.class), anyString()))
 			.thenReturn(Mono.just(new ServiceInstanceState(OperationState.IN_PROGRESS, "update service instance started",
 				new Timestamp(Instant.now().minusSeconds(60).toEpochMilli()))))
