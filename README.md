@@ -220,7 +220,7 @@ brokered_service_api_info_location | [X-Api-Info-Location header](https://docs.c
 To lookup metadata attached to a backing service instance, scripts is available at https://github.com/orange-cloudfoundry/cf-cli-cmdb-scripts to workaround incomplete CF V3 API and CF V7 CLI:
 
 ```bash
-# Example of a backing service being looked up
+# Example of a backing service being looked up (corresponding to a brokered service instance provisionned by a CF OSB client)
 $ cf s
 Getting services in org osb-cmdb-backend-services-org-client-0 / space p-mysql as xx...
 
@@ -244,6 +244,81 @@ $ cf_labels_service p-mysql-80134f9b-b6fd-48e2-8ca5-e185c4cb5ce0
     }
 }
 ```
+
+```
+# Example of a backing service being looked up (corresponding to a brokered service instance provisionned by a CF OSB client)
+$ cf s
+Getting services in org osb-cmdb-backend-services-org-client-0 / space p-mysql as xx...
+
+name                                           service   plan   bound apps   last operation     broker    upgrade available
+b6a7a748-6fa5-497c-b111-a3a727ec88db           p-mysql   10mb                create succeeded   p-mysql  
+
+$ cf_labels_service b6a7a748-6fa5-497c-b111-a3a727ec88db
+Metadata for service b6a7a748-6fa5-497c-b111-a3a727ec88db:
+{
+  "labels": {
+    "brokered_service_instance_guid": "b6a7a748-6fa5-497c-b111-a3a727ec88db",
+    "brokered_service_originating_identity_uid": "",
+    "brokered_service_context_namespace": "cloudfoundry-service-instances",
+    "backing_service_instance_guid": "6ea3cf73-cbb6-46be-b9c5-dbcf7b04064f"
+  },
+  "annotations": {
+    "brokered_service_originating_identity_extra": "{\"scopes.authorization.openshift.io\":[\"user:full\"]}",
+    "brokered_service_originating_identity_username": "a-user-name",
+    "brokered_service_originating_identity_groups": "[\"system:authenticated:oauth\",\"system:authenticated\"]"
+  }
+}
+```
+
+The svcat in OpenShift v3.9.51 ( Kubernetes v1.9.1+a0ce1bc657 ), does not provide its internal id (`wbv8r`  in the example below) in its OSB calls.  Correlation from svcat requires looking up the OSB service instance guid, named `ExternalId` into svcat cli
+
+```
+$ svcat get instances 
+         NAME                     NAMESPACE                  CLASS           PLAN       STATUS  
++---------------------+--------------------------------+---------------+--------------+--------+
+  noop-ondemand-jkpn4   cloudfoundry-service-instances   noop-ondemand   mysql-sample   Ready   
+  p-mysql-wbv8r         cloudfoundry-service-instances   p-mysql         10mb           Ready  
+  
+$ svcat describe instance p-mysql-wbv8r -v 9 2>&1 | grep "Response Body" | sed 's/.*Response Body: //' | grep ServiceInstance | jq .spec.externalID
+"b6a7a748-6fa5-497c-b111-a3a727ec88db"  
+
+#Lookup in the cmdb a K8S provisionned instance from its externalID
+
+$ cf curl "/v3/service_instances?label_selector=brokered_service_instance_guid==b6a7a748-6fa5-497c-b111-a3a727ec88db" | jq .resources[]
+{
+  "guid": "6ea3cf73-cbb6-46be-b9c5-dbcf7b04064f",
+  "created_at": "2020-02-27T17:35:43Z",
+  "updated_at": "2020-02-27T17:35:43Z",
+  "name": "b6a7a748-6fa5-497c-b111-a3a727ec88db",
+  "relationships": {
+    "space": {
+      "data": {
+        "guid": "38de12e4-3fc8-4698-a8b0-87e7a3dbf2ed"
+      }
+    }
+  },
+  "metadata": {
+    "labels": {
+      "brokered_service_instance_guid": "b6a7a748-6fa5-497c-b111-a3a727ec88db",
+      "brokered_service_originating_identity_uid": "",
+      "brokered_service_context_namespace": "cloudfoundry-service-instances",
+      "backing_service_instance_guid": "6ea3cf73-cbb6-46be-b9c5-dbcf7b04064f"
+    },
+    "annotations": {
+      "brokered_service_originating_identity_extra": "{\"scopes.authorization.openshift.io\":[\"user:full\"]}",
+      "brokered_service_originating_identity_username": "a-user-name",
+      "brokered_service_originating_identity_groups": "[\"system:authenticated:oauth\",\"system:authenticated\"]"
+    }
+  },
+  "links": {
+    "space": {
+      "href": "https://api.redacted.com/v3/spaces/38de12e4-3fc8-4698-a8b0-87e7a3dbf2ed"
+    }
+  }
+}
+
+```
+
 
 #### Dynamic catalog
 
