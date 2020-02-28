@@ -25,6 +25,7 @@ import reactor.core.scheduler.Schedulers;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.appbroker.state.ServiceInstanceState;
 import org.springframework.cloud.appbroker.state.ServiceInstanceStateRepository;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
@@ -49,6 +50,19 @@ import org.springframework.core.annotation.AnnotationAwareOrderComparator;
  * operation.
  */
 public class WorkflowServiceInstanceService implements ServiceInstanceService {
+
+	public static final CreateServiceInstanceResponse RESPONSE_CREATE_202_ACCEPTED = CreateServiceInstanceResponse.builder()
+		.async(true)
+		.build();
+
+	public static final UpdateServiceInstanceResponse RESPONSE_UPDATE_202_ACCEPTED =
+		UpdateServiceInstanceResponse.builder()
+		.async(true)
+		.build();
+
+	public static final DeleteServiceInstanceResponse RESPONSE_DELETE_202_ACCEPTED = DeleteServiceInstanceResponse.builder()
+		.async(true)
+		.build();
 
 	private final Logger log = Loggers.getLogger(WorkflowServiceInstanceService.class);
 
@@ -76,9 +90,64 @@ public class WorkflowServiceInstanceService implements ServiceInstanceService {
 
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
-		return invokeCreateResponseBuilders(request)
-			.doOnNext(response -> create(request, response)
-				.subscribe());
+		return
+			emitCreateAcceptedOnConcurrentRequest(request)
+			.switchIfEmpty(
+				stateRepository.saveState(request.getServiceInstanceId(),
+					OperationState.IN_PROGRESS,
+					"create service instance started")
+				.then(
+					invokeCreateResponseBuilders(request)
+						.doOnNext(response -> create(request, response).subscribe())));
+	}
+
+	private Mono<CreateServiceInstanceResponse> emitCreateAcceptedOnConcurrentRequest(CreateServiceInstanceRequest request) {
+		return getCurrentServiceInstanceState(request.getServiceInstanceId())
+			.filter(serviceInstanceState -> OperationState.IN_PROGRESS.equals(serviceInstanceState.getOperationState()))
+			.doOnNext(serviceInstanceState -> {
+				//A provisionning is in progress with the same Id, return 202 Accepted status code
+				//There is a small accepted risk that the operation is not a create, but a update/delete service
+				// instance
+				log.info("Assuming duplicate provisioning request with id={} as one operation is inflight with " +
+						"message={}, " +
+						"returning 202 accepted without " +
+						"triggering a new provisionning workflow", serviceInstanceState.getDescription(),
+					request.getServiceInstanceId());
+			})
+			.map(serviceInstanceState -> RESPONSE_CREATE_202_ACCEPTED);
+	}
+
+	private Mono<UpdateServiceInstanceResponse> emitUpdateAcceptedOnConcurrentRequest(UpdateServiceInstanceRequest request) {
+		return getCurrentServiceInstanceState(request.getServiceInstanceId())
+			.filter(serviceInstanceState -> OperationState.IN_PROGRESS.equals(serviceInstanceState.getOperationState()))
+			.doOnNext(serviceInstanceState -> {
+				//A provisionning is in progress with the same Id, return 202 Accepted status code
+				//There is a small accepted risk that the operation is not a create, but a update/delete service
+				// instance
+				log.info("Assuming duplicate update request with id={} as one operation is inflight with " +
+						"message={}, " +
+						"returning 202 accepted without " +
+						"triggering a new provisionning workflow", serviceInstanceState.getDescription(),
+					request.getServiceInstanceId());
+			})
+			.map(serviceInstanceState -> RESPONSE_UPDATE_202_ACCEPTED);
+	}
+
+	private Mono<ServiceInstanceState> getCurrentServiceInstanceState(String serviceInstanceId) {
+		return stateRepository.getState(serviceInstanceId)
+				.doOnError(details ->
+					log.debug("Current state for {} returned error {}",
+						serviceInstanceId,
+						details.toString()))
+				.onErrorResume(t -> {
+					if (t instanceof IllegalArgumentException && t.toString().contains("Unknown service instance ID")) {
+						return Mono.empty();
+					}
+					else {
+						//Do rethrow other exception such as inability to access the state repository.
+						throw new RuntimeException(t);
+					}
+				});
 	}
 
 	private Mono<CreateServiceInstanceResponse> invokeCreateResponseBuilders(CreateServiceInstanceRequest request) {
@@ -94,9 +163,7 @@ public class WorkflowServiceInstanceService implements ServiceInstanceService {
 	}
 
 	private Mono<Void> create(CreateServiceInstanceRequest request, CreateServiceInstanceResponse response) {
-		return stateRepository.saveState(request.getServiceInstanceId(),
-			OperationState.IN_PROGRESS,
-			"create service instance started")
+		return Mono.empty()
 			.publishOn(Schedulers.parallel())
 			.thenMany(invokeCreateWorkflows(request, response)
 				.doOnRequest(l -> log.debug("Creating service instance"))
@@ -120,9 +187,30 @@ public class WorkflowServiceInstanceService implements ServiceInstanceService {
 
 	@Override
 	public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
-		return invokeDeleteResponseBuilders(request)
-			.doOnNext(response -> delete(request, response)
-				.subscribe());
+		return
+			emitDeleteAcceptedOnConcurrentRequest(request)
+			.switchIfEmpty(
+				stateRepository.saveState(request.getServiceInstanceId(),
+					OperationState.IN_PROGRESS,
+					"delete service instance started")
+				.then(
+					invokeDeleteResponseBuilders(request)
+						.doOnNext(response -> delete(request, response).subscribe())));
+	}
+
+	private Mono<DeleteServiceInstanceResponse> emitDeleteAcceptedOnConcurrentRequest(
+		DeleteServiceInstanceRequest request) {
+		return getCurrentServiceInstanceState(request.getServiceInstanceId())
+			.filter(serviceInstanceState -> OperationState.IN_PROGRESS.equals(serviceInstanceState.getOperationState()))
+			.doOnNext(serviceInstanceState -> {
+				//A deprovisionning is in progress with the same Id, return 202 Accepted status code
+				log.info("Assuming duplicate deprovisioning request with id={} as one operation is inflight with " +
+						"message={}, " +
+						"returning 202 accepted without " +
+						"triggering a new deprovisionning workflow", serviceInstanceState.getDescription(),
+					request.getServiceInstanceId());
+			})
+			.map(serviceInstanceState -> RESPONSE_DELETE_202_ACCEPTED);
 	}
 
 	private Mono<DeleteServiceInstanceResponse> invokeDeleteResponseBuilders(DeleteServiceInstanceRequest request) {
@@ -138,8 +226,7 @@ public class WorkflowServiceInstanceService implements ServiceInstanceService {
 	}
 
 	private Mono<Void> delete(DeleteServiceInstanceRequest request, DeleteServiceInstanceResponse response) {
-		return stateRepository.saveState(request.getServiceInstanceId(),
-			OperationState.IN_PROGRESS, "delete service instance started")
+		return Mono.empty()
 			.publishOn(Schedulers.parallel())
 			.thenMany(invokeDeleteWorkflows(request, response)
 				.doOnRequest(l -> log.debug("Deleting service instance"))
@@ -163,9 +250,17 @@ public class WorkflowServiceInstanceService implements ServiceInstanceService {
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
-		return invokeUpdateResponseBuilders(request)
+		return
+			emitUpdateAcceptedOnConcurrentRequest(request)
+				.switchIfEmpty(
+					stateRepository.saveState(request.getServiceInstanceId(),
+						OperationState.IN_PROGRESS,
+						"update service instance started")
+						.then(
+
+							invokeUpdateResponseBuilders(request)
 			.doOnNext(response -> update(request, response)
-				.subscribe());
+				.subscribe())));
 	}
 
 	private Mono<UpdateServiceInstanceResponse> invokeUpdateResponseBuilders(UpdateServiceInstanceRequest request) {
@@ -181,8 +276,8 @@ public class WorkflowServiceInstanceService implements ServiceInstanceService {
 	}
 
 	private Mono<Void> update(UpdateServiceInstanceRequest request, UpdateServiceInstanceResponse response) {
-		return stateRepository.saveState(request.getServiceInstanceId(),
-			OperationState.IN_PROGRESS, "update service instance started")
+		return
+			Mono.empty()
 			.publishOn(Schedulers.parallel())
 			.thenMany(invokeUpdateWorkflows(request, response)
 				.doOnRequest(l -> log.debug("Updating service instance"))
