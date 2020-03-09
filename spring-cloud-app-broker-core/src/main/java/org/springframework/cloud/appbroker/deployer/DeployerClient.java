@@ -119,8 +119,9 @@ public class DeployerClient {
 					.parameters(backingServiceKey.getParameters())
 					.properties(backingServiceKey.getProperties())
 					.build())
-			.doOnRequest(l -> log.debug("Creating backing service key {} for service {}",
+			.doOnRequest(l -> log.debug("Creating backing service key name={} with parameters={} for service {}",
 				backingServiceKey.getName(),
+				backingServiceKey.getParameters(),
 				backingServiceKey.getServiceInstanceName()))
 			.doOnSuccess(response -> log.debug("Finished creating backing service key {} for service {}",
 				backingServiceKey.getName(),
