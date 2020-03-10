@@ -1,5 +1,16 @@
-
-
+Custom params:
+- Find a solution to current missing gradle module dependencies in integration tests
+   - add a dependency to osb-cmdb.main package in spring-cloud-app-broker-integration-tests.tests
+      - check dependency graph
+      - Check different gradle syntax https://docs.gradle.org/current/userguide/declaring_dependencies.html and https://docs.gradle.org/current/userguide/java_library_plugin.html
+      - Trying different variation still fails with 
+        > /home/guillaume/code/osb-cmdb-spike/spring-cloud-app-broker-integration-tests/src/test/java/org.springframework.cloud.appbroker/integration/CreateServiceKeyBindingComponentTest.java:19: error: package com.orange.oss.osbcmdb does not exist
+      - gradle --debug lists that the snapshot jar is referenced  
+        > Compiler arguments: -source 1.8 -target 1.8 -d /home/guillaume/code/osb-cmdb-spike/spring-cloud-app-broker-integration-tests/build/classes/java/test -encoding UTF-8 -g -sourcepath  -processorpath                                                                                                                                                                               
+      home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/libs/osb-cmdb-0.8.0-SNAPSHOT.jar
+   - duplicate the workflow impl in the integration tests instead 
+   
+   
 Metadata impl
 - Implement and test for cf update-service
 
