@@ -1,4 +1,6 @@
 
+Metadata impl
+ - Implement and test for cf update-service
  - DONE: Refine annotations to store additional annotations (when available to SCOSB, marked as X):
     - X-Broker-Api-Version
     - X-Api-Info-Location (X)
@@ -25,18 +27,17 @@
        >    	at org.cloudfoundry.util.ExceptionUtils.illegalArgument(ExceptionUtils.java:45)
        >    	at org.cloudfoundry.operations.services.DefaultServices.getOptionalValidatedServicePlanId(DefaultServices.java:511)
        - osb-cmdb side effect of disabled optimization and systematic backing service update ? => disable the test                                                                             
-                                  
+                                 
                                                                                                                             
- - Fill in annotations and labels for K8S client
- - Implement and test for cf update-service
- - Ensure metadata are also assigned when the service creation fails:
+ - DONE: Fill in annotations and labels for K8S client
+ - DONE: Ensure metadata are also assigned when the service creation fails:
     - would need duplicating the metadata assignment sequence with a doOnError https://projectreactor.io/docs/core/release/reference/#_log_or_react_on_the_side
     - Q: how to test ?
        - Component test
           - Inject Metadata transformer: CreateBackingServicesMetadataTransformationService 
 
-Metadata impl
-- Modified workflow 
+
+- DONE: Modified workflow 
    - breaks tests that asserts strictly BackendServices content
        - remove annotations from equals/hashcode
        - duplicate BackendServices in transformer ?
