@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.appbroker.integration.fixtures;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceAppBindingWorkflow;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse.CreateServiceInstanceAppBindingResponseBuilder;
@@ -29,6 +30,7 @@ import java.util.Map;
 
 @TestComponent
 @Order(Ordered.HIGHEST_PRECEDENCE)
+@ConditionalOnProperty(name="spring.credhub.url")
 public class TestBindingCredentialsProviderFixture implements CreateServiceInstanceAppBindingWorkflow {
 	private final Map<String, Object> credentials;
 
