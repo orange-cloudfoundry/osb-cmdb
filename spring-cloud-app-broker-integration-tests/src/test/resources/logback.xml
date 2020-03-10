@@ -12,5 +12,13 @@
 		<appender-ref ref="STDOUT"/>
 	</root>
 	<logger name="org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryAppDeployer" level="TRACE" />
-
+	<logger name="org.springframework.cloud.appbroker.integration.fixtures" level="debug" />
+	<logger name="org.springframework.cloud.appbroker" level="debug" />
+	<logger name="org.springframework.cloud.appbroker.deployer" level="debug" />
+	<logger name="org.springframework.cloud.appbroker.deployer.cloudfoundry" level="debug" />
+	<logger name="org.springframework.cloud.servicebroker" level="debug" />
+	<logger name="cloudfoundry-client" level="debug" />
+	<logger name="cloudfoundry-client.operations" level="debug" />
+	<logger name="org.springframework.test.context.junit.jupiter" level="debug" />
+	<logger name="org.springframework.boot.test" level="debug" />
 </configuration>
