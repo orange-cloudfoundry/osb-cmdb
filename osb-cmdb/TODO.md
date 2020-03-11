@@ -50,6 +50,8 @@ Custom params:
                 >   Run with --scan to get full insights.
             - A problem occurred evaluating root project 'spring-cloud-app-broker'.
               > Cannot set the value of read-only property 'sourceDirectories' for task ':codeCoverageReport' of type org.gradle.testing.jacoco.tasks.JacocoReport.
+            - Following bump message is now
+              > No tests found for given includes: [org.springframework.cloud.appbroker.integration.CreateServiceKeyBindingComponentTest](filter.includeTestsMatching)
          - try to google some related issues
             - https://stackoverflow.com/questions/56110026/springboottest-resulting-in-no-tests-found-for-given-includes spring context issue, but no diagnostic procedure
             - https://bugs.eclipse.org/bugs/show_bug.cgi?id=545849 systematic issue, solved by junit bump 
@@ -65,6 +67,12 @@ Custom params:
             - intellij idea issue
             - intellij idea support request
             - springboot stackoverflow
+         - try to fix suspected incorrect spring context loading
+            - check spring profile selection
+               - @ActiveProfiles("openservicebroker-catalog")
+
+
+
 - Manually test against overview broker
    - Pb: overview broker does not appear in dynamic catalog in osb-cmdb-0
       - suspecting service access visibility bug https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/2
