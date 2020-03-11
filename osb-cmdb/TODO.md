@@ -35,6 +35,21 @@ Custom params:
          - read junit5 manual to find ways to launch independently of intellij idea
             - https://junit.org/junit5/docs/current/user-guide/#running-tests-console-launcher
          - bump springboot and junit5 version to latest versions
+            - debug gradle output now includes
+                > 15:56:02.022 [DEBUG] [TestEventLogger]     java.lang.BootstrapMethodError: java.lang.NoClassDefFoundError: junit/runner/Version
+            
+                >  15:56:04.272 [DEBUG] [TestEventLogger] org.springframework.cloud.appbroker.integration.CreateServiceKeyBindingComponentTest STANDARD_OUT
+                >  15:56:04.273 [DEBUG] [TestEventLogger]     11-03-2020 15:56:04.252 [35m[Test worker][0;39m [34mINFO [0;39m o.s.b.t.c.SpringBootTestContextBootstrapper.buildDefaultMergedContextConfiguration - 
+                > Neither @ContextConfiguration nor @ContextHierarchy found for test class [org.springframework.cloud.appbroker.integration.CreateServiceKeyBindingComponentTest], using SpringBootContextLoader
+            
+                > * What went wrong:
+                >  Execution failed for task ':spring-cloud-app-broker-integration-tests:test'.
+                >  > No tests found for given includes: [org.springframework.cloud.appbroker.integration.CreateServiceKeyBindingComponentTest](filter.includeTestsMatching)
+                >  
+                >  * Try:
+                >   Run with --scan to get full insights.
+            - A problem occurred evaluating root project 'spring-cloud-app-broker'.
+              > Cannot set the value of read-only property 'sourceDirectories' for task ':codeCoverageReport' of type org.gradle.testing.jacoco.tasks.JacocoReport.
          - try to google some related issues
             - https://stackoverflow.com/questions/56110026/springboottest-resulting-in-no-tests-found-for-given-includes spring context issue, but no diagnostic procedure
             - https://bugs.eclipse.org/bugs/show_bug.cgi?id=545849 systematic issue, solved by junit bump 
