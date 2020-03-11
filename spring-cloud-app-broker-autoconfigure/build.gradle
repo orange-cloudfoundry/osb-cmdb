@@ -36,16 +36,13 @@ dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	annotationProcessor("org.springframework.boot:spring-boot-autoconfigure-processor")
 
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-test") {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
 	testImplementation("org.springframework.boot:spring-boot-starter-webflux")
-	testImplementation("org.junit.jupiter:junit-jupiter-api")
-	testImplementation("org.mockito:mockito-junit-jupiter")
-
-	testCompileOnly("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
-	testCompileOnly("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
-	testCompileOnly("org.springframework.credhub:spring-credhub-starter:${springCredhubVersion}")
+	testImplementation("io.projectreactor.tools:blockhound-junit-platform:${blockHoundVersion}")
 }
 
 compileJava.dependsOn(processResources)
