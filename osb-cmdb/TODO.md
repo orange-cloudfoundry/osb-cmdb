@@ -8,7 +8,56 @@ Custom params:
       - gradle --debug lists that the snapshot jar is referenced  
         > Compiler arguments: -source 1.8 -target 1.8 -d /home/guillaume/code/osb-cmdb-spike/spring-cloud-app-broker-integration-tests/build/classes/java/test -encoding UTF-8 -g -sourcepath  -processorpath                                                                                                                                                                               
       home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/libs/osb-cmdb-0.8.0-SNAPSHOT.jar
-   - duplicate the workflow impl in the integration tests instead 
+   - duplicate the workflow impl in the integration tests instead
+      - **Pb: when including the binding workflow classes, spring boot junit5 runner does not detect any test cases anymore**, **suspecting spring context loading issue**
+         - try running from gradle cmd line instead of intellij to get access to springboot junit error traces
+            - try specifying --debug in gradle argument to get debug output
+               - nothing in disk reports in osb-cmdb-spike/spring-cloud-app-broker-integration-tests/build/reports/tests/test/
+
+            > :spring-cloud-app-broker-integration-tests:detachedConfiguration124' completed
+              14:38:10.041 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.resolveengine.result.StreamingResolutionResultBuilder$RootFactory] Loaded resolution results (0.003 secs) from Binary store in /tmp/gradle2396711151425845556.bin (exist: true)
+            > Ensuring directory exists for property binResultsDir (Output) at /home/guillaume/code/osb-cmdb-spike/spring-cloud-app-broker-integration-tests/build/test-results/test/binary                                                                                                                                                                                                                                                                                                                  >
+
+            > 14:38:10.105 [DEBUG] [TestEventLogger] Gradle Test Run :spring-cloud-app-broker-integration-tests:test STARTED
+            >  14:38:10.115 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 204: dispatching class org.gradle.launcher.daemon.protocol.BuildEvent
+            >  14:38:10.116 [QUIET] [system.out] 
+            >  14:38:10.116 [QUIET] [system.out] Test result: SUCCESS
+            >  14:38:10.116 [QUIET] [system.out] Test summary: 0 tests, 0 succeeded, 0 failed, 0 skipped
+            >  14:38:10.117 [QUIET] [system.out] 
+            >  14:38:10.124 [QUIET] [system.out] </event></ijLog>
+         - try to find related intellij bug 
+            - https://youtrack.jetbrains.com/issue/IDEA-232400 is close with latest EAP, and deals with 
+         - try turning on logback traces for junit extension: 
+            - org.springframework.test.context.junit.jupiter
+            - org.springframework.boot.test
+         - read springboot test manual https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-testing
+            - to find ways to launch manually the test outside gradle to get traces
+         - read junit5 manual to find ways to launch independently of intellij idea
+            - https://junit.org/junit5/docs/current/user-guide/#running-tests-console-launcher
+         - bump springboot and junit5 version to latest versions
+         - try to google some related issues
+            - https://stackoverflow.com/questions/56110026/springboottest-resulting-in-no-tests-found-for-given-includes spring context issue, but no diagnostic procedure
+            - https://bugs.eclipse.org/bugs/show_bug.cgi?id=545849 systematic issue, solved by junit bump 
+         - try running from IDEA,
+            - does not output much
+                > java ... com.intellij.rt.execution.application.AppMainV2 com.intellij.rt.junit.JUnitStarter -ideVersion5 -junit5 org.springframework.cloud.appbroker.integration.CreateServiceKeyBindingComponentTest
+                >  ##teamcity[enteredTheMatrix]
+                >  ##teamcity[treeEnded]
+            - try setting debug point in intellij
+               - Pb: idea requires the classpath to be set by a module of the project
+               - When using integration tests, then idea internal classes are not found anymore
+         - ask some help
+            - intellij idea issue
+            - intellij idea support request
+            - springboot stackoverflow
+- Manually test against overview broker
+   - Pb: overview broker does not appear in dynamic catalog in osb-cmdb-0
+      - suspecting service access visibility bug https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/2
+         - unable to launch DynamicServiceAutoConfigurationAcceptanceTest: tests displayed as skipped in intellij
+         - try with running OsbCmdbApplication instead: overview broker displays in catalog
+         - rerun concourse pipeline: **wait for max in flight**
+      - debug and fix
+      - workaround by making the overview broker public ?           
    
    
 Metadata impl
