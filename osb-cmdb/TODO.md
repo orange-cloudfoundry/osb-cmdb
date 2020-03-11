@@ -26,12 +26,13 @@ Custom params:
             >  14:38:10.117 [QUIET] [system.out] 
             >  14:38:10.124 [QUIET] [system.out] </event></ijLog>
          - try to find related intellij bug 
-            - https://youtrack.jetbrains.com/issue/IDEA-232400 is close with latest EAP, and deals with 
+            - https://youtrack.jetbrains.com/issue/IDEA-232400 is close with latest EAP, and deals with junit/gradle versions
          - try turning on logback traces for junit extension: 
             - org.springframework.test.context.junit.jupiter
             - org.springframework.boot.test
          - read springboot test manual https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-testing
             - to find ways to launch manually the test outside gradle to get traces
+               - not much 
          - read junit5 manual to find ways to launch independently of intellij idea
             - https://junit.org/junit5/docs/current/user-guide/#running-tests-console-launcher
          - bump springboot and junit5 version to latest versions
