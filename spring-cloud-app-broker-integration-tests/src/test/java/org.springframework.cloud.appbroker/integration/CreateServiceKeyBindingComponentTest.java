@@ -16,32 +16,17 @@
 
 package org.springframework.cloud.appbroker.integration;
 
-import com.orange.oss.osbcmdb.AppDeploymentCreateServiceBindingWorkflow;
-import com.orange.oss.osbcmdb.AppDeploymentDeleteServiceBindingWorkflow;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.appbroker.deployer.BackingAppDeploymentService;
-import org.springframework.cloud.appbroker.deployer.BackingServicesProvisionService;
-import org.springframework.cloud.appbroker.deployer.BrokeredServices;
-import org.springframework.cloud.appbroker.extensions.credentials.CredentialProviderService;
-import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
-import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
-import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.CredHubStubFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.TestBindingCredentialsProviderFixture;
-import org.springframework.cloud.appbroker.service.CreateServiceInstanceAppBindingWorkflow;
-import org.springframework.cloud.appbroker.service.DeleteServiceInstanceBindingWorkflow;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -55,9 +40,9 @@ import static org.springframework.cloud.appbroker.integration.CreateInstanceWith
 	"spring.cloud.appbroker.services[0].plan-name=standard",
 	"spring.cloud.appbroker.services[0].services[0].service-instance-name=" + BACKING_SI_NAME,
 	"spring.cloud.appbroker.services[0].services[0].name=" + BACKING_SERVICE_NAME,
-	"spring.cloud.appbroker.services[0].services[0].plan=standard"
+	"spring.cloud.appbroker.services[0].services[0].plan=standard",
+	"service-bindings-as-service-keys=true"
 })
-@ContextConfiguration(classes = CreateServiceKeyBindingComponentTest.CustomConfig.class)
 class CreateServiceKeyBindingComponentTest extends WiremockComponentTest {
 
 	private static final String SERVICE_INSTANCE_ID = "instance-id";
@@ -101,6 +86,7 @@ class CreateServiceKeyBindingComponentTest extends WiremockComponentTest {
 	private CloudControllerStubFixture cloudControllerFixture;
 
 	@Test
+	@Disabled
 	void createsServicesWhenOnlyBackingServiceIsRequested() {
 
 		// given services are available in the marketplace
@@ -126,38 +112,6 @@ class CreateServiceKeyBindingComponentTest extends WiremockComponentTest {
 
 		String state = brokerFixture.waitForAsyncOperationComplete("instance-id");
 		assertThat(state).isEqualTo(OperationState.SUCCEEDED.toString());
-	}
-
-
-	public class CustomConfig {
-
-		@Bean
-		public CreateServiceInstanceAppBindingWorkflow createServiceKeyWorkflow(
-			BrokeredServices brokeredServices,
-			BackingAppDeploymentService backingAppDeploymentService,
-			BackingApplicationsParametersTransformationService appsParametersTransformationService,
-			BackingServicesParametersTransformationService servicesParametersTransformationService,
-			CredentialProviderService credentialProviderService,
-			TargetService targetService,
-			BackingServicesProvisionService backingServicesProvisionService) {
-
-			return new AppDeploymentCreateServiceBindingWorkflow(brokeredServices, backingAppDeploymentService, backingServicesProvisionService, appsParametersTransformationService, servicesParametersTransformationService, credentialProviderService, targetService);
-		}
-
-		@Bean
-		public DeleteServiceInstanceBindingWorkflow deleteServiceKeyWorkflow(
-			BrokeredServices brokeredServices,
-			BackingAppDeploymentService backingAppDeploymentService,
-			BackingApplicationsParametersTransformationService appsParametersTransformationService,
-			BackingServicesParametersTransformationService servicesParametersTransformationService,
-			CredentialProviderService credentialProviderService,
-			TargetService targetService,
-			BackingServicesProvisionService backingServicesProvisionService) {
-
-			return new AppDeploymentDeleteServiceBindingWorkflow(brokeredServices, backingAppDeploymentService, backingServicesProvisionService, appsParametersTransformationService, servicesParametersTransformationService, credentialProviderService, targetService);
-		}
-
-
 	}
 
 }
