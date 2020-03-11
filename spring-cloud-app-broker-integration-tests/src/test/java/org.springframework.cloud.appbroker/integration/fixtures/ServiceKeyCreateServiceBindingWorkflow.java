@@ -55,21 +55,15 @@ public class ServiceKeyCreateServiceBindingWorkflow
 
 	private final TargetService targetService;
 
-	public ServiceKeyCreateServiceBindingWorkflow() {
-		super(null);
-		this.backingServicesProvisionService = null;
-		this.servicesParametersTransformationService = null;
-		this.targetService = null;
+	public ServiceKeyCreateServiceBindingWorkflow(BrokeredServices brokeredServices,
+		BackingServicesProvisionService backingServicesProvisionService,
+		BackingServicesParametersTransformationService servicesParametersTransformationService,
+		TargetService targetService) {
+		super(brokeredServices);
+		this.backingServicesProvisionService = backingServicesProvisionService;
+		this.servicesParametersTransformationService = servicesParametersTransformationService;
+		this.targetService = targetService;
 	}
-//	public ServiceKeyCreateServiceBindingWorkflow(BrokeredServices brokeredServices,
-//		BackingServicesProvisionService backingServicesProvisionService,
-//		BackingServicesParametersTransformationService servicesParametersTransformationService,
-//		TargetService targetService) {
-//		super(brokeredServices);
-//		this.backingServicesProvisionService = backingServicesProvisionService;
-//		this.servicesParametersTransformationService = servicesParametersTransformationService;
-//		this.targetService = targetService;
-//	}
 
 	@Override
 	public Mono<Boolean> accept(CreateServiceInstanceBindingRequest request) {
