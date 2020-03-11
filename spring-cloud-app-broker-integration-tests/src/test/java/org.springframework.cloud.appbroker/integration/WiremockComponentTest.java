@@ -46,7 +46,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 		CredHubStubFixture.class,
 		TestBindingCredentialsProviderFixture.class
 		,
-		ServiceKeyCreateServiceBindingWorkflow.class
+		ServiceKeyCreateServiceBindingWorkflow.class,
+		ServiceKeyDeleteServiceBindingWorkflow.class
 	},
 	properties = {
 		"spring.cloud.appbroker.deployer.cloudfoundry.api-host=localhost",
