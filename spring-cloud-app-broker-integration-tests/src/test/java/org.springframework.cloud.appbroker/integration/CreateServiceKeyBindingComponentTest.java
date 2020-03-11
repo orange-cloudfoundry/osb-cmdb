@@ -66,6 +66,7 @@ class CreateServiceKeyBindingComponentTest extends WiremockComponentTest {
 	}
 
 	@Test
+	@Disabled
 	void createServiceKeyCreatesBackendServiceKey() {
 
 		// when a service binding is created
