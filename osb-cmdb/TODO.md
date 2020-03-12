@@ -9,7 +9,7 @@ Custom params:
         > Compiler arguments: -source 1.8 -target 1.8 -d /home/guillaume/code/osb-cmdb-spike/spring-cloud-app-broker-integration-tests/build/classes/java/test -encoding UTF-8 -g -sourcepath  -processorpath                                                                                                                                                                               
       home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/libs/osb-cmdb-0.8.0-SNAPSHOT.jar
    - duplicate the workflow impl in the integration tests instead
-      - **Pb: when including the binding workflow classes, spring boot junit5 runner does not detect any test cases anymore**, **suspecting spring context loading issue**
+      - ~~Pb: when including the binding workflow classes, spring boot junit5 runner does not detect any test cases anymore~~, suspecting spring context loading issue
          - try running from gradle cmd line instead of intellij to get access to springboot junit error traces
             - try specifying --debug in gradle argument to get debug output
                - nothing in disk reports in osb-cmdb-spike/spring-cloud-app-broker-integration-tests/build/reports/tests/test/
@@ -35,7 +35,7 @@ Custom params:
                - not much 
          - read junit5 manual to find ways to launch independently of intellij idea
             - https://junit.org/junit5/docs/current/user-guide/#running-tests-console-launcher
-         - bump springboot and junit5 version to latest versions
+         - **bump springboot and junit5 version to latest versions**
             - debug gradle output now includes
                 > 15:56:02.022 [DEBUG] [TestEventLogger]     java.lang.BootstrapMethodError: java.lang.NoClassDefFoundError: junit/runner/Version
             
@@ -53,6 +53,8 @@ Custom params:
               > Cannot set the value of read-only property 'sourceDirectories' for task ':codeCoverageReport' of type org.gradle.testing.jacoco.tasks.JacocoReport.
             - Following bump message is now
               > No tests found for given includes: [org.springframework.cloud.appbroker.integration.CreateServiceKeyBindingComponentTest](filter.includeTestsMatching)
+            - **fix broken tests as the result of the dump**
+               - related to blockhound
          - try to google some related issues
             - https://stackoverflow.com/questions/56110026/springboottest-resulting-in-no-tests-found-for-given-includes spring context issue, but no diagnostic procedure
             - https://bugs.eclipse.org/bugs/show_bug.cgi?id=545849 systematic issue, solved by junit bump 
@@ -68,9 +70,12 @@ Custom params:
             - intellij idea issue
             - intellij idea support request
             - springboot stackoverflow
+               - submitted https://stackoverflow.com/questions/60641910/how-to-troubleshoot-springboottest-leading-to-no-tests-found-for-given-include
          - try to fix suspected incorrect spring context loading
             - check spring profile selection
                - @ActiveProfiles("openservicebroker-catalog")
+        - **fix broken tests as the result of the dumps**
+           - possibly related to blockhound
 
 
 
@@ -82,7 +87,7 @@ Custom params:
          - rerun concourse pipeline: **wait for max in flight**
       - debug and fix
       - workaround by making the overview broker public ?           
-   
+   - solution: was incorrectly 
    
 Metadata impl
 - Implement and test for cf update-service
