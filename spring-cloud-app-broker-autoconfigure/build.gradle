@@ -42,7 +42,7 @@ dependencies {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
 	testImplementation("org.springframework.boot:spring-boot-starter-webflux")
-	testImplementation("io.projectreactor.tools:blockhound-junit-platform:${blockHoundVersion}")
+// 	testImplementation("io.projectreactor.tools:blockhound-junit-platform:${blockHoundVersion}")
 }
 
 compileJava.dependsOn(processResources)
