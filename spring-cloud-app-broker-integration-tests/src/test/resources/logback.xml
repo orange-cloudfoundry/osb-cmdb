@@ -30,4 +30,5 @@
 
 	<logger name="org.springframework.test.context.junit.jupiter" level="debug" />
 	<logger name="org.springframework.boot.test" level="debug" />
+<!--	<logger name="org.apache.commons.beanutils" level="trace" />-->
 </configuration>
