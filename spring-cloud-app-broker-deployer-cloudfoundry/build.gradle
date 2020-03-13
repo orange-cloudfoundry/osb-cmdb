@@ -39,5 +39,5 @@ dependencies {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
 	testImplementation("io.projectreactor:reactor-test")
-	testImplementation("io.projectreactor.tools:blockhound-junit-platform:${blockHoundVersion}")
+// 	testImplementation("io.projectreactor.tools:blockhound-junit-platform:${blockHoundVersion}")
 }
