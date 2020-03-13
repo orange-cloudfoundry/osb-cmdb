@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 import org.springframework.cloud.appbroker.deployer.BackingService;
 import org.springframework.cloud.appbroker.deployer.BackingServices;
 import org.springframework.cloud.appbroker.deployer.BrokeredService;
+import org.springframework.cloud.appbroker.deployer.ParametersTransformerSpec;
 import org.springframework.cloud.appbroker.deployer.TargetSpec;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
@@ -40,6 +41,14 @@ public class SampleServicesBuilderBaseTest {
 			.name(serviceName)
 			.plan(planName)
 			.serviceInstanceName(serviceName)
+			.parameterTransformers(buildParameterMappingTransformers())
+			.build();
+	}
+
+	private ParametersTransformerSpec buildParameterMappingTransformers() {
+		return ParametersTransformerSpec.builder()
+			.name("ParameterMapping")
+			.arg("includeAll", "true")
 			.build();
 	}
 
