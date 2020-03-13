@@ -42,7 +42,7 @@ dependencies {
 
 	testImplementation("org.springframework:spring-test")
 	testImplementation("io.projectreactor:reactor-test")
-	testImplementation("io.projectreactor.tools:blockhound-junit-platform:${blockHoundVersion}")
+// 	testImplementation("io.projectreactor.tools:blockhound-junit-platform:${blockHoundVersion}")
 	testImplementation("org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}")
 	testImplementation("org.assertj:assertj-core:${assertjVersion}")
 	testImplementation("org.mockito:mockito-core:${mockitoVersion}")
