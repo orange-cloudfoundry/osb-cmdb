@@ -49,7 +49,10 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 			"    services:\n" +
 			"    - name: \"mysql\"\n" +
 			"      parameters: {}\n" +
-			"      parametersTransformers: []\n" +
+			"      parametersTransformers:\n" +
+			"      - args:\n" +
+			"          includeAll: \"true\"\n" +
+			"        name: \"ParameterMapping\"\n" +
 			"      plan: \"10mb\"\n" +
 			"      properties: {}\n" +
 			"      rebindOnUpdate: false\n" +
@@ -62,7 +65,10 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 			"    services:\n" +
 			"    - name: \"mysql\"\n" +
 			"      parameters: {}\n" +
-			"      parametersTransformers: []\n" +
+			"      parametersTransformers:\n" +
+			"      - args:\n" +
+			"          includeAll: \"true\"\n" +
+			"        name: \"ParameterMapping\"\n" +
 			"      plan: \"20mb\"\n" +
 			"      properties: {}\n" +
 			"      rebindOnUpdate: false\n" +
@@ -75,7 +81,10 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 			"    services:\n" +
 			"    - name: \"noop\"\n" +
 			"      parameters: {}\n" +
-			"      parametersTransformers: []\n" +
+			"      parametersTransformers:\n" +
+			"      - args:\n" +
+			"          includeAll: \"true\"\n" +
+			"        name: \"ParameterMapping\"\n" +
 			"      plan: \"default\"\n" +
 			"      properties: {}\n" +
 			"      rebindOnUpdate: false\n" +
@@ -170,7 +179,10 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 			"    services:\n" +
 			"    - name: \"noop\"\n" +
 			"      parameters: {}\n" +
-			"      parametersTransformers: []\n" +
+			"      parametersTransformers:\n" +
+			"      - args:\n" +
+			"          includeAll: \"true\"\n" +
+			"        name: \"ParameterMapping\"\n" +
 			"      plan: \"default\"\n" +
 			"      properties: {}\n" +
 			"      rebindOnUpdate: false\n" +

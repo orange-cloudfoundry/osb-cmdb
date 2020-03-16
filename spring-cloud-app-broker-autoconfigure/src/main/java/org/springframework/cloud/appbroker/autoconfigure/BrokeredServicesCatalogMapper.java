@@ -7,12 +7,18 @@ import org.springframework.cloud.appbroker.deployer.BackingService;
 import org.springframework.cloud.appbroker.deployer.BackingServices;
 import org.springframework.cloud.appbroker.deployer.BrokeredService;
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
+import org.springframework.cloud.appbroker.deployer.ParametersTransformerSpec;
 import org.springframework.cloud.appbroker.deployer.TargetSpec;
 import org.springframework.cloud.appbroker.extensions.targets.SpacePerServiceDefinition;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 
 public class BrokeredServicesCatalogMapper {
+
+	public static final ParametersTransformerSpec PARAMETER_MAPPING_TRANSFORMER = ParametersTransformerSpec.builder()
+		.name("ParameterMapping")
+		.arg("includeAll", "true")
+		.build();
 
 	private final ServiceDefinitionMapperProperties serviceDefinitionMapperProperties;
 
@@ -69,9 +75,13 @@ public class BrokeredServicesCatalogMapper {
 			.name(serviceName)
 			.plan(planName)
 			.serviceInstanceName(serviceName)
+			.parameterTransformers(buildParameterMappingTransformers())
 			.build();
 	}
 
+	private ParametersTransformerSpec buildParameterMappingTransformers() {
+		return PARAMETER_MAPPING_TRANSFORMER;
+	}
 
 
 }

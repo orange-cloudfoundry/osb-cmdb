@@ -1,4 +1,96 @@
+Custom params:
+- Find a solution to current missing gradle module dependencies in integration tests
+   - add a dependency to osb-cmdb.main package in spring-cloud-app-broker-integration-tests.tests
+      - check dependency graph
+      - Check different gradle syntax https://docs.gradle.org/current/userguide/declaring_dependencies.html and https://docs.gradle.org/current/userguide/java_library_plugin.html
+      - Trying different variation still fails with 
+        > /home/guillaume/code/osb-cmdb-spike/spring-cloud-app-broker-integration-tests/src/test/java/org.springframework.cloud.appbroker/integration/CreateServiceKeyBindingComponentTest.java:19: error: package com.orange.oss.osbcmdb does not exist
+      - gradle --debug lists that the snapshot jar is referenced  
+        > Compiler arguments: -source 1.8 -target 1.8 -d /home/guillaume/code/osb-cmdb-spike/spring-cloud-app-broker-integration-tests/build/classes/java/test -encoding UTF-8 -g -sourcepath  -processorpath                                                                                                                                                                               
+      home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/libs/osb-cmdb-0.8.0-SNAPSHOT.jar
+   - duplicate the workflow impl in the integration tests instead
+      - ~~Pb: when including the binding workflow classes, spring boot junit5 runner does not detect any test cases anymore~~, suspecting spring context loading issue
+         - try running from gradle cmd line instead of intellij to get access to springboot junit error traces
+            - try specifying --debug in gradle argument to get debug output
+               - nothing in disk reports in osb-cmdb-spike/spring-cloud-app-broker-integration-tests/build/reports/tests/test/
 
+            > :spring-cloud-app-broker-integration-tests:detachedConfiguration124' completed
+              14:38:10.041 [DEBUG] [org.gradle.api.internal.artifacts.ivyservice.resolveengine.result.StreamingResolutionResultBuilder$RootFactory] Loaded resolution results (0.003 secs) from Binary store in /tmp/gradle2396711151425845556.bin (exist: true)
+            > Ensuring directory exists for property binResultsDir (Output) at /home/guillaume/code/osb-cmdb-spike/spring-cloud-app-broker-integration-tests/build/test-results/test/binary                                                                                                                                                                                                                                                                                                                  >
+
+            > 14:38:10.105 [DEBUG] [TestEventLogger] Gradle Test Run :spring-cloud-app-broker-integration-tests:test STARTED
+            >  14:38:10.115 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 204: dispatching class org.gradle.launcher.daemon.protocol.BuildEvent
+            >  14:38:10.116 [QUIET] [system.out] 
+            >  14:38:10.116 [QUIET] [system.out] Test result: SUCCESS
+            >  14:38:10.116 [QUIET] [system.out] Test summary: 0 tests, 0 succeeded, 0 failed, 0 skipped
+            >  14:38:10.117 [QUIET] [system.out] 
+            >  14:38:10.124 [QUIET] [system.out] </event></ijLog>
+         - try to find related intellij bug 
+            - https://youtrack.jetbrains.com/issue/IDEA-232400 is close with latest EAP, and deals with junit/gradle versions
+         - try turning on logback traces for junit extension: 
+            - org.springframework.test.context.junit.jupiter
+            - org.springframework.boot.test
+         - read springboot test manual https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-testing
+            - to find ways to launch manually the test outside gradle to get traces
+               - not much 
+         - read junit5 manual to find ways to launch independently of intellij idea
+            - https://junit.org/junit5/docs/current/user-guide/#running-tests-console-launcher
+         - **bump springboot and junit5 version to latest versions**
+            - debug gradle output now includes
+                > 15:56:02.022 [DEBUG] [TestEventLogger]     java.lang.BootstrapMethodError: java.lang.NoClassDefFoundError: junit/runner/Version
+            
+                >  15:56:04.272 [DEBUG] [TestEventLogger] org.springframework.cloud.appbroker.integration.CreateBindingWithServiceKeyComponentTest STANDARD_OUT
+                >  15:56:04.273 [DEBUG] [TestEventLogger]     11-03-2020 15:56:04.252 [35m[Test worker][0;39m [34mINFO [0;39m o.s.b.t.c.SpringBootTestContextBootstrapper.buildDefaultMergedContextConfiguration - 
+                > Neither @ContextConfiguration nor @ContextHierarchy found for test class [org.springframework.cloud.appbroker.integration.CreateBindingWithServiceKeyComponentTest], using SpringBootContextLoader
+            
+                > * What went wrong:
+                >  Execution failed for task ':spring-cloud-app-broker-integration-tests:test'.
+                >  > No tests found for given includes: [org.springframework.cloud.appbroker.integration.CreateBindingWithServiceKeyComponentTest](filter.includeTestsMatching)
+                >  
+                >  * Try:
+                >   Run with --scan to get full insights.
+            - A problem occurred evaluating root project 'spring-cloud-app-broker'.
+              > Cannot set the value of read-only property 'sourceDirectories' for task ':codeCoverageReport' of type org.gradle.testing.jacoco.tasks.JacocoReport.
+            - Following bump message is now
+              > No tests found for given includes: [org.springframework.cloud.appbroker.integration.CreateBindingWithServiceKeyComponentTest](filter.includeTestsMatching)
+            - **fix broken tests as the result of the dump**
+               - related to blockhound
+         - try to google some related issues
+            - https://stackoverflow.com/questions/56110026/springboottest-resulting-in-no-tests-found-for-given-includes spring context issue, but no diagnostic procedure
+            - https://bugs.eclipse.org/bugs/show_bug.cgi?id=545849 systematic issue, solved by junit bump 
+         - try running from IDEA,
+            - does not output much
+                > java ... com.intellij.rt.execution.application.AppMainV2 com.intellij.rt.junit.JUnitStarter -ideVersion5 -junit5 org.springframework.cloud.appbroker.integration.CreateBindingWithServiceKeyComponentTest
+                >  ##teamcity[enteredTheMatrix]
+                >  ##teamcity[treeEnded]
+            - try setting debug point in intellij
+               - Pb: idea requires the classpath to be set by a module of the project
+               - When using integration tests, then idea internal classes are not found anymore
+         - ask some help
+            - intellij idea issue
+            - intellij idea support request
+            - springboot stackoverflow
+               - submitted https://stackoverflow.com/questions/60641910/how-to-troubleshoot-springboottest-leading-to-no-tests-found-for-given-include
+         - try to fix suspected incorrect spring context loading
+            - check spring profile selection
+               - @ActiveProfiles("openservicebroker-catalog")
+        - **fix broken tests as the result of the dumps**
+           - possibly related to blockhound
+
+
+
+- Manually test against overview broker
+   - Pb: overview broker does not appear in dynamic catalog in osb-cmdb-0
+      - suspecting service access visibility bug https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/2
+         - unable to launch DynamicServiceAutoConfigurationAcceptanceTest: tests displayed as skipped in intellij
+         - try with running OsbCmdbApplication instead: overview broker displays in catalog
+         - rerun concourse pipeline: **wait for max in flight**
+      - debug and fix
+      - workaround by making the overview broker public ?           
+   - solution: was incorrectly 
+   
+Metadata impl
+ - Implement and test for cf update-service
  - DONE: Refine annotations to store additional annotations (when available to SCOSB, marked as X):
     - X-Broker-Api-Version
     - X-Api-Info-Location (X)
@@ -25,18 +117,17 @@
        >    	at org.cloudfoundry.util.ExceptionUtils.illegalArgument(ExceptionUtils.java:45)
        >    	at org.cloudfoundry.operations.services.DefaultServices.getOptionalValidatedServicePlanId(DefaultServices.java:511)
        - osb-cmdb side effect of disabled optimization and systematic backing service update ? => disable the test                                                                             
-                                  
+                                 
                                                                                                                             
- - Fill in annotations and labels for K8S client
- - Implement and test for cf update-service
- - Ensure metadata are also assigned when the service creation fails:
+ - DONE: Fill in annotations and labels for K8S client
+ - DONE: Ensure metadata are also assigned when the service creation fails:
     - would need duplicating the metadata assignment sequence with a doOnError https://projectreactor.io/docs/core/release/reference/#_log_or_react_on_the_side
     - Q: how to test ?
        - Component test
           - Inject Metadata transformer: CreateBackingServicesMetadataTransformationService 
 
-Metadata impl
-- Modified workflow 
+
+- DONE: Modified workflow 
    - breaks tests that asserts strictly BackendServices content
        - remove annotations from equals/hashcode
        - duplicate BackendServices in transformer ?
