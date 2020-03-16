@@ -106,7 +106,7 @@ public class AppDeploymentCreateServiceBindingWorkflow
 					.serviceInstanceName(backingService.getServiceInstanceName())
 					.name(backingService.getName())
 					.properties(backingService.getProperties())
-					//TODO also set the binding params
+					.parameters(backingService.getParameters())
 					.build();
 				return Mono.just(backingServiceKey);
 			})
