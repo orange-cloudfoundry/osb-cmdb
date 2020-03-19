@@ -42,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 // Expects the Cf client properties to be injected as system properties
 // and the corresponding Cf marketplace to be non empty
+//Expects the spring profile "acceptanceTests" to be turned on
 @EnabledIfSystemProperty(named = "ACCEPTANCE_TEST", matches = "TRUE")
 class DynamicServiceAutoConfigurationAcceptanceTest {
 	private final Logger logger = LoggerFactory.getLogger(getClass());

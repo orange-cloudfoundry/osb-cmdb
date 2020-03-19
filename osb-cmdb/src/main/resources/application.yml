@@ -1,6 +1,13 @@
-osbcmdb:
-  dynamic-catalog:
-    enabled: "true" #Turn on dynamic catalog. Catalog and brokered services should be commented out.
+  management:
+    endpoints:
+      enabled-by-default: false
+    endpoint:
+      info.enabled: true
+      health.enabled: true
+
+  osbcmdb:
+    dynamic-catalog:
+      enabled: "true" #Turn on dynamic catalog. Catalog and brokered services should be commented out.
 #    catalog:
 #      services:
 #        suffix: "-cmdb"
