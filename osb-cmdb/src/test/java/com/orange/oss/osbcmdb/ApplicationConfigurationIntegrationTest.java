@@ -14,7 +14,7 @@ import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInsta
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Profile;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,8 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Launches osb-cmdb without the CF client and SCAB part.
  * Tests application.yml defaults and its overriding in application-default
  */
-@Profile( //This annotation is here to document expected profiles to activate when launching this test using
-// -Dspring.profiles.active=offline-test-without-scab,default
+@ActiveProfiles(
     {"offline-test-without-scab", //disable service key workflow so that we can start without CF config
         "default" //simulate default profile being enabled (the case when running in production in paas-templates)
     })
@@ -44,6 +43,13 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.cloud.openservicebroker.catalog.services[0].plans[0].bindable=true",
         "spring.cloud.openservicebroker.catalog.services[0].plans[0].description=A simple plan",
         "spring.cloud.openservicebroker.catalog.services[0].plans[0].free=true",
+
+        //Define mandatory users to access OSB and actuactor endpoints
+        "spring.security.user.name="+ SecurityConfigTest.USER,
+        "spring.security.user.password="+ SecurityConfigTest.PASSWORD,
+        "osbcmdb.admin.user=" + SecurityConfigTest.ADMIN_USER,
+        "osbcmdb.admin.password=" + SecurityConfigTest.ADMIN_PASSWORD,
+
         "anotherKey=value"})
 public class ApplicationConfigurationIntegrationTest {
 
