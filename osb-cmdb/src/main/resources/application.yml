@@ -5,9 +5,17 @@
   management:
     endpoints:
       enabled-by-default: false
+      web:
+        exposure:
+          include: "conditions,info,health,httptrace,loggers,metrics,threaddump"
     endpoint:
+      conditions.enabled: true
       info.enabled: true
       health.enabled: true
+      httptrace.enabled: true
+      loggers.enabled: true
+      metrics.enabled: true
+      threaddump.enabled: true
 
 #
   osbcmdb:

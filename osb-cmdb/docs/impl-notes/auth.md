@@ -1,13 +1,13 @@
 
 
-- enable all actuator endpoints now that they are protected with admin credentials
-- need to review status of other tests in circle and schedule acceptance tests in concourse
+- DONE: enable relevant actuator endpoints now that they are protected with admin credentials
+- need to review status of other tests in circle
 - need to update paas-templates integration
    - manually test actuator endpoint 
    - DONE: generate & inject admin password
    - bruteforce test osb & sensitive actuactor endpoint
       - lookup admin password from credhub in test
-   - add pipeline to run acceptance tests
+   - add pipeline to run osb-cmdb acceptance tests
    
     - DONE: need to review expected production behavior. Recorded in SecurityConfigTest
     - DONE: need to add comments

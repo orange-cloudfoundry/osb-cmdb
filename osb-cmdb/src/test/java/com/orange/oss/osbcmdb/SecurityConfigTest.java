@@ -113,18 +113,24 @@ public class SecurityConfigTest {
     }
 
     @Test
-    public void unAuthenticatedActuactorInfo_shouldFailWith401() throws Exception {
-        mvc.perform(get("/actuator/info")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isUnauthorized());
+    public void unAuthenticatedSensitiveActuactorEndPoints_shouldFailWith401() throws Exception {
+        String [] endpoints = {"conditions", "info", "httptrace", "loggers", "metrics", "threaddump"};
+        for (String endpoint : endpoints) {
+            mvc.perform(get("/actuator/" + endpoint)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+        }
     }
 
     @WithMockUser(roles = "ADMIN")
     @Test
-    public void adminAuthenticatedActuactorInfo_shouldSucceedWith200() throws Exception {
-        mvc.perform(get("/actuator/info")
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk());
+    public void adminAuthenticatedSensitiveActuactorEndPoints_shouldSucceedWith200() throws Exception {
+        String [] endpoints = {"conditions", "info", "httptrace", "loggers", "metrics", "threaddump"};
+        for (String endpoint : endpoints) {
+            mvc.perform(get("/actuator/" + endpoint)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+        }
     }
 
     @Test
