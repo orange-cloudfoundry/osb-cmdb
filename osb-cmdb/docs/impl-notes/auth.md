@@ -12,8 +12,27 @@ Intermediate step to rework
 
 - rename and comment the SecuredControllerSpringBootIntegrationTest
 
-- need to review how paas-templates merges or replaces altogether application.yml: ops teams should rely on  safe defaults for operability (actuator)
-
+- DONE: need to review how paas-templates merges or replaces altogether application.yml: ops teams should rely on  safe defaults for operability (actuator)
+   - currently paas-templates replaces the whole `BOOT-INF/classes/application.yml` 
+    > zip -r  ${GENERATE_DIR}/${JAR_ARTEFACT_BASE_NAME}.jar BOOT-INF/classes/application.yml
+   - alternatives
+      - add a new file in the jar which spring boot would use to override the default application.yml
+         - https://docs.spring.io/spring-boot/docs/2.2.5.RELEASE/reference/htmlsingle/#boot-features-external-config
+            - Profile-specific application properties packaged inside your jar (application-{profile}.properties and YAML variants).
+                - **Don't specify a profile, and keep `default` profile in `application-default.yml`**
+                - Profile specific config should override  
+      - look into java buildpack for ways to add external application.yml
+         - https://github.com/cloudfoundry/java-buildpack/blob/master/docs/container-spring_boot.md
+            > If the application uses Spring, Spring profiles can be specified by setting the SPRING_PROFILES_ACTIVE environment variable.                                                                                                                                                                                                                                                
+   - test `application-default.yml` precedence                                                                                                                                                                                                                                           
+      - include `application-default.yml` in the jar and test that this properly overrides `application.yml` config
+         - an autowired property value in a springboot test
+            - https://docs.spring.io/spring/docs/5.1.14.RELEASE/spring-framework-reference/core.html#expressions-beandef-annotation-based
+            >  To specify a default value, you can place the @Value annotation on fields, methods, and method or constructor parameters.
+            - https://www.baeldung.com/spring-value-annotation                                                                                                                                                                                             >  
+         - Pb: profile "offline-test-without-scab" is already set
+            - Q: can we specify multiple active profiles ?
+            - A: yes, comma separated list of profiles https://docs.spring.io/spring-boot/docs/2.2.5.RELEASE/reference/htmlsingle/#boot-features-profiles     
 
 --------------
 
