@@ -1,0 +1,5 @@
+# application-default.yml aims at being replaced by paas-templates during cf push
+
+  osbcmdb:
+      # This only supports unit tests.
+      sample-noop-test-property: "set in application-default.yml"
