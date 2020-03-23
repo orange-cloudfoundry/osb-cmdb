@@ -55,6 +55,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		http
+			// See https://docs.spring.io/spring-security/site/docs/5.3.0.RELEASE/reference/html5/#csrf-when
+			//   Our recommendation is to use CSRF protection for any request that could be processed by a browser
+			//   by normal users. If you are only creating a service that is used by non-browser clients,
+			//   you will likely want to disable CSRF protection.
+			.csrf().disable()
+
 			.authorizeRequests()
 			.antMatchers("/v2/**").authenticated() //OSB API needs be authenticated (typically with user osb)
 			//Actuator config
