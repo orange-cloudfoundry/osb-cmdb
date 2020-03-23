@@ -1,16 +1,46 @@
 
 
-Intermediate step to rework
+- enable all actuator endpoints now that they are protected with admin credentials
+- need to review status of other tests in circle and schedule acceptance tests in concourse
+- need to update paas-templates integration
+   - manually test actuator endpoint 
+   - DONE: generate & inject admin password
+   - bruteforce test osb & sensitive actuactor endpoint
+      - lookup admin password from credhub in test
+   - add pipeline to run acceptance tests
+   
+    - DONE: need to review expected production behavior. Recorded in SecurityConfigTest
+    - DONE: need to add comments
+    - DONE: need to document profiles and properties & include them in CICD arguments
+    - offline-test-without-scab should be specified when running SecurityConfigTest
+       - Q: Can this be activated within the test ?
+       - A: yes with @ActiveProfile annotation
+          - https://www.baeldung.com/spring-profiles#7-activeprofile-in-tests
+          - https://docs.spring.io/spring/docs/5.1.14.RELEASE/spring-framework-reference/core.html#beans-definition-profiles-enable
+          - https://docs.spring.io/spring/docs/5.1.14.RELEASE/spring-framework-reference/testing.html#testcontext-ctx-management-env-profiles
+        
 
-- Test paas expected health endpoint config which needs fix.
 
-- Worked around start problems
-    - need to review status of other tests in circle and schedule acceptance tests in concourse
-    - need to review expected production behavior
-    - need to add comments
-    - need to document profiles and properties & include them in CICD arguments
+- DONE: Test paas expected health endpoint config which needs fix.
+   - config Java dsl is ambiguous and hard to find associated documentation.
+   - Q: how to test the basic auth filter with spring boot default user?
+      - See https://docs.spring.io/spring-security/site/docs/5.3.0.RELEASE/reference/html5/#testing-http-basic-authentication
 
-- rename and comment the SecuredControllerSpringBootIntegrationTest
+- DONE: Protect actuator endpoints with ADMIN roles so that OSB users can not access them
+    - Pb: default spring user gets disabled
+        - https://docs.spring.io/spring-boot/docs/current/reference/html/howto.html#howto-change-the-user-details-service-and-add-user-accounts
+        > If you provide a @Bean of type AuthenticationManager, AuthenticationProvider, or UserDetailsService, the default @Bean for InMemoryUserDetailsManager is not created. 
+        > The easiest way to add user accounts is to provide your own UserDetailsService bean.
+    - requirements: provide smooth transition for version 0.6 which currently relies on `spring.security.user.password`
+    - alternatives
+       - **replicate springboot behavior ourselves**
+    - Q: should we make the admin credentials optional or fail fast ?
+       - in v46, we'd provide admin credentials, so let's fail fast if their missing  
+    - Q: should we make the osb credentials optional or fail fast ?
+       - we'd want to fail fast  
+                                                                                                                                                                                                   
+
+- DONE: rename and comment the SecuredControllerSpringBootIntegrationTest
 
 - DONE: need to review how paas-templates merges or replaces altogether application.yml: ops teams should rely on  safe defaults for operability (actuator)
    - currently paas-templates replaces the whole `BOOT-INF/classes/application.yml` 
