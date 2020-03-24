@@ -1,17 +1,19 @@
 
 
 - DONE: enable relevant actuator endpoints now that they are protected with admin credentials
-- need to review status of other tests in circle
+- DONE: need to review status of other tests in circle
 - need to update paas-templates integration
-   - manually test actuator endpoint 
+   - DONE: manually test actuator endpoint
+      - document dynamic log level activation https://www.baeldung.com/spring-boot-changing-log-level-at-runtime 
+      - consider deploying springboot admin web ui https://github.com/codecentric/spring-boot-admin
    - DONE: generate & inject admin password
-   - bruteforce test osb & sensitive actuactor endpoint
+   - bruteforce test osb & sensitive actuator endpoint
       - lookup admin password from credhub in test
-   - add pipeline to run osb-cmdb acceptance tests
+   - add/load pipeline to run osb-cmdb acceptance tests in concourse
    
-    - DONE: need to review expected production behavior. Recorded in SecurityConfigTest
-    - DONE: need to add comments
-    - DONE: need to document profiles and properties & include them in CICD arguments
+- DONE: need to review expected production behavior. Recorded in SecurityConfigTest
+- DONE: need to add comments
+- DONE: need to document profiles and properties & include them in CICD arguments
     - offline-test-without-scab should be specified when running SecurityConfigTest
        - Q: Can this be activated within the test ?
        - A: yes with @ActiveProfile annotation
