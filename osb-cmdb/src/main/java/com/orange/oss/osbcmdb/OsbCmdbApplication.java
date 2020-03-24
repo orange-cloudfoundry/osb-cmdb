@@ -2,6 +2,7 @@ package com.orange.oss.osbcmdb;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfiguration;
 import org.springframework.cloud.appbroker.deployer.*;
@@ -18,6 +19,7 @@ import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceAppBindingWorkflow;
 import org.springframework.cloud.appbroker.service.DeleteServiceInstanceBindingWorkflow;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
@@ -39,6 +41,7 @@ public class OsbCmdbApplication {
 
 
 	@Bean
+	@Profile("!offline-test-without-scab")
 	public CreateServiceInstanceAppBindingWorkflow createServiceKeyWorkflow(
 		BrokeredServices brokeredServices,
 		BackingAppDeploymentService backingAppDeploymentService,
@@ -52,6 +55,7 @@ public class OsbCmdbApplication {
 	}
 
 	@Bean
+	@Profile("!offline-test-without-scab")
 	public DeleteServiceInstanceBindingWorkflow deleteServiceKeyWorkflow(
 		BrokeredServices brokeredServices,
 		BackingAppDeploymentService backingAppDeploymentService,

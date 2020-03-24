@@ -29,7 +29,7 @@ This repo contains a spike for the osb-cmdb project.
 
 This project provides a configuration management for Open Service Broker API broker implementations. See [orange-cloudfoundry/paas-templates#492](https://github.com/orange-cloudfoundry/paas-templates/issues/492) for more background around use-cases and considered alternatives.
 
-At this stage of the spike, this is a fork of the [https://github.com/spring-cloud/spring-cloud-app-broker]( spring-cloud/spring-cloud-app-broker) project (referred as SCAB).
+At this stage of the spike, this is a fork of the [spring-cloud/spring-cloud-app-broker](https://github.com/spring-cloud/spring-cloud-app-broker) project (referred as SCAB).
 
 Plan is to work with the SCAB team to contribute upstream osb-cmdb's changes to SCAB, and move osb-cmdb in its own repo which would pull SCAB from maven central, see related issue [spring-cloud/spring-cloud-app-broker/#285](https://github.com/spring-cloud/spring-cloud-app-broker/issues/285) for progress.
 
@@ -62,7 +62,7 @@ DELETE /v2/service_instances/:instance_id/service_bindings/:binding_id | cf dele
 Osb-cmdb ships as a spring-boot jar which is configured using properties.
 
 ```bash         
-curl -L https://github.com/orange-cloudfoundry/osb-cmdb-spike/releases/download/v0.2.0/osb-cmdb-0.2.0.jar -o ./osb-cmdb.jar 
+curl -L https://github.com/orange-cloudfoundry/osb-cmdb-spike/releases/download/v0.9.0/osb-cmdb-0.9.0.jar -o ./osb-cmdb.jar 
 java \
  -Dspring.cloud.appbroker.deployer.cloudfoundry.api-host=api.redacted-domain.org \
  -Dspring.cloud.appbroker.deployer.cloudfoundry.api-port=443 \
@@ -76,6 +76,8 @@ java \
  -Dspring.cloud.appbroker.deployer.cloudfoundry.properties.memory=1G \
  -Dspring.security.user.name=user \
  -Dspring.security.user.password=password \
+ -Dosbcmdb.admin.user=user \
+ -Dosbcmdb.admin.password=password \
  -Dosbcmdb.dynamic-catalog.enabled=true \
  -Dosbcmdb.dynamic-catalog.catalog.services.suffix=suffix \
  -Dosbcmdb.dynamic-catalog.catalog.services.excludeBrokerNamesRegexp=".*cmdb.*" \
@@ -89,7 +91,11 @@ java \
 
 The SCAB properties are documented at https://docs.spring.io/spring-cloud-app-broker/docs/current/reference/html5/
 
-Osb-cmdb adds support for additional properties which are illustrated below. Source of truth is associated unit tests
+Osb-cmdb adds support for additional properties which are illustrated below. Source of truth is associated unit tests, e.g. `SecurityConfigTest`
+
+Osb-cmdb requires two users auth to be configured:
+* `spring.security.user`: used for OSB API calls
+* `osbcmdb.admin`: used to access sensitive supportability endpoints (powered by springboot actuators)
 
 Osb-Cmdb is expected to be deployed once per OSB client, each having its own basic authentication, its own brokered services catalog, and backend services organization.
 

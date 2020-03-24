@@ -1,3 +1,4 @@
+
 Custom params:
 - Find a solution to current missing gradle module dependencies in integration tests
    - add a dependency to osb-cmdb.main package in spring-cloud-app-broker-integration-tests.tests
