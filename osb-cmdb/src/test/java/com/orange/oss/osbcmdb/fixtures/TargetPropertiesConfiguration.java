@@ -5,8 +5,10 @@ import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDep
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryTargetProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
+@Profile("dynamicCatalog.acceptanceTests")
 public class TargetPropertiesConfiguration {
 
 	//Inspired from spring-cloud-app-broker-autoconfigure/src/main/java/org/springframework/cloud/appbroker/autoconfigure/CloudFoundryAppDeployerAutoConfiguration.java

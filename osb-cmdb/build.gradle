@@ -40,9 +40,13 @@ dependencies {
 	compile project(":spring-cloud-starter-app-broker-cloudfoundry")
 	implementation ("org.springframework.boot:spring-boot-starter-actuator")
 	compile("org.springframework.boot:spring-boot-starter-webflux")
+	compile("org.springframework.boot:spring-boot-starter-security")
+	compile("org.springframework.boot:spring-boot-starter-web")
+    compile("org.springframework.boot:spring-boot-starter-actuator")
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 	testCompile("org.junit.jupiter:junit-jupiter-api")
 	testCompile("org.springframework.boot:spring-boot-starter-test")
+	testCompile("org.springframework.security:spring-security-test")
 	testCompile("io.projectreactor:reactor-test")
 	testCompile("org.assertj:assertj-core")
 	//For custom workflows
