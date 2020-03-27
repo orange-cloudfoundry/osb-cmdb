@@ -525,6 +525,8 @@ The following diagram summarizes the interactions between OSB-CMDB and its clien
 
 ### Releasing
 
+Check acceptance test status in your private concourse ci 
+
 For the spike, 
 * manually edit the version in `osb-cmdb/gradle.properties` (e.g `version=0.1.0`), commit & push
 * git tag v0.1.0 -a -m "0.1.0 release"
