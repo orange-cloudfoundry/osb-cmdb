@@ -40,7 +40,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile("dynamicCatalog.acceptanceTests")
+@Profile("acceptanceTests")
 @EnableConfigurationProperties(CloudFoundryProperties.class)
 //Inspired from spring-cloud-app-broker-acceptance-tests
 public class CloudFoundryClientConfiguration {
