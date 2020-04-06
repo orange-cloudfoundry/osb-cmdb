@@ -86,7 +86,7 @@ test {
 	// Pass relevant java properties to the test task
 	systemProperties << System.properties.findAll {
 		//
-		it.key.startsWith("spring.") || it.key.startsWith("osbcmdb.")
+		it.key.startsWith("spring.") || it.key.startsWith("osbcmdb.")|| it.key.startsWith("debug")
 	}
 }
 
