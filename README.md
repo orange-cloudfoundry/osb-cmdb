@@ -523,7 +523,21 @@ The following diagram summarizes the interactions between OSB-CMDB and its clien
 
 ![sequence diagram](./osb-cmdb/seq-diagram.png)
 
-### Releasing
+### Contributing
+
+#### Circle ci tests
+
+Circle ci tests run offline without a cloudfoundry instance. They include scab tests and osb-cmdb tests. See osb-cmdb/.circle/config.yml
+
+#### Acceptance tests
+
+Acceptance tests run privately against a live cloudfoundry instance. Tests are private because it is hard to secure logs to not leak credentials that could be used to abuse the Cloud Foundry instance.
+
+See https://github.com/orange-cloudfoundry/osb-cmdb-ci for the concourse task running the acceptance tests.
+
+Like scab, osb-cmdb acceptance tests use distinct properties than osb-cmdb production properties. Refer to [Getting started](#getting-started) for the list of prod properties supported, and paas-templates smoke tests. 
+
+#### Releasing
 
 For the spike, 
 * manually edit the version in `osb-cmdb/gradle.properties` (e.g `version=0.1.0`), commit & push
