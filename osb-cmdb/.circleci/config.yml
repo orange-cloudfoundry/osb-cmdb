@@ -36,7 +36,7 @@ jobs:
 #          #Workaround OpenJdk8 regression which crashes JVM. See https://stackoverflow.com/a/53085816
 #          - _JAVA_OPTIONS: "-Djdk.net.URLClassPath.disableClassPathURLCheck=true"
           command: |
-            ./gradlew --continue :osb-cmdb:assemble
+            ./gradlew --continue clean :osb-cmdb:assemble
       - run:
           name: save jar artefacts
           command: |
@@ -50,8 +50,9 @@ jobs:
           #          environment:
           #          #Workaround OpenJdk8 regression which crashes JVM. See https://stackoverflow.com/a/53085816
           #          - _JAVA_OPTIONS: "-Djdk.net.URLClassPath.disableClassPathURLCheck=true"
+          # Note: we exclude AT from circle using junit tags to be flexible on unit tests selection.
           command: |
-            ./gradlew --continue check -x checkstyleNohttp -x checkstyleMain -x checkstyleTest -x pmdMain -x pmdTest
+            ./gradlew --continue -DexcludeTags=AcceptanceTest check -x checkstyleNohttp -x checkstyleMain -x checkstyleTest -x pmdMain -x pmdTest
   build_n_deploy:
     working_directory: ~/osb-cmdb-spike
     docker:

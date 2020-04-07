@@ -24,8 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orange.oss.osbcmdb.fixtures.CloudFoundryClientConfiguration;
 import com.orange.oss.osbcmdb.fixtures.TargetPropertiesConfiguration;
 import jdk.nashorn.internal.ir.annotations.Ignore;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // Expects the Cf client properties to be injected as system properties
 // and the corresponding Cf marketplace to be non empty
 //Expects the spring profile "acceptanceTests" to be turned on
-@EnabledIfSystemProperty(named = "ACCEPTANCE_TEST", matches = "TRUE")
+@Tag("AcceptanceTest")
 class DynamicServiceAutoConfigurationAcceptanceTest {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
