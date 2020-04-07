@@ -40,14 +40,17 @@ import org.springframework.cloud.appbroker.deployer.TargetSpec;
 import org.springframework.cloud.appbroker.extensions.credentials.CredentialProviderService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceNoOp;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceWorkflow;
+import org.springframework.cloud.servicebroker.model.CloudFoundryContext;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 
 import static java.util.Collections.singletonMap;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -131,7 +134,7 @@ class AppDeploymentCreateServiceInstanceWorkflowTest {
 			appsParametersTransformationService,
 			servicesParametersTransformationService,
 			credentialProviderService,
-			targetService);
+			targetService, new CreateBackingServicesMetadataTransformationServiceNoOp());
 	}
 
 	@Test
@@ -152,7 +155,7 @@ class AppDeploymentCreateServiceInstanceWorkflowTest {
 		verify(servicesProvisionService).createServiceInstance(backingServices);
 
 		final String expectedServiceId = "service-instance-id";
-		verify(targetService).addToBackingServices(backingServices, targetSpec, expectedServiceId);
+		verify(targetService).addToBackingServices(anyList(), eq(targetSpec), eq(expectedServiceId));
 		verify(targetService).addToBackingApplications(backingApps, targetSpec, expectedServiceId);
 
 		verifyNoMoreInteractionsWithServices();
@@ -181,7 +184,8 @@ class AppDeploymentCreateServiceInstanceWorkflowTest {
 			.transformParameters(backingApps, parameters);
 
 		verify(servicesParametersTransformationService)
-			.transformParameters(backingServices, parameters);
+			.transformParameters(anyList(),// BackingService is mutated, so asserting instance equality would fail,
+				eq(parameters));
 
 		verifyNoMoreInteractionsWithServices();
 	}
@@ -201,14 +205,14 @@ class AppDeploymentCreateServiceInstanceWorkflowTest {
 	private void setupMocks(CreateServiceInstanceRequest request) {
 		given(this.appDeploymentService.deploy(eq(backingApps), eq(request.getServiceInstanceId())))
 			.willReturn(Flux.just("app1", "app2"));
-		given(this.servicesProvisionService.createServiceInstance(eq(backingServices)))
+		given(this.servicesProvisionService.createServiceInstance(anyList()))
 			.willReturn(Flux.just("my-service-instance"));
 
 		given(
 			this.appsParametersTransformationService.transformParameters(eq(backingApps), eq(request.getParameters())))
 			.willReturn(Mono.just(backingApps));
 		given(this.servicesParametersTransformationService
-			.transformParameters(eq(backingServices), eq(request.getParameters())))
+			.transformParameters(anyList(), eq(request.getParameters())))
 			.willReturn(Mono.just(backingServices));
 
 		given(this.credentialProviderService.addCredentials(eq(backingApps), eq(request.getServiceInstanceId())))
@@ -218,7 +222,8 @@ class AppDeploymentCreateServiceInstanceWorkflowTest {
 			.addToBackingApplications(eq(backingApps), eq(targetSpec), eq(request.getServiceInstanceId())))
 			.willReturn(Mono.just(backingApps));
 		given(this.targetService
-			.addToBackingServices(eq(backingServices), eq(targetSpec), eq(request.getServiceInstanceId())))
+			.addToBackingServices(anyList(), eq(targetSpec),
+			eq(request.getServiceInstanceId())))
 			.willReturn(Mono.just(backingServices));
 	}
 
@@ -256,6 +261,9 @@ class AppDeploymentCreateServiceInstanceWorkflowTest {
 				.name(planName)
 				.build())
 			.parameters(parameters == null ? new HashMap<>() : parameters)
+			.context(CloudFoundryContext.builder()
+				.property("instance_name", "instance-name-here")
+				.build())
 			.build();
 	}
 

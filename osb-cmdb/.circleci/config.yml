@@ -1,0 +1,131 @@
+# Java Maven CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-java/ for more details
+#
+version: 2
+jobs:
+  build:
+    working_directory: ~/osb-cmdb-spike
+    docker:
+      - image: circleci/openjdk:8-jdk
+    environment:
+      # Configure the JVM and Gradle to avoid OOM errors
+      _JAVA_OPTIONS: "-Xmx3g"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
+      TERM: dumb
+    steps:
+      - checkout
+      # Download and cache dependencies as advised by the circleci ui when adding gradle project
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run: ./gradlew dependencies
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
+
+      - attach_workspace:
+          at: ~/osb-cmdb-spike
+      - run:
+          # To parallelize concourse test running from tarball
+          name: Build osb-cmdb and create jar without tests
+#          environment:
+#          #Workaround OpenJdk8 regression which crashes JVM. See https://stackoverflow.com/a/53085816
+#          - _JAVA_OPTIONS: "-Djdk.net.URLClassPath.disableClassPathURLCheck=true"
+          command: |
+            ./gradlew --continue clean :osb-cmdb:assemble
+      - run:
+          name: save jar artefacts
+          command: |
+            mkdir -p ./artefacts/
+            cp osb-cmdb/build/libs/osb-cmdb*.jar ./artefacts/
+          when: always
+      - store_artifacts:
+          path: ./artefacts
+      - run:
+          name: Run unit and component tests
+          #          environment:
+          #          #Workaround OpenJdk8 regression which crashes JVM. See https://stackoverflow.com/a/53085816
+          #          - _JAVA_OPTIONS: "-Djdk.net.URLClassPath.disableClassPathURLCheck=true"
+          # Note: we exclude AT from circle using junit tags to be flexible on unit tests selection.
+          command: |
+            ./gradlew --continue -DexcludeTags=AcceptanceTest check -x checkstyleNohttp -x checkstyleMain -x checkstyleTest -x pmdMain -x pmdTest
+  build_n_deploy:
+    working_directory: ~/osb-cmdb-spike
+    docker:
+      - image: circleci/openjdk:8-jdk
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/osb-cmdb-spike
+      - run:
+          name: building artefacts
+          command: |
+            rm -f ./artefacts/*.jar osb-cmdb/build/libs/osb-cmdb*.jar
+            ./gradlew :osb-cmdb:assemble
+      - run:
+          name: save jar artefacts
+          command: |
+            mkdir -p ./artefacts/
+            cp osb-cmdb/build/libs/osb-cmdb*.jar ./artefacts/
+          when: always
+#      - run:
+#          name: Save test results
+#          command: |
+#            mkdir -p ~/junit/
+#            find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/junit/ \;
+#          when: always
+#      - store_test_results:
+#          path: ~/junit
+      - store_artifacts:
+          path: ./artefacts
+      - persist_to_workspace:
+          root: .
+          paths:
+            - osb-cmdb/ci-bin/create_github_release.sh
+            - osb-cmdb/ci-bin/upload_artefact_to_github.sh
+            - artefacts/*
+  release_to_github:
+    working_directory: ~/osb-cmdb-spike
+    docker:
+      - image: circleci/openjdk:8-jdk
+    steps:
+      - attach_workspace:
+          at: ~/osb-cmdb-spike
+      - run:
+          name: create github release
+          command: osb-cmdb/ci-bin/create_github_release.sh github_api_token=$GITHUB_TOKEN owner=$CIRCLE_PROJECT_USERNAME repo=$CIRCLE_PROJECT_REPONAME tag=$CIRCLE_TAG
+      - run:
+          name: upload artefacts to github release
+          command: |
+            for f in ./artefacts/*
+            do
+              echo "Processing $f file..."
+              # take action on each file.
+              osb-cmdb/ci-bin/upload_artefact_to_github.sh github_api_token=$GITHUB_TOKEN owner=$CIRCLE_PROJECT_USERNAME repo=$CIRCLE_PROJECT_REPONAME tag=$CIRCLE_TAG filename=$f
+            done
+workflows:
+  version: 2
+  build-n-deploy:
+    jobs:
+      - build:
+          filters:
+            tags:
+              ignore: /.*/
+      - build_n_deploy:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - release_to_github:
+          requires:
+            - build_n_deploy
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/

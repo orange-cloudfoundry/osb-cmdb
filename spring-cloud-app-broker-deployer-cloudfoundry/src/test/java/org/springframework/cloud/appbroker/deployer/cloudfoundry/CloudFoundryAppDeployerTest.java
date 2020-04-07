@@ -57,6 +57,7 @@ import org.cloudfoundry.operations.services.Services;
 import org.cloudfoundry.operations.services.UnbindServiceInstanceRequest;
 import org.cloudfoundry.operations.spaces.Spaces;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
@@ -715,6 +716,9 @@ class CloudFoundryAppDeployerTest {
 	}
 
 	@Test
+	@Disabled(value="broken in fork. Always updates. Optimization disabled")
+		// would be restored once https://github.com/spring-cloud/spring-cloud-app-broker/pull/290 gets merged
+		// and we rebase against it
 	void updateServiceInstanceRebindsWhenRequired() {
 		given(operationsServices.updateInstance(
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
@@ -771,6 +775,9 @@ class CloudFoundryAppDeployerTest {
 	}
 
 	@Test
+	@Disabled(value="broken in fork. Always updates. Optimization disabled")
+		// would be restored once https://github.com/spring-cloud/spring-cloud-app-broker/pull/290 gets merged
+		// and we rebase against it
 	void updateServiceInstanceDoesNothingWithoutParameters() {
 		given(operationsServices.updateInstance(
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()

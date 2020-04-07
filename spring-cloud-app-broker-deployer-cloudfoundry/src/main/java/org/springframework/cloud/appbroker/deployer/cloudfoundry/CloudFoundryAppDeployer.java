@@ -50,6 +50,7 @@ import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperRequest;
 import org.cloudfoundry.client.v2.spaces.CreateSpaceRequest;
 import org.cloudfoundry.client.v2.spaces.DeleteSpaceRequest;
 import org.cloudfoundry.client.v2.spaces.SpaceEntity;
+import org.cloudfoundry.client.v3.Metadata;
 import org.cloudfoundry.client.v3.Relationship;
 import org.cloudfoundry.client.v3.ToOneRelationship;
 import org.cloudfoundry.client.v3.applications.ListApplicationPackagesRequest;
@@ -88,6 +89,7 @@ import org.cloudfoundry.operations.domains.Domain;
 import org.cloudfoundry.operations.organizations.OrganizationDetail;
 import org.cloudfoundry.operations.organizations.OrganizationInfoRequest;
 import org.cloudfoundry.operations.services.BindServiceInstanceRequest;
+import org.cloudfoundry.operations.services.GetServiceKeyRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.operations.services.UnbindServiceInstanceRequest;
 import org.cloudfoundry.operations.spaces.GetSpaceRequest;
@@ -109,6 +111,10 @@ import org.springframework.cloud.appbroker.deployer.CreateServiceInstanceRequest
 import org.springframework.cloud.appbroker.deployer.CreateServiceInstanceResponse;
 import org.springframework.cloud.appbroker.deployer.DeleteServiceInstanceRequest;
 import org.springframework.cloud.appbroker.deployer.DeleteServiceInstanceResponse;
+import org.springframework.cloud.appbroker.deployer.CreateServiceKeyRequest;
+import org.springframework.cloud.appbroker.deployer.CreateServiceKeyResponse;
+import org.springframework.cloud.appbroker.deployer.DeleteServiceKeyRequest;
+import org.springframework.cloud.appbroker.deployer.DeleteServiceKeyResponse;
 import org.springframework.cloud.appbroker.deployer.DeployApplicationRequest;
 import org.springframework.cloud.appbroker.deployer.DeployApplicationResponse;
 import org.springframework.cloud.appbroker.deployer.DeploymentProperties;
@@ -127,6 +133,7 @@ import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 //TODO: refactor this class
@@ -1031,6 +1038,55 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 	}
 
 	@Override
+	public Mono<CreateServiceKeyResponse> createServiceKey(CreateServiceKeyRequest request) {
+		org.cloudfoundry.operations.services.CreateServiceKeyRequest createServiceKeyRequest =
+			org.cloudfoundry.operations.services.CreateServiceKeyRequest
+				.builder()
+				.serviceInstanceName(request.getServiceInstanceName())
+				.serviceKeyName(request.getServiceKeyName())
+				.parameters(request.getParameters())
+				.build();
+
+
+		org.cloudfoundry.operations.services.GetServiceKeyRequest getServiceKeyRequest = GetServiceKeyRequest.builder()
+			.serviceInstanceName(request.getServiceInstanceName())
+			.serviceKeyName(request.getServiceKeyName())
+			.build();
+		//Both requests are Immutable, so no risk of race condition using them in the flux run in another thread
+
+		if (request.getProperties().containsKey(DeploymentProperties.TARGET_PROPERTY_KEY)) {
+			return createSpace(request.getProperties().get(DeploymentProperties.TARGET_PROPERTY_KEY))
+				.then(
+					operationsUtils.getOperations(request.getProperties())
+						.flatMap(cfOperations -> cfOperations.services()
+							.createServiceKey(createServiceKeyRequest)
+							.then(Mono.just(request.getServiceKeyName()))))
+				.then(
+					operationsUtils.getOperations(request.getProperties())
+						.flatMap(cfOperations -> cfOperations.services()
+							.getServiceKey(getServiceKeyRequest)
+						)
+				).map(serviceKey -> CreateServiceKeyResponse.builder()
+					.name(request.getServiceKeyName())
+					.credentials(serviceKey.getCredentials())
+					.build()
+				);
+		}
+		else {
+			return operations.services()
+				.createServiceKey(createServiceKeyRequest)
+				.then(operations.services().
+					getServiceKey(getServiceKeyRequest))
+				.map(serviceKey -> CreateServiceKeyResponse.builder()
+					.name(request.getServiceKeyName())
+					.credentials(serviceKey.getCredentials())
+					.build()
+				);
+		}
+
+	}
+
+	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
 		org.cloudfoundry.operations.services.CreateServiceInstanceRequest createServiceInstanceRequest =
 			org.cloudfoundry.operations.services.CreateServiceInstanceRequest
@@ -1047,20 +1103,87 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 				.name(request.getServiceInstanceName())
 				.build());
 
+		Mono<Void> createInstance;
 		if (request.getProperties().containsKey(DeploymentProperties.TARGET_PROPERTY_KEY)) {
-			return createSpace(request.getProperties().get(DeploymentProperties.TARGET_PROPERTY_KEY))
-				.then(
-					operationsUtils.getOperations(request.getProperties())
-						.flatMap(cfOperations -> cfOperations.services()
-							.createInstance(createServiceInstanceRequest)
-							.then(createServiceInstanceResponseMono)));
+			Mono<String> space = createSpace(request.getProperties().get(DeploymentProperties.TARGET_PROPERTY_KEY));
+			createInstance = space.then(
+				operationsUtils.getOperations(request.getProperties())
+					.flatMap(cfOperations -> cfOperations.services()
+						.createInstance(createServiceInstanceRequest)));
 		}
 		else {
-			return operations
+			createInstance = operations
 				.services()
-				.createInstance(createServiceInstanceRequest)
-				.then(createServiceInstanceResponseMono);
+				.createInstance(createServiceInstanceRequest);
 		}
+
+		//Return early if no meta-data need to be set. This preserves existings tests that lack mocks for supporting
+		//assignment of metadata
+		Map<String, String> annotations = request.getAnnotations();
+		Map<String, String> labels = request.getLabels();
+		if (ObjectUtils.isEmpty(annotations) && ObjectUtils.isEmpty(labels)) {
+			return createInstance.then(createServiceInstanceResponseMono);
+		}
+
+
+		Map<String, String> properties = request.getProperties();
+		String serviceInstanceName = request.getServiceInstanceName();
+		Mono<ServiceInstance> lookUpServiceFromGuid = lookUpServiceGuidFromName(properties, serviceInstanceName);
+		Mono<org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceResponse> updateMetadata =
+			updateMetadata(lookUpServiceFromGuid, annotations, labels);
+
+		LOG.debug("Assigning metadata to service instance with name={} annotations={} + " +
+				"backing_service_instance_guid " +
+				"and labels={}", serviceInstanceName,
+			request.getAnnotations(), request.getLabels());
+
+		return createInstance
+			.doOnError(e -> {
+					LOG.error(
+						"Unable to create service instance. Will try to update metadata to failed service instance, " +
+							"caught:" + e);
+					lookUpServiceFromGuid
+						.then(updateMetadata)
+						.doOnError(t -> LOG.error("Unable to update metadata following failed CSI, caught: " + t))
+						.subscribe();
+				}
+			)
+			.then(lookUpServiceFromGuid)
+			.then(updateMetadata)
+			.then(createServiceInstanceResponseMono);
+	}
+
+	Mono<org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceResponse> updateMetadata(
+		Mono<ServiceInstance> lookUpServiceFromGuid,
+		Map<String, String> annotations,
+		Map<String, String> labels) {
+
+		return lookUpServiceFromGuid.map(serviceInstance -> org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceRequest.builder()
+			.serviceInstanceId(serviceInstance.getId())
+			.metadata(Metadata.builder()
+				.annotations(annotations)
+				.labels(labels)
+				.label("backing_service_instance_guid", serviceInstance.getId()) //Ideally should be assigned
+				// within AbstractBackingServicesMetadataTransformationService, but this would create circular
+				//project dependency
+				.build())
+			.build())
+			.flatMap(client.serviceInstancesV3()::update);
+	}
+
+	Mono<ServiceInstance> lookUpServiceGuidFromName(Map<String, String> properties, String serviceInstanceName) {
+		//Could be optimized: currently the code is looking up way too much information:
+		//the service instance, its bindings, ...
+		//This makes extra unneeed CCAPI requests which slow down provisionning
+		//Instead, the lower level api call should be used to lookup the service by name:
+		//1- lookup space by name as specified in properties target
+		//2- use /v2/spaces/d929411b-5eaa-46a9-a1f5-5d9d6fb37843/service_instances?q=name%3Agberche
+		//&return_user_provided_service_instances=false endpoint
+		return operationsUtils.getOperations(properties)
+			.flatMap(cfOperations -> cfOperations.services()
+				.getInstance(org.cloudfoundry.operations.services.GetServiceInstanceRequest.builder()
+					.name(serviceInstanceName)
+					.build()));
 	}
 
 	@Override
@@ -1071,21 +1194,39 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 	}
 
 	@Override
+	public Mono<DeleteServiceKeyResponse> deleteServiceKey(DeleteServiceKeyRequest request) {
+		String serviceInstanceName = request.getServiceInstanceName();
+		String serviceKeyName = request.getServiceKeyName();
+		Map<String, String> deploymentProperties = request.getProperties();
+
+		Mono<Void> requestDeleteServiceKey;
+		requestDeleteServiceKey = operationsUtils.getOperations(deploymentProperties)
+			.flatMap(cfOperations -> deleteServiceKey(serviceInstanceName, serviceKeyName, cfOperations));
+
+		return requestDeleteServiceKey
+			.doOnSuccess(v -> LOG.info("Successfully deleted service key {} from service instance {}", serviceKeyName, serviceInstanceName))
+			.doOnError(logError(String.format("Failed to delete service key %s from service instance %s", serviceKeyName, serviceInstanceName)))
+			.thenReturn(DeleteServiceKeyResponse.builder()
+				.name(serviceInstanceName)
+				.build());
+	}
+
+	@Override
 	public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
 		String serviceInstanceName = request.getServiceInstanceName();
 		Map<String, String> deploymentProperties = request.getProperties();
 
-		Mono<Void> requestDeleteServiceInstance;
-		if (deploymentProperties.containsKey(DeploymentProperties.TARGET_PROPERTY_KEY)) {
-			String space = deploymentProperties.get(DeploymentProperties.TARGET_PROPERTY_KEY);
-			requestDeleteServiceInstance = operationsUtils.getOperations(deploymentProperties)
-				.flatMap(cfOperations -> unbindServiceInstance(serviceInstanceName, cfOperations)
-					.then(deleteServiceInstance(serviceInstanceName, cfOperations, deploymentProperties)))
-				.then(deleteSpace(space));
-		}
-		else {
-			requestDeleteServiceInstance = unbindServiceInstance(serviceInstanceName, operations)
-				.then(deleteServiceInstance(serviceInstanceName, operations, deploymentProperties));
+		boolean deleteTargetSpace =
+			! Boolean.parseBoolean(deploymentProperties.getOrDefault(DeploymentProperties.KEEP_TARGET_ON_DELETE_PROPERTY_KEY, "false"));
+		String targetSpace = deploymentProperties.get(DeploymentProperties.TARGET_PROPERTY_KEY);
+
+		Mono<Void> requestDeleteServiceInstance = operationsUtils.getOperations(deploymentProperties)
+			.flatMap(cfOperations -> unbindServiceInstance(serviceInstanceName, cfOperations)
+				.then(deleteServiceInstance(serviceInstanceName, cfOperations, deploymentProperties)));
+
+		if (targetSpace != null && deleteTargetSpace) {
+			requestDeleteServiceInstance = requestDeleteServiceInstance
+				.then(deleteSpace(targetSpace));
 		}
 
 		return requestDeleteServiceInstance
@@ -1094,6 +1235,18 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 			.thenReturn(DeleteServiceInstanceResponse.builder()
 				.name(serviceInstanceName)
 				.build());
+	}
+
+	private Mono<Void> deleteServiceKey(String serviceInstanceName, String serviceKeyName, CloudFoundryOperations cloudFoundryOperations) {
+		return cloudFoundryOperations.services().deleteServiceKey(
+			org.cloudfoundry.operations.services.DeleteServiceKeyRequest
+				.builder()
+				.serviceInstanceName(serviceInstanceName)
+				.serviceKeyName(serviceKeyName)
+				.build())
+			.doOnError(exception -> LOG.debug("Error deleting service key {} from instance {} with error '{}'",
+				serviceKeyName, serviceInstanceName, exception.getMessage()))
+			.onErrorResume(e -> Mono.empty());
 	}
 
 	private Mono<Void> deleteServiceInstance(String serviceInstanceName,
@@ -1163,18 +1316,16 @@ public class CloudFoundryAppDeployer implements AppDeployer, ResourceLoaderAware
 
 	private Mono<UpdateServiceInstanceResponse> updateServiceInstanceIfNecessary(UpdateServiceInstanceRequest request,
 		CloudFoundryOperations cloudFoundryOperations) {
-		// service instances can be updated with a change to the plan, name, or parameters;
-		// of these only parameter changes are supported, so don't update if the
-		// backing service instance has no parameters
-		if (request.getParameters() == null || request.getParameters().isEmpty()) {
-			return Mono.empty();
-		}
+		// service instances can be updated with a change to the plan, name, or parameters
+		// or maintenance info
+		// No easy way to filter out some unnecessary update requests
 
 		final String serviceInstanceName = request.getServiceInstanceName();
 
 		return cloudFoundryOperations.services().updateInstance(
 			org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
 				.serviceInstanceName(serviceInstanceName)
+				.planName(request.getPlan())
 				.completionTimeout(apiPollingTimeout(request.getProperties()))
 				.parameters(request.getParameters())
 				.build())

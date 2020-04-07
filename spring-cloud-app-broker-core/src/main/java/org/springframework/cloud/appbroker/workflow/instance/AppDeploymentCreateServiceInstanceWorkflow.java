@@ -27,6 +27,8 @@ import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.appbroker.extensions.credentials.CredentialProviderService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceNoOp;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceWorkflow;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
@@ -49,6 +51,8 @@ public class AppDeploymentCreateServiceInstanceWorkflow
 
 	private final BackingServicesParametersTransformationService servicesParametersTransformationService;
 
+	private final CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService;
+
 	private final CredentialProviderService credentialProviderService;
 
 	private final TargetService targetService;
@@ -59,7 +63,8 @@ public class AppDeploymentCreateServiceInstanceWorkflow
 		BackingApplicationsParametersTransformationService appsParametersTransformationService,
 		BackingServicesParametersTransformationService servicesParametersTransformationService,
 		CredentialProviderService credentialProviderService,
-		TargetService targetService) {
+		TargetService targetService,
+		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService) {
 		super(brokeredServices);
 		this.deploymentService = deploymentService;
 		this.backingServicesProvisionService = backingServicesProvisionService;
@@ -67,6 +72,8 @@ public class AppDeploymentCreateServiceInstanceWorkflow
 		this.servicesParametersTransformationService = servicesParametersTransformationService;
 		this.credentialProviderService = credentialProviderService;
 		this.targetService = targetService;
+		this.createBackingServicesMetadataTransformationService =
+			createBackingServicesMetadataTransformationService;
 	}
 
 	@Override
@@ -75,6 +82,7 @@ public class AppDeploymentCreateServiceInstanceWorkflow
 			.thenMany(deployBackingApplications(request))
 			.then();
 	}
+
 
 	private Flux<String> createBackingServices(CreateServiceInstanceRequest request) {
 		return getBackingServicesForService(request.getServiceDefinition(), request.getPlan())
@@ -85,6 +93,7 @@ public class AppDeploymentCreateServiceInstanceWorkflow
 			.flatMap(backingServices ->
 				servicesParametersTransformationService.transformParameters(backingServices,
 					request.getParameters()))
+			.flatMap(backingServices1 -> createBackingServicesMetadataTransformationService.transformMetadata(backingServices1, request))
 			.flatMapMany(backingServicesProvisionService::createServiceInstance)
 			.doOnRequest(l -> log.debug("Creating backing services for {}/{}",
 				request.getServiceDefinition().getName(), request.getPlan().getName()))

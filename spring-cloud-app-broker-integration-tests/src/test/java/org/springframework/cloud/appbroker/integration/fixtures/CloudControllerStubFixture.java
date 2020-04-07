@@ -31,16 +31,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.patch;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.serverError;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 
 @TestComponent
 public class CloudControllerStubFixture extends WiremockStubFixture {
 
-	private static final String TEST_SPACE_GUID = "TEST-SPACE-GUID";
-
+	protected static final String TEST_SPACE_GUID = "TEST-SPACE-GUID";
 	private static final String TEST_ORG_GUID = "TEST-ORG-GUID";
 
 	private static final String TEST_QUOTA_DEFINITION_GUID = "TEST-QUOTA-DEFINITION-GUID";
@@ -525,6 +526,13 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 			.willReturn(ok()));
 	}
 
+	public void stubCreateServiceInstanceFailure(String serviceInstanceName) {
+		stubFor(post(urlPathEqualTo("/v2/service_instances"))
+			.withQueryParam("accepts_incomplete", equalTo("true"))
+			.withRequestBody(matchingJsonPath("$.[?(@.name == '" + serviceInstanceName + "')]"))
+			.willReturn(serverError()));
+	}
+
 	public void stubCreateServiceInstanceWithParameters(String serviceInstanceName, Map<String, Object> params) {
 		stubFor(post(urlPathEqualTo("/v2/service_instances"))
 			.withQueryParam("accepts_incomplete", equalTo("true"))
@@ -539,6 +547,49 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 			.withRequestBody(matchingJsonPath("$.[?(@.parameters == " + new JSONObject(params) + ")]"))
 			.willReturn(ok()));
 	}
+
+	public void stubUpdateServiceInstanceMetadata(String serviceInstanceName,
+		Map<String, Object> labels, Map<String, Object> annotations) {
+		stubFor(patch(urlPathEqualTo("/v3/service_instances/" + serviceInstanceGuid(serviceInstanceName)))
+			.withRequestBody(
+				matchingJsonPath("$.[?(@.metadata.labels == " + new JSONObject(labels) + ")]")
+			)
+			.withRequestBody(matchingJsonPath("$.[?(@.metadata.annotations == " + new JSONObject(annotations) + ")]"))
+			.willReturn(ok()));
+	}
+
+	public void stubCreateServiceKey(String serviceInstanceName, String serviceKeyId, Map<String, Object> params) {
+		stubFor(post(urlPathEqualTo("/v2/service_keys"))
+			.withRequestBody(matchingJsonPath("$.[?(@.service_instance_guid == '" + serviceInstanceGuid(serviceInstanceName) +
+				"')]"))
+			.withRequestBody(matchingJsonPath("$.[?(@.name == '" + serviceKeyId + "')]"))
+			.withRequestBody(matchingJsonPath("$.[?(@.parameters == " + new JSONObject(params) + ")]"))
+			.willReturn(ok()));
+	}
+
+	public void stubDeleteServiceKey(String serviceInstanceName, String serviceKeyName) {
+			String serviceInstanceGuid = serviceInstanceGuid(serviceInstanceName);
+			String serviceKeyGuid = serviceKeyGuid(serviceInstanceName, serviceKeyName);
+
+			stubFor(delete(urlPathEqualTo("/v2/service_keys/" + serviceKeyGuid))
+			.willReturn(noContent()));
+	}
+
+	public void stubListServiceKey(String serviceInstanceName, String serviceKeyName) {
+		String serviceInstanceGuid = serviceInstanceGuid(serviceInstanceName);
+		String serviceKeyGuid = serviceKeyGuid(serviceInstanceName, serviceKeyName);
+
+		stubFor(get(urlPathEqualTo("/v2/service_instances/" + serviceInstanceGuid + "/service_keys"))
+			.withQueryParam("q", equalTo("name:" + serviceKeyName))
+			.withQueryParam("page", equalTo("1"))
+			.willReturn(ok()
+				.withBody(cc("list-service-keys",
+					replace("@service-key-name", serviceKeyName),
+					replace("@guid", serviceKeyGuid),
+					replace("@service-instance-guid", serviceInstanceGuid)))));
+	}
+
+
 
 	public void stubDeleteServiceInstance(String serviceInstanceName) {
 		String serviceInstanceGuid = serviceInstanceGuid(serviceInstanceName);
@@ -568,6 +619,17 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 			.withQueryParam("async", equalTo("true"))
 			.willReturn(noContent()));
 	}
+
+	public void stubListServiceBindingsWithNoResult(String serviceInstanceName) {
+		String serviceInstanceGuid = serviceInstanceGuid(serviceInstanceName);
+
+		stubFor(get(urlPathEqualTo("/v2/service_bindings"))
+			.withQueryParam("q", equalTo("service_instance_guid:" + serviceInstanceGuid))
+			.withQueryParam("page", equalTo("1"))
+			.willReturn(ok()
+				.withBody(cc("empty-query-results"))));
+	}
+
 
 	public void stubServiceBindingExists(String appName, String serviceInstanceName) {
 		String serviceInstanceGuid = serviceInstanceGuid(serviceInstanceName);
@@ -633,7 +695,7 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 					replace("@name", spaceName)))));
 	}
 
-	private String cc(String fileRoot, StringReplacementPair... replacements) {
+	protected String cc(String fileRoot, StringReplacementPair... replacements) {
 		String response = readResponseFromFile(fileRoot, "cloudcontroller");
 		for (StringReplacementPair pair : replacements) {
 			response = response.replaceAll(pair.getRegex(), pair.getReplacement());
@@ -667,6 +729,10 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 
 	private static String serviceBindingGuid(String appName, String serviceInstanceName) {
 		return appGuid(appName) + "-" + serviceInstanceGuid(serviceInstanceName);
+	}
+
+	private String serviceKeyGuid(String serviceInstanceName, String keyName) {
+		return serviceInstanceGuid(serviceInstanceName)  + "-" + keyName + "-GUID";
 	}
 
 	private static String packageGuid(String appName) {

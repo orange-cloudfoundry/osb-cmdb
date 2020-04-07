@@ -32,17 +32,23 @@ public class CreateServiceInstanceRequest {
 	private final Map<String, Object> parameters;
 
 	private final Map<String, String> properties;
+	private final Map<String, String> annotations;
+	private final Map<String, String> labels;
 
 	protected CreateServiceInstanceRequest(String serviceInstanceName,
 		String name,
 		String plan,
 		Map<String, Object> parameters,
-		Map<String, String> properties) {
+		Map<String, String> properties,
+		Map<String, String> annotations,
+		Map<String, String> labels) {
 		this.serviceInstanceName = serviceInstanceName;
 		this.name = name;
 		this.plan = plan;
 		this.parameters = parameters;
 		this.properties = properties;
+		this.annotations = annotations;
+		this.labels = labels;
 	}
 
 	public static CreateServiceInstanceRequestBuilder builder() {
@@ -69,6 +75,14 @@ public class CreateServiceInstanceRequest {
 		return properties;
 	}
 
+	public Map<String, String> getLabels() {
+		return labels;
+	}
+
+	public Map<String, String> getAnnotations() {
+		return annotations;
+	}
+
 	public static final class CreateServiceInstanceRequestBuilder {
 
 		private String serviceInstanceName;
@@ -80,6 +94,8 @@ public class CreateServiceInstanceRequest {
 		private final Map<String, Object> parameters = new HashMap<>();
 
 		private final Map<String, String> properties = new HashMap<>();
+		private final Map<String, String> annotations = new HashMap<>();
+		private final Map<String, String> labels = new HashMap<>();
 
 		private CreateServiceInstanceRequestBuilder() {
 		}
@@ -120,8 +136,22 @@ public class CreateServiceInstanceRequest {
 			return this;
 		}
 
+		public CreateServiceInstanceRequestBuilder annotations(Map<String, String> annotations) {
+			if (!CollectionUtils.isEmpty(annotations)) {
+				this.annotations.putAll(annotations);
+			}
+			return this;
+		}
+
+		public CreateServiceInstanceRequestBuilder labels(Map<String, String> labels) {
+			if (!CollectionUtils.isEmpty(labels)) {
+				this.labels.putAll(labels);
+			}
+			return this;
+		}
+
 		public CreateServiceInstanceRequest build() {
-			return new CreateServiceInstanceRequest(serviceInstanceName, name, plan, parameters, properties);
+			return new CreateServiceInstanceRequest(serviceInstanceName, name, plan, parameters, properties, annotations, labels);
 		}
 
 	}

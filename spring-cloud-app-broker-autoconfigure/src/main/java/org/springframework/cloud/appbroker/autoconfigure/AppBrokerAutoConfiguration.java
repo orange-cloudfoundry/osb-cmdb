@@ -43,12 +43,16 @@ import org.springframework.cloud.appbroker.extensions.credentials.SpringSecurity
 import org.springframework.cloud.appbroker.extensions.credentials.SpringSecurityOAuth2CredentialProviderFactory;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceNoOp;
 import org.springframework.cloud.appbroker.extensions.parameters.EnvironmentMappingParametersTransformerFactory;
 import org.springframework.cloud.appbroker.extensions.parameters.ParameterMappingParametersTransformerFactory;
 import org.springframework.cloud.appbroker.extensions.parameters.ParametersTransformerFactory;
 import org.springframework.cloud.appbroker.extensions.parameters.PropertyMappingParametersTransformerFactory;
 import org.springframework.cloud.appbroker.extensions.targets.ServiceInstanceGuidSuffix;
+import org.springframework.cloud.appbroker.extensions.targets.SpacePerServiceDefinition;
 import org.springframework.cloud.appbroker.extensions.targets.SpacePerServiceInstance;
+import org.springframework.cloud.appbroker.extensions.targets.SpacePerServicePlan;
 import org.springframework.cloud.appbroker.extensions.targets.TargetFactory;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.manager.AppManager;
@@ -312,6 +316,14 @@ public class AppBrokerAutoConfiguration {
 		return new TargetService(targets);
 	}
 
+	@Bean
+	public SpacePerServicePlan spacePerServicePlan() { return new SpacePerServicePlan();}
+
+	@Bean
+	public SpacePerServiceDefinition spacePerServiceDefinition() { return new SpacePerServiceDefinition();}
+
+
+
 	/**
 	 * Provide a {@link BackingServicesProvisionService} bean
 	 *
@@ -323,6 +335,13 @@ public class AppBrokerAutoConfiguration {
 	public BackingServicesProvisionService backingServicesProvisionService(DeployerClient deployerClient) {
 		return new DefaultBackingServicesProvisionService(deployerClient);
 	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	public CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService() {
+		return new CreateBackingServicesMetadataTransformationServiceNoOp();
+	}
+
 
 	/**
 	 * Provide a {@link CreateServiceInstanceWorkflow} bean
@@ -342,7 +361,8 @@ public class AppBrokerAutoConfiguration {
 		BackingApplicationsParametersTransformationService appsParametersTransformationService,
 		BackingServicesParametersTransformationService servicesParametersTransformationService,
 		CredentialProviderService credentialProviderService, TargetService targetService,
-		BackingServicesProvisionService backingServicesProvisionService) {
+		BackingServicesProvisionService backingServicesProvisionService,
+		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService) {
 		return new AppDeploymentCreateServiceInstanceWorkflow(
 			brokeredServices,
 			backingAppDeploymentService,
@@ -350,7 +370,8 @@ public class AppBrokerAutoConfiguration {
 			appsParametersTransformationService,
 			servicesParametersTransformationService,
 			credentialProviderService,
-			targetService);
+			targetService,
+			createBackingServicesMetadataTransformationService);
 	}
 
 	/**

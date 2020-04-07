@@ -183,8 +183,8 @@ configure(subprojects - [project(":spring-cloud-starter-app-broker"),
 		"-Xlint:rawtypes",
 		"-Xlint:deprecation",
 		"-Xlint:unchecked",
-		"-Xlint:-options",
-		"-Werror"
+		"-Xlint:-options"
+//		"-Werror"  //Don't fail on warnings in osb-cmdb https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javac.html
 	]
 
 	jar {
@@ -262,6 +262,7 @@ configure(rootProject) {
 		})
 
 		exclude 'org/springframework/cloud/appbroker/integration/**',
+			'org/springframework/cloud/appbroker/osb-cmdb/**',
 			'org/springframework/cloud/appbroker/acceptance/**'
 		maxMemory = "1024m"
 		destinationDir = new File(buildDir, "api")
@@ -317,7 +318,7 @@ task codeCoverageReport(type: JacocoReport) {
 	executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
 
 	subprojects.each { subproject ->
-		if (subproject.name.endsWith("-integration-tests") || subproject.name.endsWith("-acceptance-tests")) {
+		if (subproject.name.endsWith("-integration-tests") || subproject.name.endsWith("-acceptance-tests")|| subproject.name.endsWith("osb-cmdb")) {
 			// Work-around for issue with jacoco and multiple-release jar files
 			// (like Log4J 2.10 and above)
 			// see https://github.com/jacoco/jacoco/issues/407

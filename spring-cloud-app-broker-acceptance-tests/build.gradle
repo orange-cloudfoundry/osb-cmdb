@@ -54,6 +54,7 @@ bootJar {
 }
 
 test {
+
 	maxParallelForks = Runtime.runtime.availableProcessors() - 1 ?: 1
 
 	// Only run the tests if acceptanceTests is specified
@@ -63,4 +64,20 @@ test {
 	systemProperty "tests.broker-app-path", "${buildDir}/libs/spring-cloud-app-broker-acceptance-tests.jar"
 	// Pass relevant java properties to the test task
 	systemProperties << System.properties.findAll { it.key.startsWith("spring.") }
+
+	//Propagate tags from gradle command line to fine tune test selection
+	//See https://javabydeveloper.com/run-tag-specific-junit-5-tests-from-gradle-command/
+	String itags = System.getProperty("includeTags")
+	String etags = System.getProperty("excludeTags")
+
+	useJUnitPlatform{
+		if (itags !=null) {
+			includeTags  itags
+		}
+		if (etags != null) {
+			excludeTags  etags
+		}
+	}
+
+
 }

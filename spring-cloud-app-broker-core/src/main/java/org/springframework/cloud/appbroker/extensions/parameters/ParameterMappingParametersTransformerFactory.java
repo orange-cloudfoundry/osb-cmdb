@@ -33,15 +33,17 @@ public class ParameterMappingParametersTransformerFactory extends
 
 	@Override
 	public ParametersTransformer<BackingService> create(Config config) {
-		return (backingType, parameters) -> transform(backingType, parameters, config.getIncludes());
+		return (backingType, parameters) -> transform(backingType, parameters, config.getIncludes(),
+			config.isIncludeAll());
 	}
 
 	private Mono<BackingService> transform(BackingService backingService,
 		Map<String, Object> parameters,
-		List<String> include) {
+		List<String> include,
+		boolean includeAll) {
 		if (parameters != null) {
 			parameters.keySet().stream()
-				.filter(include::contains)
+				.filter(o -> includeAll || include.contains(o))
 				.forEach(key -> backingService.addParameter(key, parameters.get(key)));
 		}
 
@@ -51,7 +53,9 @@ public class ParameterMappingParametersTransformerFactory extends
 	@SuppressWarnings("WeakerAccess")
 	public static class Config {
 
-		private String include;
+		private String include = "";
+
+		private boolean includeAll = false;
 
 		public List<String> getIncludes() {
 			return Arrays.asList(include.split(","));
@@ -60,6 +64,15 @@ public class ParameterMappingParametersTransformerFactory extends
 		public void setInclude(String include) {
 			this.include = include;
 		}
+
+		public void setIncludeAll(boolean includeAll) {
+			this.includeAll = includeAll;
+		}
+
+		public boolean isIncludeAll() {
+			return includeAll;
+		}
+
 
 	}
 
