@@ -66,9 +66,28 @@ test {
 //	onlyIf {
 //		project.hasProperty("acceptanceTests")
 //	}
+
+	//Propagate tags from gradle command line to fine tune test selection
+	//See https://javabydeveloper.com/run-tag-specific-junit-5-tests-from-gradle-command/
+	String itags = System.getProperty("includeTags")
+	String etags = System.getProperty("excludeTags")
+
+	useJUnitPlatform{
+		if (itags !=null) {
+			includeTags  itags
+		}
+		if (etags != null) {
+			excludeTags  etags
+		}
+	}
+
+
 	systemProperty "tests.broker-app-path", "${buildDir}/libs/osb-cmdb.jar"
 	// Pass relevant java properties to the test task
-	systemProperties << System.properties.findAll { it.key.startsWith("spring.") }
+	systemProperties << System.properties.findAll {
+		//
+		it.key.startsWith("spring.") || it.key.startsWith("osbcmdb.")|| it.key.startsWith("debug")
+	}
 }
 
 gitProperties {
