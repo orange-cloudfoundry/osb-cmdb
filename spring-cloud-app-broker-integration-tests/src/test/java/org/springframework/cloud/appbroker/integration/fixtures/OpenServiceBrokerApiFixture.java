@@ -86,6 +86,32 @@ public class OpenServiceBrokerApiFixture implements ApplicationListener<Applicat
 				"}\n");
 	}
 
+	public RequestSpecification serviceInstanceRequestWithCfOsbContext(String context) {
+		return serviceBrokerSpecification()
+			.body("{" +
+				"\"service_id\": \"" + serviceDefinitionId + "\"," +
+				"\"plan_id\": \"" + planId + "\"," +
+				"\"organization_guid\": \"" + ORG_ID + "\"," +
+				"\"space_guid\": \"" + SPACE_ID + "\"," +
+				context +
+				"}\n")
+			.header("X-Broker-API-Originating-Identity", "cloudfoundry " +
+				"eyANCiAgInVzZXJfaWQiOiAiNjgzZWE3NDgtMzA5Mi00ZmY0LWI2NTYtMzljYWNjNGQ1MzYwIg0KfQ==");
+	}
+
+	public RequestSpecification serviceInstanceRequestWithK8sOsbContext(String context) {
+		return serviceBrokerSpecification()
+			.body("{" +
+				"\"service_id\": \"" + serviceDefinitionId + "\"," +
+				"\"plan_id\": \"" + planId + "\"," +
+				"\"organization_guid\": \"" + ORG_ID + "\"," +
+				"\"space_guid\": \"" + SPACE_ID + "\"," +
+				context +
+				"}\n")
+			.header("X-Broker-API-Originating-Identity" , "kubernetes " +
+				"ew0KICAidXNlcm5hbWUiOiAiZHVrZSIsDQogICJ1aWQiOiAiYzJkZGUyNDItNWNlNC0xMWU3LTk4OGMtMDAwYzI5NDZmMTRmIiwNCiAgImdyb3VwcyI6IFsgImFkbWluIiwgImRldiIgXSwNCiAgImV4dHJhIjogew0KICAgICJteWRhdGEiOiBbICJkYXRhMSIsICJkYXRhMyIgXQ0KICB9DQp9");
+	}
+
 	public RequestSpecification serviceInstanceRequest(Map<String, Object> params) {
 		String stringParams = new JSONObject(params).toString();
 		return serviceBrokerSpecification()
@@ -109,6 +135,21 @@ public class OpenServiceBrokerApiFixture implements ApplicationListener<Applicat
 				"}");
 	}
 
+	public RequestSpecification serviceAppBindingRequest(Map<String, Object> params) {
+		String stringParams = new JSONObject(params).toString();
+		return serviceBrokerSpecification()
+			.body("{" +
+				"\"service_id\": \"" + serviceDefinitionId + "\"," +
+				"\"plan_id\": \"" + planId + "\"," +
+				"\"bind_resource\": {" +
+					"\"app_guid\": \"" + APP_ID + "\"" +
+				"}," +
+				"\"parameters\": " + stringParams +
+				"}");
+	}
+
+	//The default binding resource format used by CF, albeit yet undocumented,
+	// see https://github.com/openservicebrokerapi/servicebroker/pull/704
 	public RequestSpecification serviceKeyRequest() {
 		return serviceBrokerSpecification()
 			.body("{" +
@@ -120,7 +161,28 @@ public class OpenServiceBrokerApiFixture implements ApplicationListener<Applicat
 				"}");
 	}
 
-	private RequestSpecification serviceBrokerSpecification() {
+	//A OSB-API compliant request (bind resource is optional per https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#bind-resource-object
+	// "bind_resource and its fields are OPTIONAL"
+	public RequestSpecification serviceBindingRequestWithoutResource() {
+		return serviceBrokerSpecification()
+			.body("{" +
+				"\"service_id\": \"" + serviceDefinitionId + "\"," +
+				"\"plan_id\": \"" + planId + "\""+
+				"}");
+	}
+
+	//A OSB-API compliant request (bind resource is optional per https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#bind-resource-object
+	// "bind_resource and its fields are OPTIONAL"
+	public RequestSpecification serviceBindingRequestWithEmptyResource() {
+		return serviceBrokerSpecification()
+			.body("{" +
+				"\"service_id\": \"" + serviceDefinitionId + "\"," +
+				"\"plan_id\": \"" + planId + "\","+
+				"\"bind_resource\": {}" +
+				"}");
+	}
+
+	public RequestSpecification serviceBrokerSpecification() {
 		return with()
 			.baseUri("http://localhost:" + port + "/v2")
 			.accept(ContentType.JSON)

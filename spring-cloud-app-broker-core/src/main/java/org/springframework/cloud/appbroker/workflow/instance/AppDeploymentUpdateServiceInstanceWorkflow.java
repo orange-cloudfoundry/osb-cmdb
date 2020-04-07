@@ -36,6 +36,8 @@ import org.springframework.cloud.appbroker.deployer.BackingServicesProvisionServ
 import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationService;
+import org.springframework.cloud.appbroker.extensions.parameters.UpdateBackingServicesMetadataTransformationService;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.manager.BackingAppManagementService;
 import org.springframework.cloud.appbroker.service.UpdateServiceInstanceWorkflow;
@@ -59,6 +61,8 @@ public class AppDeploymentUpdateServiceInstanceWorkflow extends AppDeploymentIns
 	private final BackingApplicationsParametersTransformationService appsParametersTransformationService;
 
 	private final BackingServicesParametersTransformationService servicesParametersTransformationService;
+
+	private final UpdateBackingServicesMetadataTransformationService updateBackingServicesMetadataTransformationService = new UpdateBackingServicesMetadataTransformationService();
 
 	private final TargetService targetService;
 
@@ -94,33 +98,8 @@ public class AppDeploymentUpdateServiceInstanceWorkflow extends AppDeploymentIns
 			.flatMap(backingServices ->
 				servicesParametersTransformationService.transformParameters(backingServices,
 					request.getParameters()))
-			.flatMap(backingServices -> Flux.fromIterable(backingServices)
-				.collectMap(BackingService::getServiceInstanceName, Function.identity()))
-			.zipWith(getExistingBackingServiceNameMap(request))
-			.flatMapMany(newAndExisting -> {
-				Map<String, BackingService> newServices = newAndExisting.getT1();
-				Map<String, BackingService> existingServices = newAndExisting.getT2();
-
-				Set<String> serviceNamesToUpdate = intersection(newServices.keySet(), existingServices.keySet());
-				Set<String> serviceNamesToCreate = subtract(newServices.keySet(), existingServices.keySet());
-				Set<String> serviceNamesToDelete = subtract(existingServices.keySet(), newServices.keySet());
-
-				List<BackingService> servicesToUpdate = servicesInNameList(newServices, serviceNamesToUpdate);
-				List<BackingService> servicesToCreate = servicesInNameList(newServices, serviceNamesToCreate);
-				List<BackingService> servicesToDelete = servicesInNameList(existingServices,
-					serviceNamesToDelete);
-
-				log.debug("Backing services to update: {}", serviceNamesToUpdate);
-				log.debug("Backing services to create: {}", serviceNamesToCreate);
-				log.debug("Backing services to delete: {}", serviceNamesToDelete);
-
-				return Flux.concat(
-					backingServicesProvisionService.updateServiceInstance(servicesToUpdate),
-					backingServicesProvisionService.createServiceInstance(servicesToCreate),
-					backingServicesProvisionService.deleteServiceInstance(servicesToDelete))
-					.parallel()
-					.runOn(Schedulers.parallel());
-			})
+			.flatMap(backingServices1 -> updateBackingServicesMetadataTransformationService.transformMetadata(backingServices1, request))
+			.flatMapMany(backingServicesProvisionService::updateServiceInstance)
 			.doOnRequest(l -> log.debug("Updating backing services for {}/{}",
 				request.getServiceDefinition().getName(), request.getPlan().getName()))
 			.doOnComplete(() -> log.debug("Finished updating backing services for {}/{}",

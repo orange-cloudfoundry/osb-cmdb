@@ -1,0 +1,149 @@
+# application.yml aims at remaining untouched during cf push
+# application-default.yml defined at cf-push may override parts of this default config on a per environment basis
+
+# Spring boot actuator is enabled by default and acces restricted in spring security config
+  management:
+    endpoints:
+      enabled-by-default: false
+      web:
+        exposure:
+          include: "conditions,info,health,httptrace,loggers,metrics,threaddump"
+    endpoint:
+      conditions.enabled: true
+      info.enabled: true
+      health.enabled: true
+      httptrace.enabled: true
+      loggers.enabled: true
+      metrics.enabled: true
+      threaddump.enabled: true
+
+#
+  osbcmdb:
+    dynamic-catalog:
+      enabled: "true" #Turn on dynamic catalog. Catalog and brokered services should be commented out.
+
+    # This only supports unit tests.
+    sample-noop-test-property: "set in application.yml"
+
+#    catalog:
+#      services:
+#        suffix: "-cmdb"
+#        excludeBrokerNamesRegexp: ".*cmdb.*"
+#
+#spring:
+#  cloud:
+#    openservicebroker:
+#      catalog:
+#        services:
+#          - name: p-mysql-cmdb
+#            id: ebca66fd-461d-415b-bba3-5e379d671c88
+#            description: A useful service
+#            bindable: true
+#            plan_updateable: true
+#            tags:
+#              - example
+#            plans:
+#              - name: 10mb
+#                id: p-mysql-cmdb-10mb
+#                description: A standard plan
+#                free: true
+#              - name: 20mb
+#                id: p-mysql-cmdb-20mb
+#                description: A standard plan
+#                free: true
+#          - name: noop-ondemand-cmdb
+#            id: noop-ondemand-cmdb-guid
+#            description: A useful service
+#            bindable: true
+#            plan_updateable: false
+#            tags:
+#              - example
+#            plans:
+#              - name: default
+#                id: noop-ondemand-cmdb-default-plan-guid
+#                description: A standard plan
+#                free: true
+#
+#
+#    appbroker:
+#      services:
+#        - service-name: p-mysql-cmdb
+#          plan-name: 10mb
+#          target:
+#            name: SpacePerServiceDefinition
+#          services:
+#            - service-instance-name: p-mysql
+#              name: p-mysql
+#              plan: 10mb
+#        - service-name: p-mysql-cmdb
+#          plan-name: 20mb
+#          target:
+#            name: SpacePerServiceDefinition
+#          services:
+#            - service-instance-name: p-mysql
+#              name: p-mysql
+#              plan: 20mb
+#        - service-name: noop-ondemand-cmdb
+#          plan-name: default
+#          target:
+#            name: SpacePerServiceDefinition
+#          services:
+#            - service-instance-name: noop-ondemand
+#              name: noop-ondemand
+#              plan: default
+#        #              parameters:
+#        #              param-key: param-value
+#
+#        #          parameters-transformers:
+#        #            - name: ParameterMapping
+#        #              args:
+#        #                - include: count,memory
+#
+#
+#      #        - service-name: example-with-app
+#      #          plan-name: standard
+#      #          apps:
+#      #            - name: example-service-app1
+#      #              path: classpath:app1.jar
+#      #              environment:
+#      #                logging.level.spring.security: DEBUG
+#      #                spring.profiles.active: cloud
+#      #
+#      #              parameters-transformers:
+#      #                - name: EnvironmentMapping
+#      #                  args:
+#      #                    - include: parameter1,parameter2
+#      #                - name: PropertyMapping
+#      #                  args:
+#      #                    - include: count,memory
+#      #
+#      #              services:
+#      #                - service-instance-name: example-db
+#      #                  name: mysql
+#      #                  plan: small
+#      #                  parameters:
+#      #                    param-key: param-value
+#      #          services:
+#      #            - service-instance-name: example-db
+#      #              name: mysql
+#      #              plan: small
+#      #              parameters:
+#      #              param-key: param-value
+#
+#
+##      deployer:
+##        cloudfoundry:
+##          api-host:
+##          api-port: 443
+##          username:
+##          password:
+##          default-org:
+##          default-space:
+##
+##          properties:
+##            memory: 1G
+##            health-check: http
+##            health-check-http-endpoint: /health
+##            health-check-timeout: 180
+#
+#

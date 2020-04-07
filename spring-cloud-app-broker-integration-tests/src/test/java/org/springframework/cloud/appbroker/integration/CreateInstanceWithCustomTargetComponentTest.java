@@ -136,7 +136,7 @@ class CreateInstanceWithCustomTargetComponentTest extends WiremockComponentTest 
 				return this::apply;
 			}
 
-			private ArtifactDetails apply(Map<String, String> properties, String name, String serviceInstanceId) {
+			private ArtifactDetails apply(Map<String, String> properties, String name, String serviceInstanceId, String backingServiceName, String backingServicePlanName) {
 				String space = customSpaceService.retrieveSpaceName();
 				properties.put(DeploymentProperties.TARGET_PROPERTY_KEY, space);
 
