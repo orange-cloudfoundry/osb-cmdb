@@ -27,8 +27,13 @@ buildscript {
 
 description = "Spring Cloud App Broker Integration Tests"
 
-// don't publish the jar for this module
-configurations.archives.artifacts.clear()
+// publish the jar for this module so that projects can use it for their tests
+//configurations.archives.artifacts.clear()
+//See https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/html/#packaging-executable-and-normal
+jar {
+	enabled = true
+}
+
 
 ext {
 	wiremockVersion = "2.25.1"
@@ -40,11 +45,11 @@ dependencies {
 	implementation project(":spring-cloud-starter-app-broker-cloudfoundry")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
-	testImplementation("org.springframework.boot:spring-boot-starter-test") {
+	implementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
-	testImplementation("io.rest-assured:rest-assured")
-	testImplementation("com.github.tomakehurst:wiremock:${wiremockVersion}")
+	implementation("io.rest-assured:rest-assured")
+	implementation("com.github.tomakehurst:wiremock:${wiremockVersion}")
 }
 
 test {
@@ -52,3 +57,4 @@ test {
 	forkEvery = 1
 	maxHeapSize = '1G'
 }
+
