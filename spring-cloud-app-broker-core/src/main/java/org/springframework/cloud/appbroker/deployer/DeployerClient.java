@@ -27,9 +27,12 @@ public class DeployerClient {
 	private final Logger log = Loggers.getLogger(DeployerClient.class);
 
 	private final AppDeployer appDeployer;
+	private final ServiceDeployer serviceDeployer;
 
-	public DeployerClient(AppDeployer appDeployer) {
+	public DeployerClient(AppDeployer appDeployer,
+		ServiceDeployer serviceDeployer) {
 		this.appDeployer = appDeployer;
+		this.serviceDeployer = appDeployer;
 	}
 
 	public Mono<String> deploy(BackingApplication backingApplication, String serviceInstanceId) {
@@ -90,7 +93,7 @@ public class DeployerClient {
 	}
 
 	public Mono<String> createServiceInstance(BackingService backingService) {
-		return appDeployer
+		return serviceDeployer
 			.createServiceInstance(
 				CreateServiceInstanceRequest
 					.builder()
@@ -108,7 +111,7 @@ public class DeployerClient {
 	}
 
 	public Mono<String> updateServiceInstance(BackingService backingService) {
-		return appDeployer
+		return serviceDeployer
 			.updateServiceInstance(
 				UpdateServiceInstanceRequest
 					.builder()
@@ -125,7 +128,7 @@ public class DeployerClient {
 	}
 
 	public Mono<String> deleteServiceInstance(BackingService backingService) {
-		return appDeployer
+		return serviceDeployer
 			.deleteServiceInstance(
 				DeleteServiceInstanceRequest
 					.builder()

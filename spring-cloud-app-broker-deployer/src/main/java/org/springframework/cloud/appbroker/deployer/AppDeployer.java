@@ -18,7 +18,7 @@ package org.springframework.cloud.appbroker.deployer;
 
 import reactor.core.publisher.Mono;
 
-public interface AppDeployer {
+public interface AppDeployer extends ServiceDeployer {
 
 	default Mono<DeployApplicationResponse> deploy(DeployApplicationRequest request) {
 		return Mono.empty();
@@ -36,18 +36,22 @@ public interface AppDeployer {
 		return Mono.empty();
 	}
 
+	@Override
 	default Mono<GetServiceInstanceResponse> getServiceInstance(GetServiceInstanceRequest request) {
 		return Mono.empty();
 	}
 
+	@Override
 	default Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
 		return Mono.empty();
 	}
 
+	@Override
 	default Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
 		return Mono.empty();
 	}
 
+	@Override
 	default Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
 		return Mono.empty();
 	}

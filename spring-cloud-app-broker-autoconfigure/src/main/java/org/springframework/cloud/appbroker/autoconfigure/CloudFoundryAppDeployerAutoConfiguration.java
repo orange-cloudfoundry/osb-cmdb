@@ -42,6 +42,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.appbroker.deployer.AppDeployer;
+import org.springframework.cloud.appbroker.deployer.ServiceDeployer;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryAppDeployer;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryAppManager;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
@@ -100,6 +101,25 @@ public class CloudFoundryAppDeployerAutoConfiguration {
 	 */
 	@Bean
 	public AppDeployer cloudFoundryAppDeployer(CloudFoundryDeploymentProperties deploymentProperties,
+		CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
+		CloudFoundryOperationsUtils operationsUtils, CloudFoundryTargetProperties targetProperties,
+		ResourceLoader resourceLoader) {
+		return new CloudFoundryAppDeployer(deploymentProperties, cloudFoundryOperations, cloudFoundryClient,
+			operationsUtils, targetProperties, resourceLoader);
+	}
+	/**
+	 * Provide a {@link ServiceDeployer} bean
+	 *
+	 * @param deploymentProperties the CloudFoundryDeploymentProperties bean
+	 * @param cloudFoundryOperations the CloudFoundryOperations bean
+	 * @param cloudFoundryClient the CloudFoundryClient bean
+	 * @param operationsUtils the CloudFoundryOperationsUtils bean
+	 * @param targetProperties the CloudFoundryTargetProperties bean
+	 * @param resourceLoader the ResourceLoader bean
+	 * @return the bean
+	 */
+	@Bean
+	public ServiceDeployer cloudFoundryServiceDeployer(CloudFoundryDeploymentProperties deploymentProperties,
 		CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		CloudFoundryOperationsUtils operationsUtils, CloudFoundryTargetProperties targetProperties,
 		ResourceLoader resourceLoader) {
