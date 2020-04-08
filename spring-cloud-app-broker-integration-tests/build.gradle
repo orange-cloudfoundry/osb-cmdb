@@ -25,6 +25,15 @@ buildscript {
 	}
 }
 
+//Inspiration from https://github.com/spring-projects/spring-boot/blob/master/spring-boot-project/spring-boot-test/build.gradle did not help
+//plugins {
+//	id "java-library"
+//    id "org.springframework.boot.conventions"
+//    id "org.springframework.boot.deployed"
+//    id "org.springframework.boot.internal-dependency-management"
+//    id "org.springframework.boot.optional-dependencies"
+//}
+
 description = "Spring Cloud App Broker Integration Tests"
 
 // publish the jar for this module so that projects can use it for their tests
