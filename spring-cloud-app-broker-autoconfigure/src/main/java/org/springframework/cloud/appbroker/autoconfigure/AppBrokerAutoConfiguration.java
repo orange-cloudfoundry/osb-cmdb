@@ -35,6 +35,7 @@ import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.appbroker.deployer.DefaultBackingAppDeploymentService;
 import org.springframework.cloud.appbroker.deployer.DefaultBackingServicesProvisionService;
 import org.springframework.cloud.appbroker.deployer.DeployerClient;
+import org.springframework.cloud.appbroker.deployer.ServiceDeployer;
 import org.springframework.cloud.appbroker.extensions.credentials.CredentialGenerator;
 import org.springframework.cloud.appbroker.extensions.credentials.CredentialProviderFactory;
 import org.springframework.cloud.appbroker.extensions.credentials.CredentialProviderService;
@@ -95,8 +96,8 @@ public class AppBrokerAutoConfiguration {
 	 * @return the bean
 	 */
 	@Bean
-	public DeployerClient deployerClient(AppDeployer appDeployer) {
-		return new DeployerClient(appDeployer);
+	public DeployerClient deployerClient(AppDeployer appDeployer, ServiceDeployer serviceDeployer) {
+		return new DeployerClient(appDeployer, serviceDeployer);
 	}
 
 	/**

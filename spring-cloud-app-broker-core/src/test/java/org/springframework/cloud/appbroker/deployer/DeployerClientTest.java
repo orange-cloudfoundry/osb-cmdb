@@ -51,10 +51,12 @@ class DeployerClientTest {
 
 	@Mock
 	private AppDeployer appDeployer;
+	@Mock
+	private ServiceDeployer serviceDeployer;
 
 	@BeforeEach
 	void setUp() {
-		deployerClient = new DeployerClient(appDeployer);
+		deployerClient = new DeployerClient(appDeployer, serviceDeployer);
 	}
 
 	@Test
@@ -194,7 +196,7 @@ class DeployerClientTest {
 
 	@Test
 	void shouldCreateServiceInstance() {
-		given(appDeployer.createServiceInstance(any()))
+		given(serviceDeployer.createServiceInstance(any()))
 			.willReturn(Mono.just(CreateServiceInstanceResponse.builder()
 				.name(SERVICE_INSTANCE_NAME)
 				.build()));
@@ -209,13 +211,13 @@ class DeployerClientTest {
 			.expectNext(SERVICE_INSTANCE_NAME)
 			.verifyComplete();
 
-		then(appDeployer).should().createServiceInstance(argThat(request ->
+		then(serviceDeployer).should().createServiceInstance(argThat(request ->
 			SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName())));
 	}
 
 	@Test
 	void shouldUpdateServiceInstance() {
-		given(appDeployer.updateServiceInstance(any()))
+		given(serviceDeployer.updateServiceInstance(any()))
 			.willReturn(Mono.just(UpdateServiceInstanceResponse.builder()
 				.name(SERVICE_INSTANCE_NAME)
 				.build()));
@@ -230,13 +232,13 @@ class DeployerClientTest {
 			.expectNext(SERVICE_INSTANCE_NAME)
 			.verifyComplete();
 
-		then(appDeployer).should().updateServiceInstance(argThat(request ->
+		then(serviceDeployer).should().updateServiceInstance(argThat(request ->
 			SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName())));
 	}
 
 	@Test
 	void shouldReturnErrorWhenUpdatingServiceInstanceThatDoesNotExist() {
-		given(appDeployer.updateServiceInstance(any()))
+		given(serviceDeployer.updateServiceInstance(any()))
 			.willReturn(Mono.error(new IllegalStateException("service instance does not exist")));
 
 		BackingService service = BackingService.builder()
@@ -249,13 +251,13 @@ class DeployerClientTest {
 			.expectErrorMessage("service instance does not exist")
 			.verify();
 
-		then(appDeployer).should().updateServiceInstance(argThat(request ->
+		then(serviceDeployer).should().updateServiceInstance(argThat(request ->
 			SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName())));
 	}
 
 	@Test
 	void shouldDeleteServiceInstance() {
-		given(appDeployer.deleteServiceInstance(any()))
+		given(serviceDeployer.deleteServiceInstance(any()))
 			.willReturn(Mono.just(DeleteServiceInstanceResponse.builder()
 				.name(SERVICE_INSTANCE_NAME)
 				.build()));
@@ -270,13 +272,13 @@ class DeployerClientTest {
 			.expectNext(SERVICE_INSTANCE_NAME)
 			.verifyComplete();
 
-		then(appDeployer).should().deleteServiceInstance(argThat(request ->
+		then(serviceDeployer).should().deleteServiceInstance(argThat(request ->
 			SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName())));
 	}
 
 	@Test
 	void shouldNotReturnErrorWhenDeletingServiceInstanceThatDoesNotExist() {
-		given(appDeployer.deleteServiceInstance(any()))
+		given(serviceDeployer.deleteServiceInstance(any()))
 			.willReturn(Mono.error(new IllegalStateException("service instance does not exist")));
 
 		BackingService service = BackingService.builder()
@@ -289,7 +291,7 @@ class DeployerClientTest {
 			.expectNext(SERVICE_INSTANCE_NAME)
 			.verifyComplete();
 
-		then(appDeployer).should().deleteServiceInstance(argThat(request ->
+		then(serviceDeployer).should().deleteServiceInstance(argThat(request ->
 			SERVICE_INSTANCE_NAME.equals(request.getServiceInstanceName())));
 	}
 
