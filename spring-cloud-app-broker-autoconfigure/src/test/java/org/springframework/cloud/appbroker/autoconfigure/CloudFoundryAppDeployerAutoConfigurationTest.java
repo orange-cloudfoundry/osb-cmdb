@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.appbroker.autoconfigure;
 
+import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.reactor.ConnectionContext;
 import org.cloudfoundry.reactor.DefaultConnectionContext;
@@ -26,15 +27,35 @@ import org.cloudfoundry.reactor.tokenprovider.ClientCredentialsGrantTokenProvide
 import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider;
 import org.cloudfoundry.reactor.uaa.ReactorUaaClient;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Mono;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.appbroker.deployer.AppDeployer;
+import org.springframework.cloud.appbroker.deployer.CreateServiceInstanceRequest;
+import org.springframework.cloud.appbroker.deployer.CreateServiceInstanceResponse;
+import org.springframework.cloud.appbroker.deployer.DeleteServiceInstanceRequest;
+import org.springframework.cloud.appbroker.deployer.DeleteServiceInstanceResponse;
+import org.springframework.cloud.appbroker.deployer.DeployApplicationRequest;
+import org.springframework.cloud.appbroker.deployer.DeployApplicationResponse;
+import org.springframework.cloud.appbroker.deployer.GetApplicationRequest;
+import org.springframework.cloud.appbroker.deployer.GetApplicationResponse;
+import org.springframework.cloud.appbroker.deployer.GetServiceInstanceRequest;
+import org.springframework.cloud.appbroker.deployer.GetServiceInstanceResponse;
+import org.springframework.cloud.appbroker.deployer.UndeployApplicationRequest;
+import org.springframework.cloud.appbroker.deployer.UndeployApplicationResponse;
+import org.springframework.cloud.appbroker.deployer.UpdateApplicationRequest;
+import org.springframework.cloud.appbroker.deployer.UpdateApplicationResponse;
+import org.springframework.cloud.appbroker.deployer.UpdateServiceInstanceRequest;
+import org.springframework.cloud.appbroker.deployer.UpdateServiceInstanceResponse;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryOperationsUtils;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryTargetProperties;
 import org.springframework.cloud.appbroker.manager.AppManager;
 import org.springframework.cloud.appbroker.oauth2.OAuth2Client;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ResourceLoader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -138,6 +159,98 @@ class CloudFoundryAppDeployerAutoConfigurationTest {
 				assertThat(context).doesNotHaveBean(ConnectionContext.class);
 				assertThat(context).doesNotHaveBean(TokenProvider.class);
 			});
+	}
+
+	@Test
+	void deployerIsNotCreatedIfProvided() {
+		configuredContext()
+			.withUserConfiguration(CustomDeployerConfiguration.class)
+			.run(context -> {
+				assertThat(context)
+					.hasSingleBean(AppDeployer.class)
+					.getBean(AppDeployer.class)
+					.isExactlyInstanceOf(TestAppDeployer.class);
+			});
+	}
+
+	@Configuration
+	public static class CustomDeployerConfiguration {
+
+		@Bean
+		public AppDeployer cloudFoundryAppDeployer(CloudFoundryDeploymentProperties deploymentProperties,
+			CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
+			CloudFoundryOperationsUtils operationsUtils, CloudFoundryTargetProperties targetProperties,
+			ResourceLoader resourceLoader) {
+			return new TestAppDeployer(deploymentProperties, cloudFoundryOperations, cloudFoundryClient,
+				operationsUtils, targetProperties, resourceLoader);
+		}
+
+	}
+
+	private static class TestAppDeployer implements AppDeployer {
+
+		public TestAppDeployer(CloudFoundryDeploymentProperties deploymentProperties,
+			CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
+			CloudFoundryOperationsUtils operationsUtils, CloudFoundryTargetProperties targetProperties,
+			ResourceLoader resourceLoader) {
+		}
+
+		@Override
+		public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
+			return Mono.empty();
+		}
+
+		@Override
+		public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
+			return Mono.empty();
+		}
+
+		@Override
+		public Mono<DeployApplicationResponse> deploy(DeployApplicationRequest request) {
+			return Mono.empty();
+		}
+
+		@Override
+		public Mono<GetApplicationResponse> get(GetApplicationRequest request) {
+			return Mono.empty();
+		}
+
+		@Override
+		public Mono<GetServiceInstanceResponse> getServiceInstance(GetServiceInstanceRequest request) {
+			return Mono.empty();
+		}
+
+		@Override
+		public Mono<UndeployApplicationResponse> undeploy(UndeployApplicationRequest request) {
+			return Mono.empty();
+		}
+
+		@Override
+		public Mono<UpdateApplicationResponse> update(UpdateApplicationRequest request) {
+			return Mono.empty();
+		}
+
+		@Override
+		public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
+			return Mono.empty();
+		}
+
+	}
+
+	private ApplicationContextRunner configuredContext() {
+		return this.contextRunner
+			.withPropertyValues(
+				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.local",
+				"spring.cloud.appbroker.deployer.cloudfoundry.api-port=443",
+				"spring.cloud.appbroker.deployer.cloudfoundry.default-org=example-org",
+				"spring.cloud.appbroker.deployer.cloudfoundry.default-space=example-space",
+				"spring.cloud.appbroker.deployer.cloudfoundry.username=user",
+				"spring.cloud.appbroker.deployer.cloudfoundry.password=secret",
+				"spring.cloud.appbroker.deployer.cloudfoundry.properties.memory=2G",
+				"spring.cloud.appbroker.deployer.cloudfoundry.properties.count=3",
+				"spring.cloud.appbroker.deployer.cloudfoundry.properties.buildpack=example-buildpack",
+				"spring.cloud.appbroker.deployer.cloudfoundry.properties.domain=example.local"
+			);
 	}
 
 }

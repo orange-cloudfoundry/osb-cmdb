@@ -38,6 +38,7 @@ import org.cloudfoundry.reactor.uaa.ReactorUaaClient;
 import org.cloudfoundry.uaa.UaaClient;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -99,6 +100,7 @@ public class CloudFoundryAppDeployerAutoConfiguration {
 	 * @return the bean
 	 */
 	@Bean
+	@ConditionalOnMissingBean
 	public AppDeployer cloudFoundryAppDeployer(CloudFoundryDeploymentProperties deploymentProperties,
 		CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		CloudFoundryOperationsUtils operationsUtils, CloudFoundryTargetProperties targetProperties,
