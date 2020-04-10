@@ -79,16 +79,16 @@ class AppDeploymentInstanceWorkflowTest {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("service1", "plan1");
 		StepVerifier
 			.create(workflow.accept(serviceDefinition, serviceDefinition.getPlans().get(0)))
-			.expectNextMatches(value -> value)
+			.expectNextMatches(value -> value.equals(Boolean.TRUE))
 			.verifyComplete();
 	}
 
 	@Test
-	void acceptWithMatchingServiceAndNoBackingApplication() {
+	void doesNotAcceptWithMatchingServiceAndNoBackingApplication() {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("service2_without_backing_app", "plan1");
 		StepVerifier
 			.create(workflow.accept(serviceDefinition, serviceDefinition.getPlans().get(0)))
-			.expectNextMatches(value -> value)
+			.expectNextMatches(value -> value.equals(Boolean.FALSE))
 			.verifyComplete();
 	}
 
@@ -98,7 +98,7 @@ class AppDeploymentInstanceWorkflowTest {
 			"plan1");
 		StepVerifier
 			.create(workflow.accept(serviceDefinition, serviceDefinition.getPlans().get(0)))
-			.expectNextMatches(value -> !value)
+			.expectNextMatches(value -> value.equals(Boolean.FALSE))
 			.verifyComplete();
 	}
 
@@ -107,7 +107,7 @@ class AppDeploymentInstanceWorkflowTest {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("unknown-service", "plan1");
 		StepVerifier
 			.create(workflow.accept(serviceDefinition, serviceDefinition.getPlans().get(0)))
-			.expectNextMatches(value -> !value)
+			.expectNextMatches(value -> value.equals(Boolean.FALSE))
 			.verifyComplete();
 	}
 
@@ -116,7 +116,7 @@ class AppDeploymentInstanceWorkflowTest {
 		ServiceDefinition serviceDefinition = buildServiceDefinition("service1", "unknown-plan");
 		StepVerifier
 			.create(workflow.accept(serviceDefinition, serviceDefinition.getPlans().get(0)))
-			.expectNextMatches(value -> !value)
+			.expectNextMatches(value -> value.equals(Boolean.FALSE))
 			.verifyComplete();
 	}
 
