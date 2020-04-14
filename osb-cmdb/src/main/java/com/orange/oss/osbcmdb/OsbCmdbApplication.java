@@ -2,19 +2,15 @@ package com.orange.oss.osbcmdb;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfiguration;
 import org.springframework.cloud.appbroker.deployer.*;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
-import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryOperationsUtils;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryTargetProperties;
 import org.springframework.cloud.appbroker.extensions.credentials.CredentialProviderService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingApplicationsParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceImpl;
-import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceNoOp;
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceAppBindingWorkflow;
 import org.springframework.cloud.appbroker.service.DeleteServiceInstanceBindingWorkflow;
@@ -67,5 +63,24 @@ public class OsbCmdbApplication {
 
 		return new AppDeploymentDeleteServiceBindingWorkflow(brokeredServices, backingAppDeploymentService, backingServicesProvisionService, appsParametersTransformationService, servicesParametersTransformationService, credentialProviderService, targetService);
 	}
+
+	/**
+	 * Provide a {@link AppDeployer} bean
+	 *
+	 * @param deploymentProperties the CloudFoundryDeploymentProperties bean
+	 * @param cloudFoundryOperations the CloudFoundryOperations bean
+	 * @param cloudFoundryClient the CloudFoundryClient bean
+	 * @param targetProperties the CloudFoundryTargetProperties bean
+	 * @return the bean
+	 */
+	@Bean
+	public OsbCmdbServiceInstance osbCmdbServiceInstance(CloudFoundryDeploymentProperties deploymentProperties,
+		CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
+		CloudFoundryTargetProperties targetProperties) {
+		return new OsbCmdbServiceInstance(deploymentProperties, cloudFoundryOperations, cloudFoundryClient,
+			targetProperties.getDefaultOrg(), targetProperties.getDefaultSpace(), targetProperties.getUsername());
+	}
+
+
 
 }
