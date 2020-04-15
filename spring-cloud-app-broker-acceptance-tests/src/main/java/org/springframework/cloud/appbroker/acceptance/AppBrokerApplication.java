@@ -18,21 +18,14 @@ package org.springframework.cloud.appbroker.acceptance;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.appbroker.acceptance.services.NoOpCreateServiceInstanceAppBindingWorkflow;
 import org.springframework.cloud.appbroker.acceptance.services.NoOpCreateServiceInstanceWorkflow;
 import org.springframework.cloud.appbroker.acceptance.services.NoOpDeleteServiceInstanceWorkflow;
 import org.springframework.cloud.appbroker.acceptance.services.NoOpUpdateServiceInstanceWorkflow;
-import org.springframework.cloud.appbroker.deployer.BackingServicesProvisionService;
-import org.springframework.cloud.appbroker.deployer.BrokeredServices;
-import org.springframework.cloud.appbroker.extensions.parameters.BackingServicesParametersTransformationService;
-import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceAppBindingWorkflow;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceWorkflow;
 import org.springframework.cloud.appbroker.service.DeleteServiceInstanceWorkflow;
 import org.springframework.cloud.appbroker.service.UpdateServiceInstanceWorkflow;
-import org.springframework.cloud.appbroker.workflow.ServiceKeyCreateServiceBindingWorkflow;
-import org.springframework.cloud.appbroker.workflow.ServiceKeyDeleteServiceBindingWorkflow;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -100,25 +93,5 @@ public class AppBrokerApplication {
 	public CreateServiceInstanceAppBindingWorkflow createServiceInstanceAppBindingWorkflow() {
 		return new NoOpCreateServiceInstanceAppBindingWorkflow();
 	}
-
-	@Bean
-	@ConditionalOnProperty(name="service-bindings-as-service-keys")
-	public ServiceKeyCreateServiceBindingWorkflow serviceKeyCreateServiceBindingWorkflow(
-		BrokeredServices brokeredServices,
-		BackingServicesProvisionService backingServicesProvisionService,
-		BackingServicesParametersTransformationService servicesParametersTransformationService,
-		TargetService targetService) {
-		return new ServiceKeyCreateServiceBindingWorkflow(brokeredServices, backingServicesProvisionService,
-			servicesParametersTransformationService, targetService);
-	}
-
-	@Bean
-	@ConditionalOnProperty(name="service-bindings-as-service-keys")
-	public ServiceKeyDeleteServiceBindingWorkflow serviceKeyDeleteServiceBindingWorkflow(BrokeredServices brokeredServices,
-		BackingServicesProvisionService backingServicesProvisionService,
-		TargetService targetService) {
-		return new ServiceKeyDeleteServiceBindingWorkflow(brokeredServices, backingServicesProvisionService, targetService);
-	}
-
 
 }

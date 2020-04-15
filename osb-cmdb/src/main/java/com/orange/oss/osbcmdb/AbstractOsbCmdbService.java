@@ -38,9 +38,20 @@ public class AbstractOsbCmdbService {
 
 	protected ServiceInstance getCfServiceInstance(CloudFoundryOperations spacedTargetedOperations,
 		String serviceInstanceName) {
-		return spacedTargetedOperations.services()
-			.getInstance(org.cloudfoundry.operations.services.GetServiceInstanceRequest.builder()
-				.name(serviceInstanceName).build()).block();
+		try {
+			return spacedTargetedOperations.services()
+				.getInstance(org.cloudfoundry.operations.services.GetServiceInstanceRequest.builder()
+					.name(serviceInstanceName).build()).block();
+		}
+		catch (java.lang.IllegalArgumentException e) {
+			String message = e.getMessage();
+			if (message != null && message.contains("does not exist")) {
+				return null;
+			} else {
+				LOG.error("Unable to lookup service instance {} Got {}", serviceInstanceName, e);
+				throw e;
+			}
+		}
 	}
 
 	protected CloudFoundryOperations getSpaceScopedOperations(String spaceName) {

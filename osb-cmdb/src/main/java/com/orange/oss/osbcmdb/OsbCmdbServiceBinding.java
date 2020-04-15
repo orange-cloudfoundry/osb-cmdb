@@ -23,16 +23,24 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 
 	public static final Duration SYNC_COMPLETION_TIMEOUT = Duration.ofSeconds(5);
 
+	private ServiceBindingInterceptor osbInterceptor;
+
+
 	private final Logger log = Loggers.getLogger(OsbCmdbServiceBinding.class);
 
 	public OsbCmdbServiceBinding(CloudFoundryClient cloudFoundryClient, String defaultOrg, String userName,
-		CloudFoundryOperations cloudFoundryOperations) {
+		CloudFoundryOperations cloudFoundryOperations, ServiceBindingInterceptor osbInterceptor) {
 		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
+		this.osbInterceptor = osbInterceptor;
 	}
 
 	@Override
 	public Mono<CreateServiceInstanceBindingResponse> createServiceInstanceBinding(
 		CreateServiceInstanceBindingRequest request) {
+		if (osbInterceptor != null && osbInterceptor.accept(request)) {
+			return osbInterceptor.createServiceInstanceBinding(request);
+		}
+
 
 		//Lookup corresponding service instance in the backend org to validate incoming request against security
 		// attacks passing forged service instance guid
@@ -68,22 +76,38 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 	@Override
 	public Mono<DeleteServiceInstanceBindingResponse> deleteServiceInstanceBinding(
 		DeleteServiceInstanceBindingRequest request) {
+		if (osbInterceptor != null && osbInterceptor.accept(request)) {
+			return osbInterceptor.deleteServiceInstanceBinding(request);
+		}
+
 
 		//Lookup corresponding service instance to validate incoming request against security attacks passing
 		// forged service instance guid
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
 		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
 
+		if (existingSi == null) {
+			LOG.info("No such service instance id={} to delete binding from, return early.",
+				request.getServiceInstanceId());
+			return Mono.just(DeleteServiceInstanceBindingResponse.builder()
+				.build());
+		}
+
 		//For now CF api V2 & V3 do not support async service bindings
-		spacedTargetedOperations.services().deleteServiceKey(org.cloudfoundry.operations.services.DeleteServiceKeyRequest.builder()
-			.serviceInstanceName(existingSi.getName())
-			.serviceKeyName(request.getBindingId())
-			.build())
-			.block();
+		try {
+			spacedTargetedOperations.services().deleteServiceKey(org.cloudfoundry.operations.services.DeleteServiceKeyRequest.builder()
+				.serviceInstanceName(existingSi.getName())
+				.serviceKeyName(request.getBindingId())
+				.build())
+				.block();
+		}
+		catch (Exception e) {
+			LOG.info("Unable to delete service key {} from service instance {} Got {}", request.getBindingId(),
+				existingSi.getName(), e.toString());
+		}
 
 		//For now CF api V2 & V3 do not support async service bindings
 		return Mono.just(DeleteServiceInstanceBindingResponse.builder()
-			.async(false)
 			.build());
 	}
 

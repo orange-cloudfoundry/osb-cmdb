@@ -7,8 +7,9 @@
       enabled-by-default: false
       web:
         exposure:
-          include: "conditions,info,health,httptrace,loggers,metrics,threaddump"
+          include: "beans,conditions,info,health,httptrace,loggers,metrics,threaddump"
     endpoint:
+      beans.enabled: true
       conditions.enabled: true
       info.enabled: true
       health.enabled: true

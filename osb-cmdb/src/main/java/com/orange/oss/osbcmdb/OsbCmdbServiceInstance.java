@@ -13,10 +13,12 @@ import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
 import org.cloudfoundry.operations.services.ListServiceKeysRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import reactor.core.publisher.Mono;
+import reactor.netty.internal.shaded.reactor.pool.PoolAcquireTimeoutException;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
+import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstanceBindingResponse;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceRequest;
@@ -30,6 +32,8 @@ import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 
 @SuppressWarnings("BlockingMethodInNonBlockingContext")
 public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements ServiceInstanceService {
+
+	private ServiceInstanceInterceptor osbInterceptor;
 
 	public static final CreateServiceInstanceResponse RESPONSE_CREATE_202_ACCEPTED = CreateServiceInstanceResponse
 		.builder()
@@ -58,17 +62,22 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	public OsbCmdbServiceInstance(CloudFoundryDeploymentProperties deploymentProperties,
 		CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
-		String defaultOrg, String defaultSpace, String userName) {
+		String defaultOrg, String defaultSpace, String userName,
+		ServiceInstanceInterceptor osbInterceptor) {
 		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
 
 		this.deploymentProperties = deploymentProperties;
 		this.defaultSpace = defaultSpace;
+		this.osbInterceptor = osbInterceptor;
 	}
 
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
+		if (osbInterceptor != null && osbInterceptor.accept(request)) {
+			return osbInterceptor.createServiceInstance(request);
+		}
+
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
-		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
 
 		boolean asyncProvisionning;
 		try {
@@ -83,9 +92,16 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				.block();
 			asyncProvisionning = false;
 		}
-		catch (Exception timeoutException) {
-			// timeout to 5s: would return an error if service instance is "in_progress" state
-			asyncProvisionning = true;
+		//sync timeout exception: reactor.netty.internal.shaded.reactor.pool.PoolAcquireTimeoutException: Pool#acquire
+		// (Duration) has been pending for more than the configured timeout of 45000ms
+//		catch Exception timeoutException) {
+//			LOG.error("Unable to create backing service instance, got {}", timeoutException.toString());
+//			// timeout to 5s: would return an error if service instance is "in_progress" state
+//			asyncProvisionning = true;
+//		} //Already existing exception should flow up and be returned to osb client
+		catch (Exception unexpectedException) {
+			LOG.error("Unable to create backing service instance, got {}", unexpectedException.toString());
+			throw unexpectedException;
 		} //Already existing exception should flow up and be returned to osb client
 
 		ServiceInstance provisionnedSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
@@ -95,7 +111,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			.builder()
 			.dashboardUrl(provisionnedSi.getDashboardUrl())
 			.async(asyncProvisionning)
-			.operation(toJson(new CmdbOperationState(existingSi.getId(), OsbOperation.CREATE)));
+			.operation(toJson(new CmdbOperationState(provisionnedSi.getId(), OsbOperation.CREATE)));
 				//make get last operation faster by tracking the underlying CF instance
 				// GUID
 		return Mono.just(responseBuilder.build());
@@ -112,8 +128,17 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	@Override
 	public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
+		if (osbInterceptor != null && osbInterceptor.accept(request)) {
+			return osbInterceptor.deleteServiceInstance(request);
+		}
+
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
 		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
+
+		if (existingSi == null) {
+			LOG.info("No such service instance id={} to delete, return early.", request.getServiceInstanceId());
+			return Mono.just(DeleteServiceInstanceResponse.builder().build());
+		}
 
 		//List and delete service keys first
 		//Delete service keys if any. Ignore race
@@ -149,6 +174,10 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	@Override
 	public Mono<GetLastServiceOperationResponse> getLastOperation(GetLastServiceOperationRequest request) {
+		if (osbInterceptor != null && osbInterceptor.accept(request)) {
+			return osbInterceptor.getLastOperation(request);
+		}
+
 		CmdbOperationState cmdbOperationState = fromJson(request.getOperation());
 		String cfServiceGuid = cmdbOperationState.backingCfServiceInstanceGuid;
 
@@ -212,6 +241,10 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
+		if (osbInterceptor != null && osbInterceptor.accept(request)) {
+			return osbInterceptor.updateServiceInstance(request);
+		}
+
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(
 			request.getServiceDefinition().getName()); //ignore race condition during space
 		// creation for K8S dupl requests

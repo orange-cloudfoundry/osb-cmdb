@@ -161,7 +161,7 @@ class OsbCmdbServiceInstanceTest {
 		given(cloudFoundryClient.organizations()).willReturn(clientOrganizations);
 
 		osbCmdbServiceInstance = new OsbCmdbServiceInstance(deploymentProperties, cloudFoundryOperations,
-			cloudFoundryClient, defaultOrg, defaultSpace, "userName");
+			cloudFoundryClient, defaultOrg, defaultSpace, "userName", null);
 	}
 
 }
