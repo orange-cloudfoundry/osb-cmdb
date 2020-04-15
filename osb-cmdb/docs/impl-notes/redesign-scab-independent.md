@@ -171,7 +171,7 @@ What SCAB features would be lost and how to accomodate ?
        * [x] too heavy CF API calls
        * [x] logic errors in ServiceInstance
        * [x] logic errors in ServiceInstanceInterceptor
-       * [ ] Infinite loop: brokered service instance creation ask for brokered service creation until exhausting CC API threads.
+       * [x] Infinite loop: brokered service instance creation ask for brokered service creation until exhausting CC API threads.
           * In the common osb-cmdb case, brokered service definition is same as backend service definition name: no suffix is added
              * however, differences are that
                 * two distinct brokers are actually deployed, enabling selective publication of service plans
@@ -196,6 +196,9 @@ What SCAB features would be lost and how to accomodate ?
                    * [ ] Modify AT to deploy two distinct brokers
                    * [ ] Check recent support in cf-java-client. https://github.com/cloudfoundry/cf-java-client/issues/1025
                    * [ ] Contribute support in cf-java-client
+       * [x] Json serialization issue
+          > java.lang.RuntimeException: com.fasterxml.jackson.databind.exc.InvalidDefinitionException: 
+          > No serializer found for class com.orange.oss.osbcmdb.OsbCmdbServiceInstance$CmdbOperationState and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS)
 
 
     * [ ] Adapt clean up script to also clean up spacePerServiceDefinition

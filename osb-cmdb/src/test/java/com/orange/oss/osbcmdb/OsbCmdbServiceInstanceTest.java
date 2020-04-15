@@ -68,6 +68,20 @@ class OsbCmdbServiceInstanceTest {
 	private OsbCmdbServiceInstance osbCmdbServiceInstance;
 
 	@Test
+	void serializesStateToJson() {
+		String json = osbCmdbServiceInstance.toJson(new OsbCmdbServiceInstance.CmdbOperationState("guid",
+			OsbCmdbServiceInstance.OsbOperation.CREATE));
+		assertThat(json).isEqualTo("{\"backingCfServiceInstanceGuid\":\"guid\",\"operationType\":\"CREATE\"}");
+	}
+
+	@Test
+	void deserializesStateFromJson() {
+		String json = "{\"backingCfServiceInstanceGuid\":\"guid\",\"operationType\":\"CREATE\"}";
+		assertThat(osbCmdbServiceInstance.fromJson(json)).isEqualTo(new OsbCmdbServiceInstance.CmdbOperationState("guid",
+			OsbCmdbServiceInstance.OsbOperation.CREATE));
+	}
+
+	@Test
 	void createServiceInstanceWithTarget() {
 		given(operationsOrganizations
 			.get(

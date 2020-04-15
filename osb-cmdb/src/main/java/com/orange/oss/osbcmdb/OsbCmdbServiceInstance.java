@@ -4,6 +4,8 @@ import java.time.Duration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
@@ -117,7 +119,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		return Mono.just(responseBuilder.build());
 	}
 
-	private String toJson(CmdbOperationState cmdbOperationState)  {
+	protected String toJson(CmdbOperationState cmdbOperationState)  {
 		try {
 			return OBJECT_MAPPER.writeValueAsString(cmdbOperationState);
 		}
@@ -274,7 +276,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			.build());
 	}
 
-	private CmdbOperationState fromJson(String operation) {
+	protected CmdbOperationState fromJson(String operation) {
 		try {
 			return OBJECT_MAPPER.readValue(operation, CmdbOperationState.class);
 		}
@@ -288,22 +290,54 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		//TODO: reuse CAFD + metadata formatter code in workflow
 	}
 
-	private enum OsbOperation {
+	protected enum OsbOperation {
 		CREATE,
 		UPDATE,
 		DELETE
 	}
 
-	private static class CmdbOperationState {
+	protected static class CmdbOperationState {
 
 		String backingCfServiceInstanceGuid;
 
 		OsbOperation operationType;
 
+		/**
+		 *
+		 */
+		public CmdbOperationState() {
+		}
+
 		public CmdbOperationState(String backingCfServiceInstanceGuid,
 			OsbOperation operationType) {
 			this.backingCfServiceInstanceGuid = backingCfServiceInstanceGuid;
 			this.operationType = operationType;
+		}
+
+		public String getBackingCfServiceInstanceGuid() {
+			return backingCfServiceInstanceGuid;
+		}
+
+		public OsbOperation getOperationType() {
+			return operationType;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+
+			CmdbOperationState that = (CmdbOperationState) o;
+
+			if (!backingCfServiceInstanceGuid.equals(that.backingCfServiceInstanceGuid)) return false;
+			return operationType == that.operationType;
+		}
+
+		@Override
+		public int hashCode() {
+			int result = backingCfServiceInstanceGuid.hashCode();
+			result = 31 * result + operationType.hashCode();
+			return result;
 		}
 
 	}
