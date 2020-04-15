@@ -43,6 +43,7 @@ import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.cloudfoundry.operations.applications.DeleteApplicationRequest;
 import org.cloudfoundry.operations.applications.GetApplicationEnvironmentsRequest;
 import org.cloudfoundry.operations.applications.GetApplicationRequest;
+import org.cloudfoundry.operations.applications.LogsRequest;
 import org.cloudfoundry.operations.applications.PushApplicationManifestRequest;
 import org.cloudfoundry.operations.applications.RestartApplicationRequest;
 import org.cloudfoundry.operations.applications.StopApplicationRequest;
@@ -56,10 +57,15 @@ import org.cloudfoundry.operations.serviceadmin.DeleteServiceBrokerRequest;
 import org.cloudfoundry.operations.serviceadmin.EnableServiceAccessRequest;
 import org.cloudfoundry.operations.serviceadmin.UpdateServiceBrokerRequest;
 import org.cloudfoundry.operations.services.CreateServiceInstanceRequest;
+import org.cloudfoundry.operations.services.CreateServiceKeyRequest;
 import org.cloudfoundry.operations.services.DeleteServiceInstanceRequest;
+import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
 import org.cloudfoundry.operations.services.GetServiceInstanceRequest;
+import org.cloudfoundry.operations.services.GetServiceKeyRequest;
+import org.cloudfoundry.operations.services.ListServiceKeysRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.operations.services.ServiceInstanceSummary;
+import org.cloudfoundry.operations.services.ServiceKey;
 import org.cloudfoundry.operations.services.UpdateServiceInstanceRequest;
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest;
 import org.cloudfoundry.operations.spaces.SpaceSummary;
@@ -160,6 +166,22 @@ public class CloudFoundryService {
 			.doOnError(error -> LOG.error("Error pushing broker app " + appName + ": " + error));
 	}
 
+	public Mono<Void> logRecentAppLogs(String appName) {
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Dumping recent logs for broker {}", appName);
+			return
+				cloudFoundryOperations.applications().logs(LogsRequest.builder().name(appName).recent(true).build())
+				.doOnNext(l  -> LOG.debug("{}", l))
+				.doOnComplete(()  -> LOG.debug("log stream completed"))
+				.doOnError(error -> LOG.debug("Error getting logs for app " + appName + " : " + error))
+				.onErrorResume(e -> Mono.empty())
+				.then();
+		}
+		else {
+			return Mono.empty();
+		}
+	}
+
 	public Mono<Void> updateBrokerApp(String appName, String brokerClientId, List<String> appBrokerProperties) {
 		return cloudFoundryOperations.applications()
 			.get(GetApplicationRequest.builder().name(appName).build())
@@ -233,6 +255,30 @@ public class CloudFoundryService {
 			.doOnError(error -> LOG.error("Error creating service instance " + serviceInstanceName + ": " + error));
 	}
 
+	public Mono<Void> createServiceKey(String serviceKeyName, String serviceInstanceName,
+			Map<String, Object> parameters) {
+		return cloudFoundryOperations.services()
+			.createServiceKey(CreateServiceKeyRequest.builder()
+				.serviceKeyName(serviceKeyName)
+				.serviceInstanceName(serviceInstanceName)
+				.parameters(parameters)
+				.build())
+			.doOnSuccess(item -> LOG.info("Created service key " + serviceKeyName + " for instance " + serviceInstanceName))
+			.doOnError(error -> LOG.error("Error creating service key " + serviceKeyName
+				+ " for instance " + serviceInstanceName + ": " +  error));
+	}
+
+	public Mono<Void> deleteServiceKey(String serviceInstanceName, String serviceKeyName) {
+		return cloudFoundryOperations.services()
+			.deleteServiceKey(DeleteServiceKeyRequest.builder()
+				.serviceKeyName(serviceKeyName)
+				.serviceInstanceName(serviceInstanceName)
+				.build())
+			.doOnSuccess(item -> LOG.info("Deleted service key " + serviceKeyName + " for instance " + serviceInstanceName))
+			.doOnError(error -> LOG.error("Error Deleting service key " + serviceKeyName
+				+ " for instance " + serviceInstanceName + ": " +  error));
+	}
+
 	public Mono<Void> updateServiceInstance(String serviceInstanceName, Map<String, Object> parameters) {
 		return cloudFoundryOperations.services()
 			.updateInstance(UpdateServiceInstanceRequest.builder()
@@ -247,8 +293,18 @@ public class CloudFoundryService {
 		return cloudFoundryOperations.services().listInstances();
 	}
 
+	public Flux<ServiceKey> listServiceKeys(String serviceInstanceName) {
+		return cloudFoundryOperations.services().listServiceKeys(
+			ListServiceKeysRequest.builder()
+			.serviceInstanceName(serviceInstanceName).build());
+	}
+
 	public Mono<ServiceInstance> getServiceInstance(String serviceInstanceName) {
 		return getServiceInstance(cloudFoundryOperations, serviceInstanceName);
+	}
+
+	public Mono<ServiceKey> getServiceKey(String serviceInstanceName, String serviceKeyName) {
+		return getServiceKey(cloudFoundryOperations, serviceInstanceName, serviceKeyName);
 	}
 
 	public Mono<ServiceInstance> getServiceInstance(String serviceInstanceName, String space) {
@@ -263,6 +319,17 @@ public class CloudFoundryService {
 				.build())
 			.doOnSuccess(item -> LOG.info("Got service instance " + serviceInstanceName))
 			.doOnError(error -> LOG.error("Error getting service instance " + serviceInstanceName + ": " + error));
+	}
+
+	private Mono<ServiceKey> getServiceKey(CloudFoundryOperations operations,
+		String serviceInstanceName, String serviceKeyName) {
+		return operations.services()
+			.getServiceKey(GetServiceKeyRequest.builder()
+				.serviceKeyName(serviceKeyName)
+				.serviceInstanceName(serviceInstanceName)
+				.build())
+			.doOnSuccess(item -> LOG.info("Got service key " + serviceKeyName + " for service instance " + serviceInstanceName))
+			.doOnError(error -> LOG.error("Error getting service key " + serviceKeyName + " for service instance " + serviceInstanceName + ": " + error));
 	}
 
 	public Mono<List<ApplicationSummary>> getApplications() {
