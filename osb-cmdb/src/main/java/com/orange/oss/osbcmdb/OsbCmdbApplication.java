@@ -65,7 +65,7 @@ public class OsbCmdbApplication {
 	}
 
 	/**
-	 * Provide a {@link AppDeployer} bean
+	 * Provide a {@link OsbCmdbServiceInstance} bean
 	 *
 	 * @param deploymentProperties the CloudFoundryDeploymentProperties bean
 	 * @param cloudFoundryOperations the CloudFoundryOperations bean
@@ -79,6 +79,23 @@ public class OsbCmdbApplication {
 		CloudFoundryTargetProperties targetProperties) {
 		return new OsbCmdbServiceInstance(deploymentProperties, cloudFoundryOperations, cloudFoundryClient,
 			targetProperties.getDefaultOrg(), targetProperties.getDefaultSpace(), targetProperties.getUsername());
+	}
+
+	/**
+	 * Provide a {@link OsbCmdbServiceBinding} bean
+	 *
+	 * @param cloudFoundryOperations the CloudFoundryOperations bean
+	 * @param cloudFoundryClient the CloudFoundryClient bean
+	 * @param targetProperties the CloudFoundryTargetProperties bean
+	 * @return the bean
+	 */
+	@Bean
+	public OsbCmdbServiceBinding osbCmdbServiceBinding(
+		CloudFoundryOperations cloudFoundryOperations,
+		CloudFoundryClient cloudFoundryClient,
+		CloudFoundryTargetProperties targetProperties) {
+		return new OsbCmdbServiceBinding(cloudFoundryClient, targetProperties.getDefaultOrg(),
+			targetProperties.getUsername(), cloudFoundryOperations);
 	}
 
 
