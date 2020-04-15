@@ -60,7 +60,9 @@ test {
 	onlyIf {
 		project.hasProperty("acceptanceTests")
 	}
-	systemProperty "tests.broker-app-path", "${buildDir}/libs/spring-cloud-app-broker-acceptance-tests.jar"
+	//	systemProperty "tests.broker-app-path", "${buildDir}/libs/spring-cloud-app-broker-acceptance-tests.jar"
+
+
 	// Pass relevant java properties to the test task
-	systemProperties << System.properties.findAll { it.key.startsWith("spring.") }
+	systemProperties << System.properties.findAll { it.key.startsWith("spring.") ||  it.key.startsWith("tests.")}
 }

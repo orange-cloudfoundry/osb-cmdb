@@ -541,9 +541,14 @@ public class CloudFoundryService {
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "skip-ssl-validation",
 			String.valueOf(cloudFoundryProperties.isSkipSslValidation()));
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "properties.memory", "1024M");
-		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "client-id", brokerClientId);
-		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "client-secret",
-			CloudFoundryClientConfiguration.APP_BROKER_CLIENT_SECRET);
+		if (cloudFoundryProperties.getUsername() != null && cloudFoundryProperties.getPassword() != null) {
+			deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "username", cloudFoundryProperties.getUsername());
+			deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "password", cloudFoundryProperties.getPassword());
+		} else {
+			deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "client-id", brokerClientId);
+			deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "client-secret",
+				CloudFoundryClientConfiguration.APP_BROKER_CLIENT_SECRET);
+		}
 		return deployerVariables;
 	}
 

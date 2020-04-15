@@ -59,6 +59,8 @@ DELETE /v2/service_instances/:instance_id/service_bindings/:binding_id | cf dele
 
 ### Getting started
 
+#### Deploying
+
 Osb-cmdb ships as a spring-boot jar which is configured using properties.
 
 ```bash         
@@ -98,6 +100,14 @@ Osb-cmdb requires two users auth to be configured:
 * `osbcmdb.admin`: used to access sensitive supportability endpoints (powered by springboot actuators)
 
 Osb-Cmdb is expected to be deployed once per OSB client, each having its own basic authentication, its own brokered services catalog, and backend services organization.
+
+#### Increasing log levels dynamically
+
+In production like in acceptance tests, use spring boot actuator logger to dynamically increase log levels,  
+ 
+```bash
+curl -kv https://admin:password@test-broker-app-create-instance-with-service-keys.redacted-domain/actuator/loggers/cloudfoundry-client.wire -X POST -H 'Content-Type: application/json' -d '{"configuredLevel": "TRACE"}'
+```
 
 #### Manual catalog of Brokered and backing services 
 
@@ -536,6 +546,8 @@ Acceptance tests run privately against a live cloudfoundry instance. Tests are p
 See https://github.com/orange-cloudfoundry/osb-cmdb-ci for the concourse task running the acceptance tests.
 
 Like scab, osb-cmdb acceptance tests use distinct properties than osb-cmdb production properties. Refer to [Getting started](#getting-started) for the list of prod properties supported, and paas-templates smoke tests. 
+
+
 
 #### Releasing
 

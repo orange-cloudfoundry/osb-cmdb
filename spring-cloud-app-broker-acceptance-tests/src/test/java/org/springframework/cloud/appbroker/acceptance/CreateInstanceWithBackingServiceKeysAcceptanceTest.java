@@ -60,7 +60,23 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		"spring.cloud.appbroker.services[0].services[0].plan=" + PLAN_NAME,
 		"spring.cloud.appbroker.services[0].services[0].service-instance-name=" + BACKING_SI_1_NAME,
 		"service-bindings-as-service-keys=true", //controls autoconfigure
-		"debug=true" //Spring boot debug mode
+		"debug=true", //Spring boot debug mode
+		//osb-cmdb auth
+		"spring.security.user.name=user",
+		"spring.security.user.password=password",
+		"osbcmdb.admin.user=admin",
+		"osbcmdb.admin.password=password",
+		"spring.profiles.active=acceptanceTests",
+		//cf java client wire traces
+		"logging.level.cloudfoundry-client.wire=debug",
+//		"logging.level.cloudfoundry-client.wire=trace",
+		"logging.level.cloudfoundry-client.operations=debug",
+		"logging.level.cloudfoundry-client.request=debug",
+		"logging.level.cloudfoundry-client.response=debug",
+		"logging.level.okhttp3=debug",
+
+		"logging.level.com.orange.oss.osbcmdb=debug",
+		"osbcmdb.dynamic-catalog.enabled=false",
 	})
 	void deployAppsAndCreateServiceKeyssOnBindService() {
 		// given a brokered service instance is created
