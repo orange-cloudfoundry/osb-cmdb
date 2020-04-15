@@ -310,14 +310,20 @@ abstract class CloudFoundryAcceptanceTest {
 		blockingSubscribe(cloudFoundryService.deleteServiceKey(serviceInstanceName, serviceKeyName));
 	}
 
+	protected List<String> listServiceInstances(String space) {
+		return cloudFoundryService.listServiceInstances(space)
+			.map(ServiceInstanceSummary::getName)
+			.collectList()
+			.block();
+	}
 	protected List<String> listServiceInstances() {
 		return cloudFoundryService.listServiceInstances()
 			.map(ServiceInstanceSummary::getName)
 			.collectList()
 			.block();
 	}
-	protected List<String> listServiceKeys(String serviceInstanceName) {
-		return cloudFoundryService.listServiceKeys(serviceInstanceName)
+	protected List<String> listServiceKeys(String serviceInstanceName, String space) {
+		return cloudFoundryService.listServiceKeys(serviceInstanceName, space)
 			.map(ServiceKey::getName)
 			.collectList()
 			.block();
@@ -325,6 +331,10 @@ abstract class CloudFoundryAcceptanceTest {
 
 	protected ServiceInstance getServiceInstance(String serviceInstanceName) {
 		return getServiceInstanceMono(serviceInstanceName).block();
+	}
+
+	protected ServiceKey getServiceKey(String serviceKeyName, String serviceInstanceName, String space) {
+		return getServiceKeyMono(serviceInstanceName, serviceKeyName, space).block();
 	}
 
 	protected ServiceKey getServiceKey(String serviceKeyName, String serviceInstanceName) {
@@ -343,6 +353,11 @@ abstract class CloudFoundryAcceptanceTest {
 
 	private Mono<ServiceInstance> getServiceInstanceMono(String serviceInstanceName) {
 		return cloudFoundryService.getServiceInstance(serviceInstanceName);
+	}
+
+	private Mono<ServiceKey> getServiceKeyMono(String serviceInstanceName, String serviceInstanceKeyName,
+		String space) {
+		return cloudFoundryService.getServiceKey(serviceInstanceName, serviceInstanceKeyName, space);
 	}
 
 	private Mono<ServiceKey> getServiceKeyMono(String serviceInstanceName, String serviceInstanceKeyName) {

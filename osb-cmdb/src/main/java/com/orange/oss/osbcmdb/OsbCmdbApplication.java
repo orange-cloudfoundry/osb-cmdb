@@ -1,13 +1,9 @@
 package com.orange.oss.osbcmdb;
 
-import java.util.Collections;
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.appbroker.deployer.*;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryTargetProperties;
@@ -19,16 +15,12 @@ import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingSe
 import org.springframework.cloud.appbroker.extensions.targets.TargetService;
 import org.springframework.cloud.appbroker.service.CreateServiceInstanceAppBindingWorkflow;
 import org.springframework.cloud.appbroker.service.DeleteServiceInstanceBindingWorkflow;
-import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse;
-import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest;
-import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import reactor.core.publisher.Hooks;
-import reactor.core.publisher.Mono;
 
 @SpringBootApplication
 public class OsbCmdbApplication {
@@ -96,15 +88,15 @@ public class OsbCmdbApplication {
 
 	//TODO: condition that to spring profile or env var
 	@Bean
-	public ServiceInstanceInterceptor noopServiceInstanceInterceptor() {
-		return new ServiceInstanceInterceptor() {};
+	public ServiceInstanceInterceptor acceptanceTestBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new BackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	//TODO: condition that to spring profile or env var
 	@Bean
 	@ConditionalOnMissingBean
-	public ServiceBindingInterceptor noopServiceBindingInterceptor() {
-		return new ServiceBindingInterceptor() {};
+	public ServiceBindingInterceptor noopServiceBindingInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new BackingServiceBindingInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	/**

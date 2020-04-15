@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.operations.services.ServiceKey;
 import org.junit.jupiter.api.Test;
@@ -36,6 +39,10 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 	private static final String APP_SERVICE_NAME = "app-service-" + SUFFIX;
 
 	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
+
+	public static final Map<String, Object> STATIC_CREDENTIALS = Collections.singletonMap("noop-binding-key", "noop" +
+		"-binding-value");
+
 
 	@Override
 	protected String testSuffix() {
@@ -81,31 +88,35 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 	void deployAppsAndCreateServiceKeyssOnBindService() {
 		// given a brokered service instance is created
 		createServiceInstance(SI_NAME);
-		// and a backing service instance is created
-		ServiceInstance backingServiceInstance = getServiceInstance(BACKING_SI_1_NAME);
-		assertThat(backingServiceInstance).isNotNull();
+		// then the brokered service instance is indeed created
+		ServiceInstance brokeredServiceInstance = getServiceInstance(SI_NAME);
+
+		// and a backing service instance is created in the backing service with the id as service name
+		ServiceInstance backingServiceInstance = getServiceInstance(brokeredServiceInstance.getId(), APP_SERVICE_NAME);
+		//and the backing service has the right type
+		assertThat(backingServiceInstance.getService()).isEqualTo(APP_SERVICE_NAME);
 
 		//when a service key is created with params
 		createServiceKey(SK_NAME, SI_NAME);
 		ServiceKey brokeredServiceKey = getServiceKey(SK_NAME, SI_NAME);
 
 		//then a backing service key with params is created, whose name matches the brokered service binding id
-		assertThat(listServiceKeys(BACKING_SI_1_NAME)).containsOnly(brokeredServiceKey.getId());
-		ServiceKey serviceKey = getServiceKey(brokeredServiceKey.getId(), BACKING_SI_1_NAME);
+		assertThat(listServiceKeys(BACKING_SI_1_NAME, APP_SERVICE_NAME)).containsOnly(brokeredServiceKey.getId());
+		ServiceKey backingServiceKey = getServiceKey(brokeredServiceKey.getId(), BACKING_SI_1_NAME, APP_SERVICE_NAME);
 		// and credentials from backing service key is returned in brokered service key
-		assertThat(serviceKey.getCredentials()).isEqualTo(NoOpCreateServiceInstanceAppBindingWorkflow.CREDENTIALS);
+		assertThat(backingServiceKey.getCredentials()).isEqualTo(STATIC_CREDENTIALS);
 
 		//when a service key is deleted
 		deleteServiceKey(SK_NAME, SI_NAME);
 
 		//then the backing service key is deleted
-		assertThat(listServiceKeys(BACKING_SI_1_NAME)).isEmpty();
+		assertThat(listServiceKeys(BACKING_SI_1_NAME, APP_SERVICE_NAME)).isEmpty();
 
 		// when the service instance is deleted
 		deleteServiceInstance(SI_NAME);
 
 		// and the backing service instance is deleted
-		assertThat(listServiceInstances()).doesNotContain(BACKING_SI_1_NAME);
+		assertThat(listServiceInstances(APP_SERVICE_NAME)).doesNotContain(BACKING_SI_1_NAME);
 	}
 
 }
