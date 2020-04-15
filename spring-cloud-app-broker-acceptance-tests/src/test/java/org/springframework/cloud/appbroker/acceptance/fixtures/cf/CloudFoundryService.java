@@ -290,11 +290,19 @@ public class CloudFoundryService {
 	}
 
 	public Flux<ServiceInstanceSummary> listServiceInstances() {
+		return listServiceInstances(this.cloudFoundryOperations);
+	}
+
+	public Flux<ServiceInstanceSummary> listServiceInstances(String space) {
+		return listServiceInstances(createOperationsForSpace(space));
+	}
+
+	public Flux<ServiceInstanceSummary> listServiceInstances(CloudFoundryOperations cloudFoundryOperations) {
 		return cloudFoundryOperations.services().listInstances();
 	}
 
-	public Flux<ServiceKey> listServiceKeys(String serviceInstanceName) {
-		return cloudFoundryOperations.services().listServiceKeys(
+	public Flux<ServiceKey> listServiceKeys(String serviceInstanceName, String space) {
+		return createOperationsForSpace(space).services().listServiceKeys(
 			ListServiceKeysRequest.builder()
 			.serviceInstanceName(serviceInstanceName).build());
 	}
@@ -305,6 +313,10 @@ public class CloudFoundryService {
 
 	public Mono<ServiceKey> getServiceKey(String serviceInstanceName, String serviceKeyName) {
 		return getServiceKey(cloudFoundryOperations, serviceInstanceName, serviceKeyName);
+	}
+
+	public Mono<ServiceKey> getServiceKey(String serviceInstanceName, String serviceKeyName, String space) {
+		return getServiceKey(createOperationsForSpace(space), serviceInstanceName, serviceKeyName);
 	}
 
 	public Mono<ServiceInstance> getServiceInstance(String serviceInstanceName, String space) {
@@ -323,6 +335,7 @@ public class CloudFoundryService {
 
 	private Mono<ServiceKey> getServiceKey(CloudFoundryOperations operations,
 		String serviceInstanceName, String serviceKeyName) {
+
 		return operations.services()
 			.getServiceKey(GetServiceKeyRequest.builder()
 				.serviceKeyName(serviceKeyName)
@@ -397,7 +410,7 @@ public class CloudFoundryService {
 			.build()
 			.spaces();
 
-		final String defaultSpace = cloudFoundryProperties.getDefaultSpace();
+		final String defaultSpace = getDefaultSpaceName();
 		return getDefaultSpace(spaceOperations)
 			.switchIfEmpty(spaceOperations.create(CreateSpaceRequest
 				.builder()
@@ -405,6 +418,10 @@ public class CloudFoundryService {
 				.organization(defaultOrg)
 				.build())
 				.then(getDefaultSpace(spaceOperations)));
+	}
+
+	public String getDefaultSpaceName() {
+		return cloudFoundryProperties.getDefaultSpace();
 	}
 
 	public Mono<OrganizationSummary> getOrCreateDefaultOrganization() {
@@ -432,7 +449,7 @@ public class CloudFoundryService {
 		return spaceOperations.list()
 			.filter(r -> r
 				.getName()
-				.equals(cloudFoundryProperties.getDefaultSpace()))
+				.equals(getDefaultSpaceName()))
 			.next();
 	}
 
@@ -537,7 +554,7 @@ public class CloudFoundryService {
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "default-org",
 			cloudFoundryProperties.getDefaultOrg());
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "default-space",
-			cloudFoundryProperties.getDefaultSpace());
+			getDefaultSpaceName());
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "skip-ssl-validation",
 			String.valueOf(cloudFoundryProperties.isSkipSslValidation()));
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "properties.memory", "1024M");
