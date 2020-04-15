@@ -5,21 +5,13 @@ import java.time.Duration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v2.organizations.ListOrganizationSpacesRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
-import org.cloudfoundry.client.v2.spaces.CreateSpaceRequest;
 import org.cloudfoundry.operations.CloudFoundryOperations;
-import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
-import org.cloudfoundry.operations.organizations.OrganizationDetail;
-import org.cloudfoundry.operations.organizations.OrganizationInfoRequest;
 import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
 import org.cloudfoundry.operations.services.ListServiceKeysRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
-import org.cloudfoundry.operations.useradmin.SetSpaceRoleRequest;
-import org.cloudfoundry.operations.useradmin.SpaceRole;
-import org.cloudfoundry.util.PaginationUtils;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
@@ -37,7 +29,7 @@ import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInsta
 import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 
 @SuppressWarnings("BlockingMethodInNonBlockingContext")
-public class OsbCmdbServiceInstance implements ServiceInstanceService {
+public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements ServiceInstanceService {
 
 	public static final CreateServiceInstanceResponse RESPONSE_CREATE_202_ACCEPTED = CreateServiceInstanceResponse
 		.builder()
@@ -58,36 +50,24 @@ public class OsbCmdbServiceInstance implements ServiceInstanceService {
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-	private final Logger LOG = Loggers.getLogger(OsbCmdbServiceInstance.class);
-
-	private final CloudFoundryClient client;
-
-	private final String defaultOrg;
-
 	private final String defaultSpace;
-
-	private final String userName;
 
 	private final CloudFoundryDeploymentProperties deploymentProperties;
 
-	private final CloudFoundryOperations operations;
-
+	protected final Logger LOG = Loggers.getLogger(AbstractOsbCmdbService.class);
 
 	public OsbCmdbServiceInstance(CloudFoundryDeploymentProperties deploymentProperties,
 		CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		String defaultOrg, String defaultSpace, String userName) {
+		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
 
 		this.deploymentProperties = deploymentProperties;
-		operations = cloudFoundryOperations;
-		client = cloudFoundryClient;
-		this.defaultOrg = defaultOrg;
 		this.defaultSpace = defaultSpace;
-		this.userName = userName;
 	}
 
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
-		CloudFoundryOperations spacedTargetedOperations = getOrCreateSpace(request.getServiceDefinition().getName());
+		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
 		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
 
 		boolean asyncProvisionning;
@@ -132,7 +112,7 @@ public class OsbCmdbServiceInstance implements ServiceInstanceService {
 
 	@Override
 	public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
-		CloudFoundryOperations spacedTargetedOperations = getOrCreateSpace(request.getServiceDefinition().getName());
+		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
 		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
 
 		//List and delete service keys first
@@ -232,7 +212,7 @@ public class OsbCmdbServiceInstance implements ServiceInstanceService {
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
-		CloudFoundryOperations spacedTargetedOperations = getOrCreateSpace(
+		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(
 			request.getServiceDefinition().getName()); //ignore race condition during space
 		// creation for K8S dupl requests
 		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
@@ -261,36 +241,6 @@ public class OsbCmdbServiceInstance implements ServiceInstanceService {
 			.build());
 	}
 
-	private Mono<Void> addSpaceDeveloperRoleForCurrentUser(String orgName, String spaceName) {
-		return Mono.defer(() -> {
-			return operations.userAdmin().setSpaceRole(SetSpaceRoleRequest.builder()
-				.spaceRole(SpaceRole.DEVELOPER)
-				.organizationName(orgName)
-				.spaceName(spaceName)
-				.username(this.userName)
-				.build())
-				.doOnSuccess(v -> LOG.info("Set space developer role for space {}", spaceName))
-				.doOnError(e -> LOG.warn(String
-					.format("Error setting space developer role for space %s: %s", spaceName, e.getMessage())));
-		});
-	}
-
-	private Mono<String> createSpace(String spaceName) {
-		return getSpaceId(spaceName)
-			.switchIfEmpty(Mono.just(this.defaultOrg)
-				.flatMap(orgName -> getOrganizationId(orgName)
-					.flatMap(orgId -> client.spaces().create(CreateSpaceRequest.builder()
-						.organizationId(orgId)
-						.name(spaceName)
-						.build())
-						.doOnSuccess(response -> LOG.info("Created space {}", spaceName))
-						.doOnError(
-							e -> LOG.warn(String.format("Error creating space %s: %s", spaceName, e.getMessage())))
-						.map(response -> response.getMetadata().getId())
-						.flatMap(spaceId -> addSpaceDeveloperRoleForCurrentUser(orgName, spaceName)
-							.thenReturn(spaceId)))));
-	}
-
 	private CmdbOperationState fromJson(String operation) {
 		try {
 			return OBJECT_MAPPER.readValue(operation, CmdbOperationState.class);
@@ -298,43 +248,6 @@ public class OsbCmdbServiceInstance implements ServiceInstanceService {
 		catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	private ServiceInstance getCfServiceInstance(CloudFoundryOperations spacedTargetedOperations,
-		String serviceInstanceName) {
-		return spacedTargetedOperations.services()
-			.getInstance(org.cloudfoundry.operations.services.GetServiceInstanceRequest.builder()
-				.name(serviceInstanceName).build()).block();
-	}
-
-	private CloudFoundryOperations getOrCreateSpace(String spaceName) {
-		createSpace(spaceName).block();
-
-		return DefaultCloudFoundryOperations.builder()
-			.from((DefaultCloudFoundryOperations) this.operations)
-			.space(spaceName)
-			.build();
-	}
-
-	private Mono<String> getOrganizationId(String orgName) {
-		return operations.organizations().get(OrganizationInfoRequest.builder()
-			.name(orgName)
-			.build())
-			.map(OrganizationDetail::getId);
-	}
-
-	private Mono<String> getSpaceId(String spaceName) {
-		return Mono.justOrEmpty(this.defaultOrg)
-			.flatMap(orgName -> getOrganizationId(orgName)
-				.flatMap(orgId -> PaginationUtils.requestClientV2Resources(page -> client.organizations()
-					.listSpaces(ListOrganizationSpacesRequest.builder()
-						.name(spaceName)
-						.organizationId(orgId)
-						.page(page)
-						.build()))
-					.filter(resource -> resource.getEntity().getName().equals(spaceName))
-					.map(resource -> resource.getMetadata().getId())
-					.next()));
 	}
 
 	private void updateServiceInstanceMetadata(CloudFoundryOperations spacedTargetedOperations,
