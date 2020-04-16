@@ -60,9 +60,27 @@ test {
 	onlyIf {
 		project.hasProperty("acceptanceTests")
 	}
-	//	systemProperty "tests.broker-app-path", "${buildDir}/libs/spring-cloud-app-broker-acceptance-tests.jar"
 
 
 	// Pass relevant java properties to the test task
+	//	systemProperty "tests.broker-app-path", "${buildDir}/libs/spring-cloud-app-broker-acceptance-tests.jar"
 	systemProperties << System.properties.findAll { it.key.startsWith("spring.") ||  it.key.startsWith("tests.")}
+
+
+	String itag = project.hasProperty("includeTag") ?
+			project.property("includeTag") : null;
+	String etag = project.hasProperty("excludeTag") ?
+			project.property("excludeTag") : null;
+
+	useJUnitPlatform{
+		if (itag !=null) {
+			includeTags  itag
+		}
+		if (etag != null) {
+			excludeTags  etag
+		}
+	}
+
 }
+
+
