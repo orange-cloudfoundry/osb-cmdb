@@ -203,8 +203,11 @@ What SCAB features would be lost and how to accomodate ?
 
 * [ ] Run AT in CI
    * [ ] Adapt JVM arg -Dtests.broker-app-path=/home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/libs/osb-cmdb-0.10.0-SNAPSHOT.jar
-   * [ ] Adapt clean up script to also clean up backing (spacePerServiceDefinition) spaces
-   * [ ] create PR
+      * [ ] fly hijack to know if current dir absolute path is constant
+   * [ ] Adapt clean up script to also clean up backing (spacePerServiceDefinition) spaces ?
+   * [ ] create PR to trigger pipeline ?
+      * against scab-master branch
+   * [x] Modify pipeline to run on `redesign-cmdb` branch
 * [ ] Refine AT coverage
     * [ ] dashboard url
     * [ ] update service instance plan
