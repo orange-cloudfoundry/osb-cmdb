@@ -51,4 +51,19 @@ test {
 	// force a new fork for every test to eliminate issues with wiremock state
 	forkEvery = 1
 	maxHeapSize = '1G'
+
+	String itag = project.hasProperty("includeTag") ?
+			project.property("includeTag") : null;
+	String etag = project.hasProperty("excludeTag") ?
+			project.property("excludeTag") : null;
+
+	useJUnitPlatform{
+		if (itag !=null) {
+			includeTags  itag
+		}
+		if (etag != null) {
+			excludeTags  etag
+		}
+	}
+
 }

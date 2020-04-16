@@ -201,13 +201,15 @@ What SCAB features would be lost and how to accomodate ?
     * [ ] optimize cf api calls
        * [ ] duplicate `START  Get Organization` on CSI
 
-* [ ] Run AT in CI
-   * [ ] Adapt JVM arg -Dtests.broker-app-path=/home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/libs/osb-cmdb-0.10.0-SNAPSHOT.jar
-      * [ ] fly hijack to know if current dir absolute path is constant
+* [~] Run AT in CI
+   * [x] Adapt JVM arg -Dtests.broker-app-path=/home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/libs/osb-cmdb-0.10.0-SNAPSHOT.jar
+      * [x] fly hijack to know if current dir absolute path is constant
+      * [x] modify task to replace $PWD with current var
    * [ ] Adapt clean up script to also clean up backing (spacePerServiceDefinition) spaces ?
-   * [ ] create PR to trigger pipeline ?
-      * against scab-master branch
    * [x] Modify pipeline to run on `redesign-cmdb` branch
+* [ ] Fix CI https://circleci.com/gh/orange-cloudfoundry/osb-cmdb-spike/282
+   * [ ] Add tag to select which test to run
+   * [ ] Delete unneeded scab test, once we get sufficient inspiration    
 * [ ] Refine AT coverage
     * [ ] dashboard url
     * [ ] update service instance plan
