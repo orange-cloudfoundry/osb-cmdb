@@ -133,22 +133,22 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		if (osbInterceptor != null && osbInterceptor.accept(request)) {
 			return osbInterceptor.deleteServiceInstance(request);
 		}
+		String backingServiceInstanceName = request.getServiceInstanceId();
 
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
-		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
+		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, backingServiceInstanceName);
 
 		if (existingSi == null) {
-			LOG.info("No such service instance id={} to delete, return early.", request.getServiceInstanceId());
+			LOG.info("No such backing service instance id={} to delete, return early.", backingServiceInstanceName);
 			return Mono.just(DeleteServiceInstanceResponse.builder().build());
 		}
 
 		//List and delete service keys first
 		//Delete service keys if any. Ignore race
-		String serviceInstanceName = request.getServiceInstanceId();
 		spacedTargetedOperations.services().listServiceKeys(ListServiceKeysRequest.builder()
-			.serviceInstanceName(serviceInstanceName).build())
+			.serviceInstanceName(backingServiceInstanceName).build())
 			.flatMap(sk -> spacedTargetedOperations.services().deleteServiceKey(DeleteServiceKeyRequest.builder()
-				.serviceInstanceName(serviceInstanceName)
+				.serviceInstanceName(backingServiceInstanceName)
 				.serviceKeyName(sk.getName())
 				.build()))
 			.blockLast();
@@ -159,9 +159,10 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		//expects noop on missing service instance
 		spacedTargetedOperations.services()
 			.deleteInstance(org.cloudfoundry.operations.services.DeleteServiceInstanceRequest.builder()
-				.name(serviceInstanceName)
+				.name(backingServiceInstanceName)
 				.completionTimeout(SYNC_COMPLETION_TIMEOUT)
-				.build());
+				.build())
+			.block();
 		boolean asyncProvisionning = false;
 
 		DeleteServiceInstanceResponse.DeleteServiceInstanceResponseBuilder builder = DeleteServiceInstanceResponse
@@ -170,8 +171,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		if (asyncProvisionning) {
 			builder.operation(toJson(new CmdbOperationState(existingSi.getId(), OsbOperation.DELETE)));
 		}
-		return Mono.just(builder
-			.build());
+		return Mono.just(builder.build());
 	}
 
 	@Override
@@ -303,7 +303,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		OsbOperation operationType;
 
 		/**
-		 *
+		 * Required for Jackson deserialization. See https://www.baeldung.com/jackson-exception#2-the-solution
 		 */
 		public CmdbOperationState() {
 		}

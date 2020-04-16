@@ -31,7 +31,6 @@ What SCAB features would be lost and how to accomodate ?
          - use custom app deployer
 - BackingService spec: what are use-cases that would require a configuration per brokered service ?
    - coab custom params opt-in ?
-   - support
    - ~~dashboard Url configuration ? => serve it in nested brokers instead ?~~
    - ~~sync vs async processing~~
 
@@ -40,7 +39,7 @@ What SCAB features would be lost and how to accomodate ?
 # Design outline:
 
 - Reuse acceptance tests
-   - [ ] handle test broker
+   - [x] handle test broker
 - Reuse component tests
 - custom ServiceInstanceService impl
    - stateless design: CF is the only state, no more state repository.
@@ -127,12 +126,12 @@ What SCAB features would be lost and how to accomodate ?
    * [x] Wire autoconfiguration in OsbCmdbApplication. For now reuse scab autoconfiguration and just override ServiceInstanceService
    * [x] Cherry pick service key acceptance test from service-key-support branch & associated files
       * alternatives
-      * [ ] create a `service-key-support-flattened-Aprl-5`
-      * using git reset
+      * [ ] ~~create a `service-key-support-flattened-Aprl-5`~~
+      * ~~using git reset~~
          * [ ] git reset --keep `service-key-support`: brings in all files from service-key support in working dir
             * from d4da3f73
          * [ ] git reset --soft : reset index
-      * using git checkout https://jasonrudolph.com/blog/2009/02/25/git-tip-how-to-merge-specific-files-from-another-branch/
+      * [x] using git checkout https://jasonrudolph.com/blog/2009/02/25/git-tip-how-to-merge-specific-files-from-another-branch/
          * acceptance-tests
          * autoconfiguration
             * [ ] move dynamoc catalog in osb-cmdb package ?
@@ -182,8 +181,8 @@ What SCAB features would be lost and how to accomodate ?
                    * [ ] Restore BackingService spec code and use it in OsbCmdbServiceInstance: corresponds to different case than osb-cmdb prod
                       * [ ] Modify CreateInstanceWithBackingServiceKeysAcceptanceTest catalog + requested service definitions
                    * [ ] Configure an artificial suffix in OsbCmdbServiceInstance to convert BrokeredService name into BackendService name
-             * [ ] Test same set up than prod: brokered service name == backend service name
-                * [ ] **Modify ServiceInstanceInterceptor to only accept OSB calls in backing spaces**,
+             * [~] Test same set up than prod: brokered service name == backend service name
+                * [x] **Modify ServiceInstanceInterceptor to only accept OSB calls in backing spaces**,
                    * [x] CSI and USI using using CF context
                    * DSI and GLO don't have backing space as context
                       * [x] Maintain state and correlate provisionned service instance id(s)
@@ -199,15 +198,45 @@ What SCAB features would be lost and how to accomodate ?
        * [x] Json serialization issue
           > java.lang.RuntimeException: com.fasterxml.jackson.databind.exc.InvalidDefinitionException: 
           > No serializer found for class com.orange.oss.osbcmdb.OsbCmdbServiceInstance$CmdbOperationState and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS)
+    * [ ] optimize cf api calls
+       * [ ] duplicate `START  Get Organization` on CSI
 
-
-    * [ ] Adapt clean up script to also clean up spacePerServiceDefinition
+* [ ] Run AT in CI
+   * [ ] Adapt JVM arg -Dtests.broker-app-path=/home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/libs/osb-cmdb-0.10.0-SNAPSHOT.jar
+   * [ ] Adapt clean up script to also clean up backing (spacePerServiceDefinition) spaces
+   * [ ] create PR
+* [ ] Refine AT coverage
+    * [ ] dashboard url
+    * [ ] update service instance plan
+    * [ ] dynamic catalog
+    * [ ] service instance params ?
+    * [ ] service binding params ?
+    * [ ] async backing service
+    * [ ] metadata
+* [ ] Refactor AT:
+    * [x] Extract variables to make explicit backend service name
+    * [ ] 
+    * [ ] Fix broker clean up
+       * [x] DSI bug: missing subscribe to mono through block()
+       * [x] check cf-java-client support purge service offering (in cfclient) + purge service instance
+       * [ ] modify call to use cfclient.deleteService(purge=true) for each service 
+    * [x] Remove app-broker unnecessary properties passed as env vars
+    * [ ] Rename Test class
+* [ ] Refactor AT with multi broker support 
+    * [ ] Fail fast on org.springframework.cloud.appbroker.acceptance.CloudFoundryAcceptanceTest.initializeBroker()
+        > org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceBrokerNameTaken(270002): The service broker name is taken
+        * [ ] Replace `blockingSubscribe(Mono<? super T> publisher)` with Mono.block() ?                                                                                                                
+    * [ ] Modify AT to deploy two distinct brokers
+    * [ ] Check recent support in cf-java-client. https://github.com/cloudfoundry/cf-java-client/issues/1025
+    
 * [ ] Collect wire traces from CF API
 * [ ] Set up component test, mocking CF API
+   * [ ] async backing service with timeout
+   * [ ] async backing service without timeout
+   * [ ] K8S dupls
 * [ ] Collect Cf java client exception
+   * [ ] Submit cf-java client issue to have exceptions be documented and tested
 * [ ] Set up unit test, mocking CF java client
    * [ ] Extract collaborator to deal with CloudFoundryOperations mock lifecycle (similar to CloudFoundryOperationsUtils)
 
-* [ ] Run AT in CI
-   * create PR
-   * [ ] Adapt JVM arg -Dtests.broker-app-path=/home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/libs/osb-cmdb-0.10.0-SNAPSHOT.jar
+* [ ] Refactor

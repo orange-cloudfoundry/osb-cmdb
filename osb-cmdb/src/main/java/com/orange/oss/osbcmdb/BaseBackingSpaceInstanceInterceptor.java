@@ -32,16 +32,19 @@ public class BaseBackingSpaceInstanceInterceptor {
 		this.defaultSpaceName = defaultSpaceName;
 	}
 
-	protected boolean isScabAcceptanceTest(Context context) {
+	protected boolean isScabAcceptanceTest(Context context, String requestToString) {
 		CloudFoundryContext cloudFoundryContext = (CloudFoundryContext) context;
 		String spaceName = cloudFoundryContext.getSpaceName();
 		boolean isTest = ! spaceName.equals(defaultSpaceName);
-		LOG.debug("Accept: isTest={} for spaceName={}", isTest, spaceName);
+		LOG.debug("Accept: isTest={} for spaceName={} and request={}", isTest, spaceName, requestToString);
 		return isTest;
 	}
 
-	protected boolean isServiceGuidPreviousProvisionnedByUs(String serviceInstanceId) {
-		return provisionnedServiceInstanceGuids.contains(serviceInstanceId);
+	protected boolean isServiceGuidPreviousProvisionnedByUs(String serviceInstanceId, String requestToString) {
+		boolean isGuidPreviouslyProvisionnedByUs = provisionnedServiceInstanceGuids.contains(serviceInstanceId);
+		LOG.debug("Accept: isServiceGuidPreviousProvisionnedByUs={} for serviceInstanceId={} and request={}",
+			isGuidPreviouslyProvisionnedByUs, serviceInstanceId, requestToString);
+		return isGuidPreviouslyProvisionnedByUs;
 	}
 
 }

@@ -23,8 +23,6 @@ import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.operations.services.ServiceKey;
 import org.junit.jupiter.api.Test;
 
-import org.springframework.cloud.appbroker.acceptance.services.NoOpCreateServiceInstanceAppBindingWorkflow;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcceptanceTest {
@@ -32,11 +30,9 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 	private static final String SI_NAME = "si-create-service-keys";
 	private static final String SK_NAME = "sk-create-service-keys";
 
-	private static final String BACKING_SI_1_NAME = "backing-service-instance-created";
-
 	private static final String SUFFIX = "create-instance-with-service-keys";
 
-	private static final String APP_SERVICE_NAME = "app-service-" + SUFFIX;
+	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
 	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
 
@@ -51,7 +47,7 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 
 	@Override
 	protected String appServiceName() {
-		return APP_SERVICE_NAME;
+		return BROKERED_SERVICE_NAME;
 	}
 
 	@Override
@@ -61,12 +57,6 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 
 	@Test
 	@AppBrokerTestProperties({
-		"spring.cloud.appbroker.services[0].service-name=" + APP_SERVICE_NAME,
-		"spring.cloud.appbroker.services[0].plan-name=" + PLAN_NAME,
-		"spring.cloud.appbroker.services[0].services[0].name=" + BACKING_SERVICE_NAME,
-		"spring.cloud.appbroker.services[0].services[0].plan=" + PLAN_NAME,
-		"spring.cloud.appbroker.services[0].services[0].service-instance-name=" + BACKING_SI_1_NAME,
-		"service-bindings-as-service-keys=true", //controls autoconfigure
 		"debug=true", //Spring boot debug mode
 		//osb-cmdb auth
 		"spring.security.user.name=user",
@@ -92,17 +82,19 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		ServiceInstance brokeredServiceInstance = getServiceInstance(SI_NAME);
 
 		// and a backing service instance is created in the backing service with the id as service name
-		ServiceInstance backingServiceInstance = getServiceInstance(brokeredServiceInstance.getId(), APP_SERVICE_NAME);
+		String backingServiceName = brokeredServiceInstance.getId();
+		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
 		//and the backing service has the right type
-		assertThat(backingServiceInstance.getService()).isEqualTo(APP_SERVICE_NAME);
+		assertThat(backingServiceInstance.getService()).isEqualTo(BROKERED_SERVICE_NAME);
 
 		//when a service key is created with params
 		createServiceKey(SK_NAME, SI_NAME);
 		ServiceKey brokeredServiceKey = getServiceKey(SK_NAME, SI_NAME);
 
 		//then a backing service key with params is created, whose name matches the brokered service binding id
-		assertThat(listServiceKeys(BACKING_SI_1_NAME, APP_SERVICE_NAME)).containsOnly(brokeredServiceKey.getId());
-		ServiceKey backingServiceKey = getServiceKey(brokeredServiceKey.getId(), BACKING_SI_1_NAME, APP_SERVICE_NAME);
+		String backingServiceKeyName = brokeredServiceKey.getId();
+		assertThat(listServiceKeys(backingServiceName, BROKERED_SERVICE_NAME)).containsOnly(backingServiceKeyName);
+		ServiceKey backingServiceKey = getServiceKey(backingServiceKeyName, backingServiceName, BROKERED_SERVICE_NAME);
 		// and credentials from backing service key is returned in brokered service key
 		assertThat(backingServiceKey.getCredentials()).isEqualTo(STATIC_CREDENTIALS);
 
@@ -110,13 +102,13 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		deleteServiceKey(SK_NAME, SI_NAME);
 
 		//then the backing service key is deleted
-		assertThat(listServiceKeys(BACKING_SI_1_NAME, APP_SERVICE_NAME)).isEmpty();
+		assertThat(listServiceKeys(backingServiceName, BROKERED_SERVICE_NAME)).isEmpty();
 
 		// when the service instance is deleted
 		deleteServiceInstance(SI_NAME);
 
 		// and the backing service instance is deleted
-		assertThat(listServiceInstances(APP_SERVICE_NAME)).doesNotContain(BACKING_SI_1_NAME);
+		assertThat(listServiceInstances(BROKERED_SERVICE_NAME)).doesNotContain(backingServiceName);
 	}
 
 }

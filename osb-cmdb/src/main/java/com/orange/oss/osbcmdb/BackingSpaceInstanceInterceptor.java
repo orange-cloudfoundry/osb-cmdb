@@ -29,22 +29,22 @@ public class BackingSpaceInstanceInterceptor extends BaseBackingSpaceInstanceInt
 
 	@Override
 	public boolean accept(CreateServiceInstanceRequest request) {
-		return isScabAcceptanceTest(request.getContext());
+		return isScabAcceptanceTest(request.getContext(), request.toString());
 	}
 
 	@Override
 	public boolean accept(GetLastServiceOperationRequest request) {
-		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId());
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
 	}
 
 	@Override
 	public boolean accept(DeleteServiceInstanceRequest request) {
-		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId());
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
 	}
 
 	@Override
 	public boolean accept(UpdateServiceInstanceRequest request) {
-		return isScabAcceptanceTest(request.getContext());
+		return isScabAcceptanceTest(request.getContext(), request.toString());
 	}
 
 	@Override

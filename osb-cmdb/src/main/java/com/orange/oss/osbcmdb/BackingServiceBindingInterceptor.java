@@ -29,9 +29,11 @@ public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceIn
 	}
 
 	@Override
-	public boolean accept(CreateServiceInstanceBindingRequest request) { return isScabAcceptanceTest(request.getContext());}
+	public boolean accept(CreateServiceInstanceBindingRequest request) { return isScabAcceptanceTest(request.getContext(),
+		request.toString());}
 	@Override
-	public boolean accept(DeleteServiceInstanceBindingRequest request) { return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId());}
+	public boolean accept(DeleteServiceInstanceBindingRequest request) { return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(),
+		request.toString());}
 
 
 	@Override
