@@ -59,7 +59,7 @@ class DynamicCatalogComponentTest {
 			.body("services[0].metadata.size()", is(0))
 			.body("services[0].plan_updateable", equalTo(null))
 			.body("services[0].instances_retrievable", equalTo(null))
-			.body("services[0].plans[0].id", equalTo("standard-plan-id"))
+			.body("services[0].plans[0].id", equalTo("standard-PLAN-GUID"))
 			.body("services[0].plans[0].name", equalTo("standard"))
 			.body("services[0].plans[0].metadata", equalTo(null))
 			.body("services[0].plans[0].bindable", equalTo(true))

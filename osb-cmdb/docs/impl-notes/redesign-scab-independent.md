@@ -120,8 +120,7 @@ What SCAB features would be lost and how to accomodate ?
    * src/main/
       * java
          * cmdb
-            * config: autoconfig, security config
-            * catalog
+            * config: autoconfig, security config ??
             * serviceinstance
             * servicebinding
       * resources: application.yml: default config: actuactor, logs 

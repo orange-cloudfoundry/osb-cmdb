@@ -1,5 +1,30 @@
 
 * [ ] **Set up component test, mocking CF API** to get faster feedback than AT
+   * [ ] Understand and document how integration tests work
+      * `WiremockComponentTest` starts the spring boot app from integration tests and configures it to talk wiremock server launched in jvm.
+         * In scab context, autoconfiguration classes are present in the classpath and thus automatically detected
+         * Requires the wiremock resources to be present in "classpath:/responses/"
+         * No auth is performed 
+   * [ ] Alternatives for reusing SCAB 
+      * Copy component tests in osb-cmdb module as a subpackage
+      * Adapt `WiremockComponentTest` to load OsbCmdbApplication with some tunings
+         * disable dynamic catalog with property
+         * handle default osb-cmdb auth
+            * select a permissive spring security config to talk to osb api
+               * using spring profile
+            * modify org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture.serviceBrokerSpecification() to use basic auth
+       * [ ] Test `DynamicCatalogComponentTest`: just checks that v2/catalog wiremock is served to junit
+          * [ ] Fix changes to recorded mocks since rebase
+          * [ ] Activate dynamic catalog          
+       * [ ] Test `DynamicServiceAutoConfigurationComponentTest`
+          * Pb: wiremock port conflicts `java.io.IOException: Failed to bind to /0.0.0.0:8080`
+          * another scab rebase regression ? 
+             * compare with cmdb-master: WireMockServer fixture changed:
+               > 	@PostConstruct
+               >  	public void startWiremock() {
+             * check circle ci history on rebase osb-cmdb master: `cmdb-master-rebased-from-scab`
+             * [ ] Fixed `ExtendedCloudControllerStubFixture` with now missing body id replacement
+          * multiple wiremock instances started that conflict ?
    * [ ] Initiate CmdbCreateServiceInstanceComponentTest from CreateInstanceWithSpacePerServiceInstanceTargetComponentTest
       * [ ] configure scab-integration-tests to depend on osb-cmdb project
       * [ ] adapt WiremockComponentTest to use OsbCmdbApplication and inject osb-cmdb props: catalog off + admin user
@@ -33,22 +58,6 @@
        * [x] check cf-java-client support purge service offering (in cfclient) + purge service instance
        * [ ] modify call to use cfclient.deleteService(purge=true) for each service 
     * [ ] Rename Test class
-* [ ] Refactor osb-cmdb packaging (see [target packaging](redesign-scab-independent.md))
-    * [x] study removing dependencies to scab code to make tests faster: stashed in `remove-scab-gradle-dependency`
-       * CloudFoundryDeploymentProperties
-       * CloudFoundryTargetProperties
-       * CreateBackingServicesMetadataTransformationService
-       * CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient
-    * [ ] Study to Only keep single project (to speed up builds). Find solutions for
-       * boot jar dependency for acceptance tests execution
-       * multiple classpath for tests ?
-    * [ ] move cmdb code into packages
-    * [ ] Clean up acceptance test fixture in production code
-       * [ ] Conditioned by a spring profile acceptance test
-    * [ ] duplicate SCAB AT to not depend on SCAB anymore
-       * [ ] copy code into a package
-       * [ ] check/handle resources
-    * [ ] Migrate from gradle to maven ?
 
      
 * [ ] Refactor AT with multi broker support 
