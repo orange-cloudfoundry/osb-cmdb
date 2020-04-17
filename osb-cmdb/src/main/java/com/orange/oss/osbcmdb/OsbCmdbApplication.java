@@ -18,6 +18,8 @@ import org.springframework.cloud.appbroker.service.DeleteServiceInstanceBindingW
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 
+import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
+import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import reactor.core.publisher.Hooks;
@@ -83,7 +85,8 @@ public class OsbCmdbApplication {
 		ServiceInstanceInterceptor serviceInstanceInterceptor) {
 		return new OsbCmdbServiceInstance(deploymentProperties, cloudFoundryOperations, cloudFoundryClient,
 			targetProperties.getDefaultOrg(), targetProperties.getDefaultSpace(), targetProperties.getUsername(),
-			serviceInstanceInterceptor);
+			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(),
+			new UpdateServiceMetadataFormatterService());
 	}
 
 	//TODO: condition that to spring profile or env var

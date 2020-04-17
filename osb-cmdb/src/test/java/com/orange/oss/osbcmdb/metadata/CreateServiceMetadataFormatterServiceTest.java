@@ -23,10 +23,9 @@ class CreateServiceMetadataFormatterServiceTest {
 	@Test
 	void populates_expected_labels_and_annotations_for_null_profile() {
 		//given
-		MetaData metaData1 = MetaData
+		MetaData metaData = MetaData
 			.builder()
 			.build();
-		List<MetaData> backingServices = singletonList(metaData1);
 
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest
 			.builder()
@@ -52,10 +51,9 @@ class CreateServiceMetadataFormatterServiceTest {
 		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
-		createServiceMetadataFormatterService.setMetadata(backingServices, request);
+		createServiceMetadataFormatterService.setMetadata(metaData, request);
 
 		//then
-		MetaData metaData = backingServices.get(0);
 		Map<String, String> annotations = metaData.getAnnotations();
 		Map<String, String> labels = metaData.getLabels();
 		assertThat(labels).containsOnly(
@@ -66,10 +64,9 @@ class CreateServiceMetadataFormatterServiceTest {
 	@Test
 	void populates_expected_labels_and_annotations_for_cf_profile() {
 		//given
-		MetaData metaData1 = MetaData
+		MetaData metaData = MetaData
 			.builder()
 			.build();
-		List<MetaData> backingServices = singletonList(metaData1);
 
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest
 			.builder()
@@ -108,10 +105,9 @@ class CreateServiceMetadataFormatterServiceTest {
 		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
-		createServiceMetadataFormatterService.setMetadata(backingServices, request);
+		createServiceMetadataFormatterService.setMetadata(metaData, request);
 
 		//then
-		MetaData metaData = backingServices.get(0);
 		Map<String, String> annotations = metaData.getAnnotations();
 		Map<String, String> labels = metaData.getLabels();
 		assertThat(labels).containsOnly(
@@ -132,10 +128,9 @@ class CreateServiceMetadataFormatterServiceTest {
 	@Test
 	void populates_expected_labels_and_annotations_for_kubernetes_profile() {
 		//given
-		MetaData metaData1 = MetaData
+		MetaData metaData = MetaData
 			.builder()
 			.build();
-		List<MetaData> backingServices = singletonList(metaData1);
 
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest
 			.builder()
@@ -172,10 +167,9 @@ class CreateServiceMetadataFormatterServiceTest {
 		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
-		createServiceMetadataFormatterService.setMetadata(backingServices, request);
+		createServiceMetadataFormatterService.setMetadata(metaData, request);
 
 		//then
-		MetaData metaData = backingServices.get(0);
 		Map<String, String> annotations = metaData.getAnnotations();
 		Map<String, String> labels = metaData.getLabels();
 		assertThat(labels).containsOnly(
