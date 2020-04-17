@@ -101,11 +101,6 @@ class DynamicServiceAutoConfigurationComponentTest {
 	@Autowired
 	private UaaStubFixture uaaFixture;
 
-	@BeforeAll
-	void setUp() {
-		wiremockFixture.startWiremock();
-	}
-
 	@AfterAll
 	void tearDown() {
 		wiremockFixture.stopWiremock();

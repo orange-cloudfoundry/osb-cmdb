@@ -11,7 +11,9 @@ public class ExtendedCloudControllerStubFixture extends CloudControllerStubFixtu
 		stubFor(get(urlPathEqualTo("/v2/spaces/" + TEST_SPACE_GUID + "/services"))
 			.withQueryParam("page", equalTo("1"))
 			.willReturn(ok()
-				.withBody(cc(responseFile))));
+				.withBody(cc(responseFile,
+					replace("@service-guid", "SERVICE-ID")
+					))));
 	}
 
 	public void stubServicePlanWithResponse(String responseFile) {
