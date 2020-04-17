@@ -6,11 +6,11 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 
-public class CreateBackingServicesMetadataTransformationServiceNoOp
-		implements CreateBackingServicesMetadataTransformationService {
+public class CreateServiceMetadataFormatterServiceNoOp
+		implements CreateServiceMetadataFormatterService {
 
 	@Override
-	public Mono<List<MetaData>> transformMetadata(
+	public Mono<List<MetaData>> setMetadata(
 		List<MetaData> metaData,
 		CreateServiceInstanceRequest request) {
 		return Mono.just(metaData);

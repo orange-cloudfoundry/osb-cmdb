@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 import org.springframework.cloud.servicebroker.model.Context;
 import org.springframework.cloud.servicebroker.model.ServiceBrokerRequest;
 
-public abstract class BaseBackingServicesMetadataTransformationService {
+public abstract class BaseMetadataFormatter {
 
 	protected abstract void setLabelsAndAnnotations(Map<String, Object> properties, Map<String, String> annotations,
 			Map<String, String> labels, String prefix);

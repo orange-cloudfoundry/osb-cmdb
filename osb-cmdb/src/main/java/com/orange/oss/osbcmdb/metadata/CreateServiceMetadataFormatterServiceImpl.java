@@ -20,13 +20,18 @@ import java.util.List;
 
 import reactor.core.publisher.Mono;
 
-import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceRequest;
+import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 
-public class UpdateBackingServicesMetadataTransformationService extends AbstractBackingServicesMetadataTransformationService {
+public class CreateServiceMetadataFormatterServiceImpl extends AbstractMetadataFormatterService
+	implements
+	CreateServiceMetadataFormatterService {
 
-	public Mono<List<MetaData>> transformMetadata(List<MetaData> metaData,
-		UpdateServiceInstanceRequest request) {
-		return setMetadata(metaData, request, request.getServiceInstanceId(), request.getContext());
+
+	@Override
+	public Mono<List<MetaData>> setMetadata(List<MetaData> metaData,
+		CreateServiceInstanceRequest request) {
+		return setMetadata(metaData, request, request.getServiceInstanceId(),
+			request.getContext());
 	}
 
 }

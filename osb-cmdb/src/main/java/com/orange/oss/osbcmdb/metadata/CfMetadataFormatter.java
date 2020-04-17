@@ -2,7 +2,7 @@ package com.orange.oss.osbcmdb.metadata;
 
 import java.util.Map;
 
-public class CfBackingServicesMetadataTransformationService extends BaseBackingServicesMetadataTransformationService {
+public class CfMetadataFormatter extends BaseMetadataFormatter {
 
 	@Override
 	protected void setLabelsAndAnnotations(Map<String, Object> properties, Map<String, String> annotations,
