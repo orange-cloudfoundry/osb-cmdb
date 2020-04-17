@@ -26,7 +26,6 @@ import org.mockito.quality.Strictness;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
 import org.springframework.cloud.servicebroker.model.CloudFoundryContext;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
@@ -56,8 +55,6 @@ class OsbCmdbServiceInstanceTest {
 
 	@Mock
 	private CloudFoundryOperations cloudFoundryOperations;
-
-	private CloudFoundryDeploymentProperties deploymentProperties;
 
 	@Mock
 	private Organizations operationsOrganizations;
@@ -166,7 +163,6 @@ class OsbCmdbServiceInstanceTest {
 
 	@BeforeEach
 	void setUp() {
-		deploymentProperties = new CloudFoundryDeploymentProperties();
 		String defaultOrg = "default-org";
 		String defaultSpace = "default-space";
 
@@ -178,7 +174,7 @@ class OsbCmdbServiceInstanceTest {
 		given(cloudFoundryClient.spaces()).willReturn(clientSpaces);
 		given(cloudFoundryClient.organizations()).willReturn(clientOrganizations);
 
-		osbCmdbServiceInstance = new OsbCmdbServiceInstance(deploymentProperties, cloudFoundryOperations,
+		osbCmdbServiceInstance = new OsbCmdbServiceInstance(cloudFoundryOperations,
 			cloudFoundryClient, defaultOrg, defaultSpace, "userName", null,
 			new CreateServiceMetadataFormatterServiceImpl(), new UpdateServiceMetadataFormatterService());
 	}

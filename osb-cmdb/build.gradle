@@ -37,12 +37,17 @@ configurations.archives.artifacts.clear()
 apply plugin: 'org.springframework.boot'
 
 dependencies {
-	compile project(":spring-cloud-starter-app-broker-cloudfoundry")
+	compile("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}")
 	implementation ("org.springframework.boot:spring-boot-starter-actuator")
 	compile("org.springframework.boot:spring-boot-starter-webflux")
 	compile("org.springframework.boot:spring-boot-starter-security")
 	compile("org.springframework.boot:spring-boot-starter-web")
     compile("org.springframework.boot:spring-boot-starter-actuator")
+	compile("org.apache.commons:commons-text:1.8")
+	compile("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
+	compile("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
+	compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9")
+
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 	testCompile("org.junit.jupiter:junit-jupiter-api")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
