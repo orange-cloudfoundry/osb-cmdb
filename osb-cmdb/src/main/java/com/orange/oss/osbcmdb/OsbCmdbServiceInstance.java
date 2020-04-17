@@ -11,6 +11,7 @@ import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
+import org.cloudfoundry.client.v3.Metadata;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
 import org.cloudfoundry.operations.services.ListServiceKeysRequest;
@@ -114,7 +115,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		} //Already existing exception should flow up and be returned to osb client
 
 		ServiceInstance provisionnedSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
-		updateServiceInstanceMetadata(spacedTargetedOperations, provisionnedSi, request);
+		updateServiceInstanceMetadata(provisionnedSi, request);
 
 		CreateServiceInstanceResponse.CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse
 			.builder()
@@ -277,6 +278,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			// timeout to 5s: would return an error if service instance is "in_progress" state
 			asyncProvisionning = true;
 		} //Other exceptions should flow up and be returned to osb client
+		finally {
+			updateServiceInstanceMetadata(existingSi, request);
+		}
+
+
 		return Mono.just(UpdateServiceInstanceResponse.builder()
 			.async(asyncProvisionning)
 			.operation(toJson(new CmdbOperationState(existingSi.getId(), OsbOperation.UPDATE)))
@@ -292,9 +298,30 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 	}
 
-	private void updateServiceInstanceMetadata(CloudFoundryOperations spacedTargetedOperations,
-		ServiceInstance provisionnedSi, CreateServiceInstanceRequest request) {
-//		createServiceMetadataFormatterService.setMetadata(MetaData.builder().build(), );//TODO: reuse CAFD + metadata formatter code in workflow
+	private void updateServiceInstanceMetadata(ServiceInstance serviceInstance, CreateServiceInstanceRequest request) {
+		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
+		updateMetadata(serviceInstance, metaData);
+	}
+
+	private void updateServiceInstanceMetadata(ServiceInstance serviceInstance, UpdateServiceInstanceRequest request) {
+		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
+		updateMetadata(serviceInstance, metaData);
+	}
+
+	private void updateMetadata(ServiceInstance serviceInstance, MetaData metaData) {
+		LOG.debug("Assigning metadata to service instance with name={} annotations={} + " +
+				"backing_service_instance_guid " +
+				"and labels={}", serviceInstance.getName(),
+			metaData.getAnnotations(), metaData.getLabels());
+
+		client.serviceInstancesV3().update(org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceRequest.builder()
+			.serviceInstanceId(serviceInstance.getId())
+			.metadata(Metadata.builder()
+				.annotations(metaData.getAnnotations())
+				.labels(metaData.getLabels())
+				.build())
+			.build())
+			.block();
 	}
 
 	protected enum OsbOperation {
