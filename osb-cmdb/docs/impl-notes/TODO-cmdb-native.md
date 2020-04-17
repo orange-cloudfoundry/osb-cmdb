@@ -13,18 +13,18 @@
             * select a permissive spring security config to talk to osb api
                * using spring profile
             * modify org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture.serviceBrokerSpecification() to use basic auth
-       * [ ] Test `DynamicCatalogComponentTest`: just checks that v2/catalog wiremock is served to junit
-          * [ ] Fix changes to recorded mocks since rebase
-          * [ ] Activate dynamic catalog          
-       * [ ] Test `DynamicServiceAutoConfigurationComponentTest`
+       * [x] Test `DynamicCatalogComponentTest`: just checks that static v2/catalog from application.yml is served to junit
+          * [x] Fix changes to recorded mocks since rebase
+          * [x] Rename and comment          
+       * [x] Test `DynamicServiceAutoConfigurationComponentTest`
           * Pb: wiremock port conflicts `java.io.IOException: Failed to bind to /0.0.0.0:8080`
-          * another scab rebase regression ? 
+             * another scab rebase regression ? 
+             * multiple wiremock instances started that conflict
              * compare with cmdb-master: WireMockServer fixture changed:
                > 	@PostConstruct
                >  	public void startWiremock() {
              * check circle ci history on rebase osb-cmdb master: `cmdb-master-rebased-from-scab`
-             * [ ] Fixed `ExtendedCloudControllerStubFixture` with now missing body id replacement
-          * multiple wiremock instances started that conflict ?
+          * [x] Fixed `ExtendedCloudControllerStubFixture` with now missing body id replacement
    * [ ] Initiate CmdbCreateServiceInstanceComponentTest from CreateInstanceWithSpacePerServiceInstanceTargetComponentTest
       * [ ] configure scab-integration-tests to depend on osb-cmdb project
       * [ ] adapt WiremockComponentTest to use OsbCmdbApplication and inject osb-cmdb props: catalog off + admin user

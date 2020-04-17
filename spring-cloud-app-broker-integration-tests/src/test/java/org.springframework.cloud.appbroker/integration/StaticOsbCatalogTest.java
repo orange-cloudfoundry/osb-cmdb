@@ -30,12 +30,17 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 
+/**
+ * Cmdb's copy of SCAB CatalogTest: merely asserts that the osb client is properly fetching the catalog configured in
+ * the application.yml served by the AppBrokerApplication.class.
+ * Merely useful to check that when dynamic catalog is turned off, static catalog is used instead
+ */
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(
 	webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 	classes = {AppBrokerApplication.class})
 @ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})
-class DynamicCatalogComponentTest {
+class StaticOsbCatalogTest {
 
 	private String baseUrl;
 
