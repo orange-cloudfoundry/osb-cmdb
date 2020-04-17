@@ -1,4 +1,4 @@
-package org.springframework.cloud.appbroker.autoconfigure;
+package com.orange.oss.osbcmdb.catalog;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,7 +15,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 
 public class ServiceConfigurationYamlDumper {
@@ -54,7 +53,7 @@ public class ServiceConfigurationYamlDumper {
 		return yamlString;
 	}
 
-	public void dumpToYamlFile(Catalog catalog, BrokeredServices brokeredServices) throws IOException {
+	public void dumpToYamlFile(Catalog catalog) throws IOException {
 		String yamlString = dumpToYamlString(catalog);
 		try (Writer writer = buildFileWriter()) {
 			writer.write(yamlString);

@@ -20,7 +20,6 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
-import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceRequest;
@@ -62,19 +61,15 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private final String defaultSpace;
 
-	private final CloudFoundryDeploymentProperties deploymentProperties;
-
 	protected final Logger LOG = Loggers.getLogger(AbstractOsbCmdbService.class);
 
-	public OsbCmdbServiceInstance(CloudFoundryDeploymentProperties deploymentProperties,
-		CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
+	public OsbCmdbServiceInstance(CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		String defaultOrg, String defaultSpace, String userName,
 		ServiceInstanceInterceptor osbInterceptor,
 		CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService,
 		UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService) {
 		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
 
-		this.deploymentProperties = deploymentProperties;
 		this.defaultSpace = defaultSpace;
 		this.osbInterceptor = osbInterceptor;
 		this.createServiceMetadataFormatterService = createServiceMetadataFormatterService;

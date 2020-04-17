@@ -1,4 +1,4 @@
-package org.springframework.cloud.appbroker.autoconfigure;
+package com.orange.oss.osbcmdb.catalog;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -7,7 +7,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.catalog.MethodSchema;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
@@ -29,12 +28,6 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 				buildServiceDefinition("noop", "default")))
 			.build();
 
-		BrokeredServices brokeredServices = BrokeredServices.builder()
-			.service(buildBrokeredService("mysql", "10mb"))
-			.service(buildBrokeredService("mysql", "20mb"))
-			.service(buildBrokeredService("noop", "default"))
-			.build();
-
 		//when
 		ServiceConfigurationYamlDumper serviceConfigurationYamlDumper = new ServiceConfigurationYamlDumper();
 		String applicationYml = serviceConfigurationYamlDumper.dumpToYamlString(catalog);
@@ -42,55 +35,6 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 		//then
 		String expectedYaml
 			= "spring.cloud:\n" +
-			"  appbroker.services:\n" +
-			"  - apps: null\n" +
-			"    planName: \"10mb\"\n" +
-			"    serviceName: \"mysql\"\n" +
-			"    services:\n" +
-			"    - name: \"mysql\"\n" +
-			"      parameters: {}\n" +
-			"      parametersTransformers:\n" +
-			"      - args:\n" +
-			"          includeAll: \"true\"\n" +
-			"        name: \"ParameterMapping\"\n" +
-			"      plan: \"10mb\"\n" +
-			"      properties: {}\n" +
-			"      rebindOnUpdate: false\n" +
-			"      serviceInstanceName: \"mysql\"\n" +
-			"    target:\n" +
-			"      name: \"SpacePerServiceDefinition\"\n" +
-			"  - apps: null\n" +
-			"    planName: \"20mb\"\n" +
-			"    serviceName: \"mysql\"\n" +
-			"    services:\n" +
-			"    - name: \"mysql\"\n" +
-			"      parameters: {}\n" +
-			"      parametersTransformers:\n" +
-			"      - args:\n" +
-			"          includeAll: \"true\"\n" +
-			"        name: \"ParameterMapping\"\n" +
-			"      plan: \"20mb\"\n" +
-			"      properties: {}\n" +
-			"      rebindOnUpdate: false\n" +
-			"      serviceInstanceName: \"mysql\"\n" +
-			"    target:\n" +
-			"      name: \"SpacePerServiceDefinition\"\n" +
-			"  - apps: null\n" +
-			"    planName: \"default\"\n" +
-			"    serviceName: \"noop\"\n" +
-			"    services:\n" +
-			"    - name: \"noop\"\n" +
-			"      parameters: {}\n" +
-			"      parametersTransformers:\n" +
-			"      - args:\n" +
-			"          includeAll: \"true\"\n" +
-			"        name: \"ParameterMapping\"\n" +
-			"      plan: \"default\"\n" +
-			"      properties: {}\n" +
-			"      rebindOnUpdate: false\n" +
-			"      serviceInstanceName: \"noop\"\n" +
-			"    target:\n" +
-			"      name: \"SpacePerServiceDefinition\"\n" +
 			"  openservicebroker.catalog:\n" +
 			"    services:\n" +
 			"    - bindable: false\n" +
@@ -118,7 +62,7 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 		assertThat(applicationYml).isEqualTo(expectedYaml);
 
 		//and when
-		serviceConfigurationYamlDumper.dumpToYamlFile(catalog, brokeredServices);
+		serviceConfigurationYamlDumper.dumpToYamlFile(catalog);
 
 		//then
 		String readYamlFromFile = readFileFromDisk();
@@ -161,10 +105,6 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 					.build()))
 			.build();
 
-		BrokeredServices brokeredServices = BrokeredServices.builder()
-			.service(buildBrokeredService("noop", "default"))
-			.build();
-
 		//when
 		ServiceConfigurationYamlDumper serviceConfigurationYamlDumper = new ServiceConfigurationYamlDumper();
 		String applicationYml = serviceConfigurationYamlDumper.dumpToYamlString(catalog);
@@ -172,23 +112,6 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 		//then
 		String expectedYaml
 			= "spring.cloud:\n" +
-			"  appbroker.services:\n" +
-			"  - apps: null\n" +
-			"    planName: \"default\"\n" +
-			"    serviceName: \"noop\"\n" +
-			"    services:\n" +
-			"    - name: \"noop\"\n" +
-			"      parameters: {}\n" +
-			"      parametersTransformers:\n" +
-			"      - args:\n" +
-			"          includeAll: \"true\"\n" +
-			"        name: \"ParameterMapping\"\n" +
-			"      plan: \"default\"\n" +
-			"      properties: {}\n" +
-			"      rebindOnUpdate: false\n" +
-			"      serviceInstanceName: \"noop\"\n" +
-			"    target:\n" +
-			"      name: \"SpacePerServiceDefinition\"\n" +
 			"  openservicebroker.catalog:\n" +
 			"    services:\n" +
 			"    - bindable: false\n" +
@@ -213,7 +136,7 @@ class ServiceConfigurationYamlDumperTest extends SampleServicesBuilderBaseTest {
 		assertThat(applicationYml).isEqualTo(expectedYaml);
 
 		//and when
-		serviceConfigurationYamlDumper.dumpToYamlFile(catalog, brokeredServices);
+		serviceConfigurationYamlDumper.dumpToYamlFile(catalog);
 
 		//then
 		String readYamlFromFile = readFileFromDisk();

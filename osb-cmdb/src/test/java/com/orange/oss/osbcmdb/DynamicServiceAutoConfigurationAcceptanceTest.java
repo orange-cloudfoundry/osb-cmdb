@@ -21,6 +21,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orange.oss.osbcmdb.catalog.DynamicCatalogConstants;
+import com.orange.oss.osbcmdb.catalog.DynamicCatalogServiceAutoConfiguration;
 import com.orange.oss.osbcmdb.fixtures.CloudFoundryClientConfiguration;
 import com.orange.oss.osbcmdb.fixtures.TargetPropertiesConfiguration;
 import jdk.nashorn.internal.ir.annotations.Ignore;
@@ -31,9 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogConstants;
-import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfiguration;
-import org.springframework.cloud.appbroker.deployer.BrokeredServices;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
@@ -59,8 +58,6 @@ class DynamicServiceAutoConfigurationAcceptanceTest {
 	void contextLoadWithCatalogCreatedWhenPropertiesProvided() {
 		configuredContext()
 			.run(context -> {
-				BrokeredServices brokeredServices = context.getBean(BrokeredServices.class);
-				assertThat(brokeredServices).isNotEmpty();
 				Catalog catalog = context.getBean(Catalog.class);
 				assertThat(catalog.getServiceDefinitions()).isNotEmpty();
 
@@ -72,7 +69,6 @@ class DynamicServiceAutoConfigurationAcceptanceTest {
 					.forEach(this::assertPlanIsValid);
 
 				assertThat(context).hasSingleBean(Catalog.class);
-				assertThat(context).hasSingleBean(BrokeredServices.class);
 			});
 	}
 
@@ -110,24 +106,6 @@ class DynamicServiceAutoConfigurationAcceptanceTest {
 	private ApplicationContextRunner configuredContext() {
 		return this.contextRunner
 			.withPropertyValues(
-				"spring.cloud.appbroker.services[0].service-name=service1",
-				"spring.cloud.appbroker.services[0].plan-name=service1-plan1",
-
-				"spring.cloud.appbroker.services[0].apps[0].path=classpath:app1.jar",
-				"spring.cloud.appbroker.services[0].apps[0].name=app1",
-				"spring.cloud.appbroker.services[0].apps[0].properties.memory=1G",
-
-				"spring.cloud.appbroker.services[0].apps[1].path=classpath:app2.jar",
-				"spring.cloud.appbroker.services[0].apps[1].name=app2",
-				"spring.cloud.appbroker.services[0].apps[1].properties.memory=2G",
-				"spring.cloud.appbroker.services[0].apps[1].properties.instances=2",
-
-				"spring.cloud.appbroker.services[1].service-name=service2",
-				"spring.cloud.appbroker.services[1].plan-name=service2-plan1",
-
-				"spring.cloud.appbroker.services[1].apps[0].path=classpath:app3.jar",
-				"spring.cloud.appbroker.services[1].apps[0].name=app3",
-
 				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=https://api.example.com",
 				"spring.cloud.appbroker.deployer.cloudfoundry.username=user",
 				"spring.cloud.appbroker.deployer.cloudfoundry.password=secret"
