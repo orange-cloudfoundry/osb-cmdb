@@ -1,22 +1,4 @@
 
-* [ ] Fix CI https://circleci.com/gh/orange-cloudfoundry/osb-cmdb-spike/282
-   * [ ] **Fix cmdb UT**
-   
-        >   ApplicationConfigurationIntegrationTest > paas_templates_overrides_default_cmdb_config_in_application_default_yml_Overrides_application_yml() FAILED
-        >       java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:132
-        >           Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:798
-        >               Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException at DefaultListableBeanFactory.java:1700
-        >   FAILED test: com.orange.oss.osbcmdb.OsbCmdbServiceInstanceTest > createServiceInstanceWithTarget()
-        >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > unAuthenticatedActuactorHealth_shouldSucceedWith200()
-        >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > unAuthenticatedSensitiveActuactorEndPoints_shouldFailWith401()
-        >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > authenticatedPostOsbRequest_shouldSucceedWith200()
-        >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > basicAuthAuthenticatedAdmin_to_ActuactorInfo_shouldSucceedWith200()
-        >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > basicAuthAuthenticatedOsbUser_to_ActuactorInfo_shouldSucceedWith401()
-        >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > basicAuthAuthenticatedOsbRequest_shouldSucceedWith200()
-        >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > adminAuthenticatedSensitiveActuactorEndPoints_shouldSucceedWith200()
-        >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > authenticatedOsbRequest_shouldSucceedWith200()
-        >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > unauthenticatedOsbRequest_shouldFailWith401()
-
 * [ ] **Set up component test, mocking CF API** to get faster feedback than AT
    * [ ] Initiate CmdbCreateServiceInstanceComponentTest from CreateInstanceWithSpacePerServiceInstanceTargetComponentTest
       * [ ] configure scab-integration-tests to depend on osb-cmdb project
@@ -52,16 +34,22 @@
        * [ ] modify call to use cfclient.deleteService(purge=true) for each service 
     * [ ] Rename Test class
 * [ ] Refactor osb-cmdb packaging (see [target packaging](redesign-scab-independent.md))
-    * [ ] Study to Only keep single project (to speed up builds). Find solutions for  
+    * [x] study removing dependencies to scab code to make tests faster: stashed in `remove-scab-gradle-dependency`
+       * CloudFoundryDeploymentProperties
+       * CloudFoundryTargetProperties
+       * CreateBackingServicesMetadataTransformationService
+       * CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient
+    * [ ] Study to Only keep single project (to speed up builds). Find solutions for
        * boot jar dependency for acceptance tests execution
-       * multiple classpath for tests ?  
+       * multiple classpath for tests ?
     * [ ] move cmdb code into packages
     * [ ] Clean up acceptance test fixture in production code
        * [ ] Conditioned by a spring profile acceptance test
     * [ ] duplicate SCAB AT to not depend on SCAB anymore
        * [ ] copy code into a package
-       * [ ] check/handle resources 
-    * [ ] Migrate from gradle to maven ? 
+       * [ ] check/handle resources
+    * [ ] Migrate from gradle to maven ?
+
      
 * [ ] Refactor AT with multi broker support 
     * [ ] Wait for support in cf-java-client. https://github.com/cloudfoundry/cf-java-client/issues/1025
