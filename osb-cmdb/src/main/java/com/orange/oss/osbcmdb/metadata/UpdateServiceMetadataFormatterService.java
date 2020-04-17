@@ -16,17 +16,13 @@
 
 package com.orange.oss.osbcmdb.metadata;
 
-import java.util.List;
-
-import reactor.core.publisher.Mono;
-
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceRequest;
 
 public class UpdateServiceMetadataFormatterService extends AbstractMetadataFormatterService {
 
-	public Mono<List<MetaData>> setMetadata(List<MetaData> metaData,
+	public void setMetadata(MetaData metaData,
 		UpdateServiceInstanceRequest request) {
-		return setMetadata(metaData, request, request.getServiceInstanceId(), request.getContext());
+		setMetadata(metaData, request, request.getServiceInstanceId(), request.getContext());
 	}
 
 }

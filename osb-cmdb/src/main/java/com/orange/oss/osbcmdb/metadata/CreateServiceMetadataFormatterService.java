@@ -8,7 +8,7 @@ import org.springframework.cloud.servicebroker.model.instance.CreateServiceInsta
 
 public interface CreateServiceMetadataFormatterService {
 
-	Mono<List<MetaData>> setMetadata(List<MetaData> metaData,
+	void setMetadata(MetaData metaData,
 		CreateServiceInstanceRequest request);
 
 }
