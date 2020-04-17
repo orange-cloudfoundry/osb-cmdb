@@ -14,9 +14,7 @@ public abstract class BaseMetadataFormatter {
 	protected abstract void setLabelsAndAnnotations(Map<String, Object> properties, Map<String, String> annotations,
 			Map<String, String> labels, String prefix);
 
-	protected void setMetadata(MetaData metaData,
-		ServiceBrokerRequest request, String serviceInstanceId,
-		Context context) {
+	protected MetaData setMetadata(ServiceBrokerRequest request, String serviceInstanceId, Context context) {
 
 		Map<String, String> annotations = new HashMap<>();
 		Map<String, String> labels = new HashMap<>();
@@ -26,8 +24,10 @@ public abstract class BaseMetadataFormatter {
 		setContextMetadata(context, annotations, labels);
 		setOriginatingIdentityMetadata(request, annotations, labels);
 
-		metaData.setAnnotations(annotations);
-		metaData.setLabels(labels);
+		return MetaData.builder()
+			.annotations(annotations)
+			.labels(labels)
+			.build();
 	}
 
 	private void setApiInfoLocationAnnotation(ServiceBrokerRequest request, Map<String, String> annotations) {

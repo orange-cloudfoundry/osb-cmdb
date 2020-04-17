@@ -6,9 +6,9 @@ public class CreateServiceMetadataFormatterServiceNoOp
 		implements CreateServiceMetadataFormatterService {
 
 	@Override
-	public void setMetadata(
-		MetaData metaData,
+	public MetaData formatAsMetadata(
 		CreateServiceInstanceRequest request) {
+		return null;
 	}
 
 }

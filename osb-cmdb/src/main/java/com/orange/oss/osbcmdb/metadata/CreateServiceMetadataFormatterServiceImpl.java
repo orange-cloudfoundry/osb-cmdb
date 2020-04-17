@@ -24,9 +24,8 @@ public class CreateServiceMetadataFormatterServiceImpl extends AbstractMetadataF
 
 
 	@Override
-	public void setMetadata(MetaData metaData,
-		CreateServiceInstanceRequest request) {
-		setMetadata(metaData, request, request.getServiceInstanceId(),
+	public MetaData formatAsMetadata(CreateServiceInstanceRequest request) {
+		return setMetadata(request, request.getServiceInstanceId(),
 			request.getContext());
 	}
 

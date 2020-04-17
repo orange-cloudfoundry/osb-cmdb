@@ -1,8 +1,5 @@
 package com.orange.oss.osbcmdb.metadata;
 
-import java.util.List;
-
-import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
@@ -20,26 +17,23 @@ public class AbstractMetadataFormatterService {
 
 	private K8SMetadataFormatter k8SMetadataFormatter = new K8SMetadataFormatter();
 
-	protected void setMetadata(MetaData metaData,
-		ServiceBrokerRequest request, String serviceInstanceId,
-		Context context) {
+	protected MetaData setMetadata(ServiceBrokerRequest request, String serviceInstanceId, Context context) {
 
 		logger.debug("Assigning meta-data request from request={} id={} context={}", request, serviceInstanceId,
 			context);
 		if (context instanceof KubernetesContext) {
-			k8SMetadataFormatter.setMetadata(metaData, request,
+			return k8SMetadataFormatter.setMetadata(request,
 				serviceInstanceId, context);
-			return;
 		}
 		else if (context instanceof CloudFoundryContext ||
 			context ==null // when no context is passed, default to CloudFoundry behavior which will only set the
 			// instance guid as metadata
 		) {
-			cfMetadataFormatter.setMetadata(metaData, request, serviceInstanceId, context);
-			return;
+			return cfMetadataFormatter.setMetadata(request, serviceInstanceId, context);
 		}
 		else {
 			logger.warn("Unsupported OSB context type={}, skipping associated metadata", context);
+			return null;
 		}
 
 	}

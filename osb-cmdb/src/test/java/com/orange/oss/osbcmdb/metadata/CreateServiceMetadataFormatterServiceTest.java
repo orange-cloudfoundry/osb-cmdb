@@ -1,7 +1,6 @@
 package com.orange.oss.osbcmdb.metadata;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -13,7 +12,6 @@ import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -23,10 +21,6 @@ class CreateServiceMetadataFormatterServiceTest {
 	@Test
 	void populates_expected_labels_and_annotations_for_null_profile() {
 		//given
-		MetaData metaData = MetaData
-			.builder()
-			.build();
-
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest
 			.builder()
 			.serviceInstanceId("service-instance-id")
@@ -51,7 +45,7 @@ class CreateServiceMetadataFormatterServiceTest {
 		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
-		createServiceMetadataFormatterService.setMetadata(metaData, request);
+		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
 
 		//then
 		Map<String, String> annotations = metaData.getAnnotations();
@@ -64,10 +58,6 @@ class CreateServiceMetadataFormatterServiceTest {
 	@Test
 	void populates_expected_labels_and_annotations_for_cf_profile() {
 		//given
-		MetaData metaData = MetaData
-			.builder()
-			.build();
-
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest
 			.builder()
 			.serviceInstanceId("service-instance-id")
@@ -105,7 +95,7 @@ class CreateServiceMetadataFormatterServiceTest {
 		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
-		createServiceMetadataFormatterService.setMetadata(metaData, request);
+		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
 
 		//then
 		Map<String, String> annotations = metaData.getAnnotations();
@@ -128,10 +118,6 @@ class CreateServiceMetadataFormatterServiceTest {
 	@Test
 	void populates_expected_labels_and_annotations_for_kubernetes_profile() {
 		//given
-		MetaData metaData = MetaData
-			.builder()
-			.build();
-
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest
 			.builder()
 			.serviceInstanceId("service-instance-id")
@@ -167,7 +153,7 @@ class CreateServiceMetadataFormatterServiceTest {
 		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
-		createServiceMetadataFormatterService.setMetadata(metaData, request);
+		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
 
 		//then
 		Map<String, String> annotations = metaData.getAnnotations();
