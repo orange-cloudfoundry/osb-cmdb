@@ -149,7 +149,7 @@ public class AppDeploymentCreateServiceBindingWorkflow
 //	}
 
 	// Unused, just for inspiration above
-//	public Mono<List<BackingService>> transformParameters(List<BackingService> backingServices,
+//	public Mono<List<MetaData>> transformParameters(List<MetaData> backingServices,
 //														  Map<String, Object> parameters) {
 //		return Flux.fromIterable(backingServices)
 //				.flatMap(backingService -> {
@@ -157,7 +157,7 @@ public class AppDeploymentCreateServiceBindingWorkflow
 //
 //					return Flux.fromIterable(specs)
 //							.flatMap(spec -> {
-//								ParametersTransformer<BackingService> transformer = locator.getByName(spec.getName(), spec.getArgs());
+//								ParametersTransformer<MetaData> transformer = locator.getByName(spec.getName(), spec.getArgs());
 //								return transformer.transform(backingService, parameters);
 //							})
 //							.then(Mono.just(backingService));
