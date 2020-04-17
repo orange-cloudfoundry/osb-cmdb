@@ -66,6 +66,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
+/**
+ * Checks that the DynamicCatalog autoconfiguration bean is automatically triggering.
+ */
 @ExtendWith(SpringExtension.class) //Junit 5 jupiter support
 @ContextConfiguration(classes = {
 	WiremockServerFixture.class,
