@@ -14,7 +14,7 @@ public abstract class BaseMetadataFormatter {
 	protected abstract void setLabelsAndAnnotations(Map<String, Object> properties, Map<String, String> annotations,
 			Map<String, String> labels, String prefix);
 
-	protected Mono<List<MetaData>> setMetadata(List<MetaData> metaDatas,
+	protected void setMetadata(MetaData metaData,
 		ServiceBrokerRequest request, String serviceInstanceId,
 		Context context) {
 
@@ -26,11 +26,8 @@ public abstract class BaseMetadataFormatter {
 		setContextMetadata(context, annotations, labels);
 		setOriginatingIdentityMetadata(request, annotations, labels);
 
-		for (MetaData metaData : metaDatas) {
-			metaData.setAnnotations(annotations);
-			metaData.setLabels(labels);
-		}
-		return Mono.justOrEmpty(metaDatas);
+		metaData.setAnnotations(annotations);
+		metaData.setLabels(labels);
 	}
 
 	private void setApiInfoLocationAnnotation(ServiceBrokerRequest request, Map<String, String> annotations) {

@@ -20,26 +20,26 @@ public class AbstractMetadataFormatterService {
 
 	private K8SMetadataFormatter k8SMetadataFormatter = new K8SMetadataFormatter();
 
-	protected Mono<List<MetaData>> setMetadata(List<MetaData> metaData,
+	protected void setMetadata(MetaData metaData,
 		ServiceBrokerRequest request, String serviceInstanceId,
 		Context context) {
 
 		logger.debug("Assigning meta-data request from request={} id={} context={}", request, serviceInstanceId,
 			context);
 		if (context instanceof KubernetesContext) {
-			return k8SMetadataFormatter.setMetadata(metaData, request,
+			k8SMetadataFormatter.setMetadata(metaData, request,
 				serviceInstanceId, context);
+			return;
 		}
 		else if (context instanceof CloudFoundryContext ||
 			context ==null // when no context is passed, default to CloudFoundry behavior which will only set the
 			// instance guid as metadata
 		) {
-			return cfMetadataFormatter.setMetadata(metaData, request,
-				serviceInstanceId, context);
+			cfMetadataFormatter.setMetadata(metaData, request, serviceInstanceId, context);
+			return;
 		}
 		else {
 			logger.warn("Unsupported OSB context type={}, skipping associated metadata", context);
-			return Mono.justOrEmpty(metaData);
 		}
 
 	}
