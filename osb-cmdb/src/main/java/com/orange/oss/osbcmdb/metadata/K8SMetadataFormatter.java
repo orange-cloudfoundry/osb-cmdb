@@ -5,7 +5,7 @@ import java.util.Map;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class K8SBackingServicesMetadataTransformationService extends BaseBackingServicesMetadataTransformationService {
+public class K8SMetadataFormatter extends BaseMetadataFormatter {
 
 	private ObjectMapper objectMapper = new ObjectMapper();
 

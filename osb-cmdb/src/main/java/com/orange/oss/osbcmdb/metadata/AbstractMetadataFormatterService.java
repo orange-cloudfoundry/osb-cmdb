@@ -11,15 +11,14 @@ import org.springframework.cloud.servicebroker.model.Context;
 import org.springframework.cloud.servicebroker.model.KubernetesContext;
 import org.springframework.cloud.servicebroker.model.ServiceBrokerRequest;
 
-public class AbstractBackingServicesMetadataTransformationService {
+public class AbstractMetadataFormatterService {
 
 	private final Logger logger = Loggers.getLogger(this.getClass());
 
 
-	private CfBackingServicesMetadataTransformationService cfBackingServicesMetadataTransformationService = new CfBackingServicesMetadataTransformationService();
+	private CfMetadataFormatter cfMetadataFormatter = new CfMetadataFormatter();
 
-	private K8SBackingServicesMetadataTransformationService k8SBackingServicesMetadataTransformationService =
-		new K8SBackingServicesMetadataTransformationService();
+	private K8SMetadataFormatter k8SMetadataFormatter = new K8SMetadataFormatter();
 
 	protected Mono<List<MetaData>> setMetadata(List<MetaData> metaData,
 		ServiceBrokerRequest request, String serviceInstanceId,
@@ -28,14 +27,14 @@ public class AbstractBackingServicesMetadataTransformationService {
 		logger.debug("Assigning meta-data request from request={} id={} context={}", request, serviceInstanceId,
 			context);
 		if (context instanceof KubernetesContext) {
-			return k8SBackingServicesMetadataTransformationService.setMetadata(metaData, request,
+			return k8SMetadataFormatter.setMetadata(metaData, request,
 				serviceInstanceId, context);
 		}
 		else if (context instanceof CloudFoundryContext ||
 			context ==null // when no context is passed, default to CloudFoundry behavior which will only set the
 			// instance guid as metadata
 		) {
-			return cfBackingServicesMetadataTransformationService.setMetadata(metaData, request,
+			return cfMetadataFormatter.setMetadata(metaData, request,
 				serviceInstanceId, context);
 		}
 		else {

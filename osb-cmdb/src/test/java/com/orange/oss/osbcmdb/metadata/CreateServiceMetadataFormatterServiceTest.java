@@ -18,7 +18,7 @@ import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
-class CreateBackingServicesMetadataTransformationServiceTest {
+class CreateServiceMetadataFormatterServiceTest {
 
 	@Test
 	void populates_expected_labels_and_annotations_for_null_profile() {
@@ -49,10 +49,10 @@ class CreateBackingServicesMetadataTransformationServiceTest {
 			.parameters(new HashMap<>())
 			.build();
 
-		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService = new CreateBackingServicesMetadataTransformationServiceImpl();
+		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
-		createBackingServicesMetadataTransformationService.transformMetadata(backingServices, request);
+		createServiceMetadataFormatterService.setMetadata(backingServices, request);
 
 		//then
 		MetaData metaData = backingServices.get(0);
@@ -105,10 +105,10 @@ class CreateBackingServicesMetadataTransformationServiceTest {
 			.apiInfoLocation("api.my-cf.org/v2/info")
 			.build();
 
-		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService = new CreateBackingServicesMetadataTransformationServiceImpl();
+		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
-		createBackingServicesMetadataTransformationService.transformMetadata(backingServices, request);
+		createServiceMetadataFormatterService.setMetadata(backingServices, request);
 
 		//then
 		MetaData metaData = backingServices.get(0);
@@ -169,10 +169,10 @@ class CreateBackingServicesMetadataTransformationServiceTest {
 				.build())
 			.build();
 
-		CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService = new CreateBackingServicesMetadataTransformationServiceImpl();
+		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
-		createBackingServicesMetadataTransformationService.transformMetadata(backingServices, request);
+		createServiceMetadataFormatterService.setMetadata(backingServices, request);
 
 		//then
 		MetaData metaData = backingServices.get(0);

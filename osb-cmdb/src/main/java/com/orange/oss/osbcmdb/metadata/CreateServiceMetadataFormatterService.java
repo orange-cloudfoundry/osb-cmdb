@@ -6,9 +6,9 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 
-public interface CreateBackingServicesMetadataTransformationService {
+public interface CreateServiceMetadataFormatterService {
 
-	Mono<List<MetaData>> transformMetadata(List<MetaData> metaData,
+	Mono<List<MetaData>> setMetadata(List<MetaData> metaData,
 		CreateServiceInstanceRequest request);
 
 }
