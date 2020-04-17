@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.orange.oss.osbcmdb;
+package com.orange.oss.osbcmdb.catalog;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,7 +39,7 @@ import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Expects the Cf client properties to be injected as system properties
+// Expects the prod Cf client properties to be injected as system properties
 // and the corresponding Cf marketplace to be non empty
 //Expects the spring profile "acceptanceTests" to be turned on
 @Tag("AcceptanceTest")

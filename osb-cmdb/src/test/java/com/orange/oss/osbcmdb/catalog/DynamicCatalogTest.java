@@ -1,4 +1,4 @@
-package com.orange.oss.osbcmdb;
+package com.orange.oss.osbcmdb.catalog;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
