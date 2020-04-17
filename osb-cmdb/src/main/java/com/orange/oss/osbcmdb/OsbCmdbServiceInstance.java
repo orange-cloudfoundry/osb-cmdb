@@ -4,8 +4,9 @@ import java.time.Duration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
+import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
+import com.orange.oss.osbcmdb.metadata.MetaData;
+import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
@@ -15,12 +16,10 @@ import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
 import org.cloudfoundry.operations.services.ListServiceKeysRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import reactor.core.publisher.Mono;
-import reactor.netty.internal.shaded.reactor.pool.PoolAcquireTimeoutException;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
 import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
-import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstanceBindingResponse;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceRequest;
@@ -34,6 +33,10 @@ import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 
 @SuppressWarnings("BlockingMethodInNonBlockingContext")
 public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements ServiceInstanceService {
+
+	private final CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService;
+
+	private final UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService;
 
 	private ServiceInstanceInterceptor osbInterceptor;
 
@@ -65,12 +68,16 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	public OsbCmdbServiceInstance(CloudFoundryDeploymentProperties deploymentProperties,
 		CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		String defaultOrg, String defaultSpace, String userName,
-		ServiceInstanceInterceptor osbInterceptor) {
+		ServiceInstanceInterceptor osbInterceptor,
+		CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService,
+		UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService) {
 		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
 
 		this.deploymentProperties = deploymentProperties;
 		this.defaultSpace = defaultSpace;
 		this.osbInterceptor = osbInterceptor;
+		this.createServiceMetadataFormatterService = createServiceMetadataFormatterService;
+		this.updateServiceMetadataFormatterService = updateServiceMetadataFormatterService;
 	}
 
 	@Override
@@ -287,7 +294,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private void updateServiceInstanceMetadata(CloudFoundryOperations spacedTargetedOperations,
 		ServiceInstance provisionnedSi, CreateServiceInstanceRequest request) {
-		//TODO: reuse CAFD + metadata formatter code in workflow
+//		createServiceMetadataFormatterService.setMetadata(MetaData.builder().build(), );//TODO: reuse CAFD + metadata formatter code in workflow
 	}
 
 	protected enum OsbOperation {

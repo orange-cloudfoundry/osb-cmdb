@@ -2,6 +2,8 @@ package com.orange.oss.osbcmdb;
 
 import java.time.Duration;
 
+import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
+import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.organizations.ListOrganizationSpacesRequest;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstances;
@@ -175,7 +177,8 @@ class OsbCmdbServiceInstanceTest {
 		given(cloudFoundryClient.organizations()).willReturn(clientOrganizations);
 
 		osbCmdbServiceInstance = new OsbCmdbServiceInstance(deploymentProperties, cloudFoundryOperations,
-			cloudFoundryClient, defaultOrg, defaultSpace, "userName", null);
+			cloudFoundryClient, defaultOrg, defaultSpace, "userName", null,
+			new CreateServiceMetadataFormatterServiceImpl(), new UpdateServiceMetadataFormatterService());
 	}
 
 }
