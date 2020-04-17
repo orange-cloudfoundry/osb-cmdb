@@ -145,7 +145,7 @@ public class SecurityConfigTest {
 
 	@Test
 	public void unAuthenticatedSensitiveActuactorEndPoints_shouldFailWith401() throws Exception {
-		String[] endpoints = {"conditions", "info", "httptrace", "loggers", "metrics", "threaddump"};
+		String[] endpoints = {"beans", "conditions", "info", "httptrace", "loggers", "metrics", "threaddump"};
 		for (String endpoint : endpoints) {
 			mvc.perform(get("/actuator/" + endpoint)
 				.contentType(MediaType.APPLICATION_JSON))
