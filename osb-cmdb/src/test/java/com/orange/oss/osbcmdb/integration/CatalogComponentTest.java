@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import com.orange.oss.osbcmdb.OsbCmdbApplication;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +36,7 @@ import static org.hamcrest.CoreMatchers.is;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(
 	webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-	classes = {AppBrokerApplication.class})
+	classes = {OsbCmdbApplication.class})
 @ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})
 class CatalogComponentTest {
 

@@ -16,15 +16,13 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import com.orange.oss.osbcmdb.OsbCmdbApplication;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.appbroker.deployer.AppDeployer;
-import org.springframework.cloud.appbroker.deployer.BackingAppDeploymentService;
-import org.springframework.cloud.appbroker.service.WorkflowServiceInstanceService;
 import org.springframework.cloud.servicebroker.controller.CatalogController;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -32,7 +30,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = {AppBrokerApplication.class})
+@SpringBootTest(classes = {OsbCmdbApplication.class})
 @ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})
 class ApplicationTest {
 
@@ -42,22 +40,10 @@ class ApplicationTest {
 	@Autowired(required = false)
 	private CloudFoundryOperations cloudFoundryOperations;
 
-	@Autowired(required = false)
-	private AppDeployer appDeployer;
-
-	@Autowired(required = false)
-	private BackingAppDeploymentService deploymentService;
-
-	@Autowired(required = false)
-	private WorkflowServiceInstanceService serviceInstanceService;
-
 	@Test
 	void applicationInitialized() {
 		assertThat(catalogController).isNotNull();
 		assertThat(cloudFoundryOperations).isNotNull();
-		assertThat(appDeployer).isNotNull();
-		assertThat(deploymentService).isNotNull();
-		assertThat(serviceInstanceService).isNotNull();
 	}
 
 }

@@ -25,11 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.CredHubStubFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.ServiceKeyCreateServiceBindingWorkflow;
-import org.springframework.cloud.appbroker.integration.fixtures.ServiceKeyDeleteServiceBindingWorkflow;
-import org.springframework.cloud.appbroker.integration.fixtures.TestBindingCredentialsProviderFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.UaaStubFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.WiremockServerFixture;
 import org.springframework.test.context.ActiveProfiles;
@@ -42,12 +38,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 		WiremockServerFixture.class,
 		OpenServiceBrokerApiFixture.class,
 		CloudControllerStubFixture.class,
-		UaaStubFixture.class,
-		CredHubStubFixture.class,
-		TestBindingCredentialsProviderFixture.class
-		,
-		ServiceKeyCreateServiceBindingWorkflow.class,
-		ServiceKeyDeleteServiceBindingWorkflow.class
+		UaaStubFixture.class
 	},
 	properties = {
 		"spring.cloud.appbroker.deployer.cloudfoundry.api-host=localhost",
@@ -61,7 +52,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 )
 @ActiveProfiles("openservicebroker-catalog")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class WiremockComponentTest {
+public class WiremockComponentTest {
 
 	@Autowired
 	private WiremockServerFixture wiremockFixture;

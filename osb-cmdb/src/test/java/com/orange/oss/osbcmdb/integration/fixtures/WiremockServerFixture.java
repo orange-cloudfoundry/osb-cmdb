@@ -25,17 +25,17 @@ import javax.annotation.PostConstruct;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
+import com.orange.oss.osbcmdb.OsbCmdbBrokerConfiguration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.test.context.TestComponent;
-import org.springframework.cloud.appbroker.autoconfigure.CloudFoundryAppDeployerAutoConfiguration;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@AutoConfigureBefore(CloudFoundryAppDeployerAutoConfiguration.class)
+@AutoConfigureBefore(OsbCmdbBrokerConfiguration.class)
 @TestComponent
 public class WiremockServerFixture {
 

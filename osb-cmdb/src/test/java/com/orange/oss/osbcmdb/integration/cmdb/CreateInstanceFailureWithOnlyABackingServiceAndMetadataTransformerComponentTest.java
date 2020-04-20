@@ -19,30 +19,24 @@ package com.orange.oss.osbcmdb.integration.cmdb;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.orange.oss.osbcmdb.integration.WiremockComponentTest;
+import com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Hooks;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationService;
-import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceImpl;
-import  com.orange.oss.osbcmdb.integration.WiremockComponentTest;
-import  com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
-import  com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 
+import static com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SERVICE_NAME;
+import static com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SI_NAME;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SERVICE_NAME;
-import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SI_NAME;
 
 @TestPropertySource(properties = {
 	"spring.cloud.appbroker.services[0].service-name=example",
@@ -51,7 +45,6 @@ import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesCom
 	"spring.cloud.appbroker.services[0].services[0].name=" + BACKING_SERVICE_NAME,
 	"spring.cloud.appbroker.services[0].services[0].plan=standard"
 })
-@ContextConfiguration(classes = CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest.CustomConfig.class)
 class CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "app-with-new-services";
@@ -116,17 +109,6 @@ class CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponen
 
 		String state = brokerFixture.waitForAsyncOperationComplete("instance-id");
 		assertThat(state).isEqualTo(OperationState.FAILED.toString());
-	}
-
-	@Configuration
-	static class CustomConfig {
-
-		@Bean
-		@ConditionalOnMissingBean
-		public CreateBackingServicesMetadataTransformationService createBackingServicesMetadataTransformationService() {
-			return new CreateBackingServicesMetadataTransformationServiceImpl();
-		}
-
 	}
 
 }

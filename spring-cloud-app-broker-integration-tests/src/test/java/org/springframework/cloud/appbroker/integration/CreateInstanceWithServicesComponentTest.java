@@ -43,15 +43,15 @@ import static org.springframework.cloud.appbroker.integration.CreateInstanceWith
 	"spring.cloud.appbroker.services[0].services[0].name=" + BACKING_SERVICE_NAME,
 	"spring.cloud.appbroker.services[0].services[0].plan=standard"
 })
-class CreateInstanceWithServicesComponentTest extends WiremockComponentTest {
+public class CreateInstanceWithServicesComponentTest extends WiremockComponentTest {
 
-	protected static final String APP_NAME = "app-with-new-services";
+	public static final String APP_NAME = "app-with-new-services";
 
-	protected static final String BACKING_SI_NAME = "my-db-service";
+	public static final String BACKING_SI_NAME = "my-db-service";
 
-	protected static final String BACKING_SERVICE_NAME = "db-service";
+	public static final String BACKING_SERVICE_NAME = "db-service";
 
-	protected static final String BACKING_PLAN_NAME = "standard";
+	public static final String BACKING_PLAN_NAME = "standard";
 
 	@Autowired
 	private OpenServiceBrokerApiFixture brokerFixture;
