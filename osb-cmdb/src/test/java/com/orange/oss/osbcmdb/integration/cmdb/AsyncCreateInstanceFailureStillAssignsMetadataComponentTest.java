@@ -19,6 +19,7 @@ package com.orange.oss.osbcmdb.integration.cmdb;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest;
 import com.orange.oss.osbcmdb.integration.WiremockComponentTest;
 import com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
 import com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
@@ -32,28 +33,31 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 
 import static com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SERVICE_NAME;
-import static com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SI_NAME;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 @TestPropertySource(properties = {
-	"spring.cloud.appbroker.services[0].service-name=example",
-	"spring.cloud.appbroker.services[0].plan-name=standard",
-	"spring.cloud.appbroker.services[0].services[0].service-instance-name=" + BACKING_SI_NAME,
-	"spring.cloud.appbroker.services[0].services[0].name=" + BACKING_SERVICE_NAME,
-	"spring.cloud.appbroker.services[0].services[0].plan=standard"
+	"spring.cloud.openservicebroker.catalog.services[0].id=SERVICE_ID",
+	"spring.cloud.openservicebroker.catalog.services[0].name=" + BACKING_SERVICE_NAME,
+	"spring.cloud.openservicebroker.catalog.services[0].description=A service that deploys a backing app",
+	"spring.cloud.openservicebroker.catalog.services[0].bindable=true",
+	"spring.cloud.openservicebroker.catalog.services[0].plans[0].id=PLAN_ID",
+	"spring.cloud.openservicebroker.catalog.services[0].plans[0].name=standard",
+	"spring.cloud.openservicebroker.catalog.services[0].plans[0].bindable=true",
+	"spring.cloud.openservicebroker.catalog.services[0].plans[0].description=A simple plan",
+	"spring.cloud.openservicebroker.catalog.services[0].plans[0].free=true",
 })
-class CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest extends WiremockComponentTest {
-
-	protected static final String APP_NAME = "app-with-new-services";
+class AsyncCreateInstanceFailureStillAssignsMetadataComponentTest extends WiremockComponentTest {
 
 	protected static final String BACKING_SI_NAME = "my-db-service";
 
 	protected static final String BACKING_SERVICE_NAME = "db-service";
 
 	protected static final String BACKING_PLAN_NAME = "standard";
+
+	public static final String BROKERED_SERVICE_INSTANCE_ID = "instance-id";
 
 	@Autowired
 	private OpenServiceBrokerApiFixture brokerFixture;
@@ -71,43 +75,52 @@ class CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponen
 	@Test
 	void createsServicesFailuresStillUpdatesMetadataAndReportsFailure() {
 
+		//given a space creation request is made
+		cloudControllerFixture.stubCreateSpace(BACKING_SERVICE_NAME);
+		cloudControllerFixture.stubAssociatePermissions(BACKING_SERVICE_NAME);
+
 		// given services are available in the marketplace
 		cloudControllerFixture.stubServiceExists(BACKING_SERVICE_NAME, BACKING_PLAN_NAME);
 
-		// will fail to create the service instance
-		cloudControllerFixture.stubCreateServiceInstanceFailure(BACKING_SI_NAME);
+		// given CSI returns 202 accepted
+		cloudControllerFixture.stubCreateServiceInstanceAsync(BROKERED_SERVICE_INSTANCE_ID);
 
-		// will list the created service instance
-		cloudControllerFixture.stubServiceInstanceExists(BACKING_SI_NAME);
+		// given the created service instance is listed within space
+		cloudControllerFixture.stubServiceInstanceExists(BROKERED_SERVICE_INSTANCE_ID, BACKING_SERVICE_NAME,
+			BACKING_PLAN_NAME);
+
+		// given the service instance can be looked up by name in the space
+		cloudControllerFixture.stubGetBackingServiceInstance(BROKERED_SERVICE_INSTANCE_ID, BACKING_SERVICE_NAME,
+			CreateInstanceWithServicesComponentTest.BACKING_PLAN_NAME);
 
 		// will list the created service instance bindings with no results
-		cloudControllerFixture.stubListServiceBindingsWithNoResult(BACKING_SI_NAME);
+		cloudControllerFixture.stubListServiceBindingsWithNoResult(BROKERED_SERVICE_INSTANCE_ID);
 
 		// will update the metadata on the service instance
 		// results
 
 		Map<String, Object> labels = new HashMap<>();
-		labels.put("brokered_service_instance_guid","instance-id");
+		labels.put("brokered_service_instance_guid", BROKERED_SERVICE_INSTANCE_ID);
 		labels.put("backing_service_instance_guid", "my-db-service-GUID");
 		Map<String, Object> annotations = new HashMap<>();
-		cloudControllerFixture.stubUpdateServiceInstanceMetadata(BACKING_SI_NAME, labels, annotations);
+		cloudControllerFixture.stubUpdateServiceInstanceMetadata(BROKERED_SERVICE_INSTANCE_ID, labels, annotations);
 
 		// when a service instance is created
 		given(brokerFixture.serviceInstanceRequest())
 			.when()
-			.put(brokerFixture.createServiceInstanceUrl(), "instance-id")
+			.put(brokerFixture.createServiceInstanceUrl(), BROKERED_SERVICE_INSTANCE_ID)
 			.then()
 			.statusCode(HttpStatus.ACCEPTED.value());
 
 		// when the "last_operation" API is polled
 		given(brokerFixture.serviceInstanceRequest())
 			.when()
-			.get(brokerFixture.getLastInstanceOperationUrl(), "instance-id")
+			.get(brokerFixture.getLastInstanceOperationUrl(), BROKERED_SERVICE_INSTANCE_ID)
 			.then()
 			.statusCode(HttpStatus.OK.value())
 			.body("state", is(equalTo(OperationState.IN_PROGRESS.toString())));
 
-		String state = brokerFixture.waitForAsyncOperationComplete("instance-id");
+		String state = brokerFixture.waitForAsyncOperationComplete(BROKERED_SERVICE_INSTANCE_ID);
 		assertThat(state).isEqualTo(OperationState.FAILED.toString());
 	}
 

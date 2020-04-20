@@ -34,6 +34,11 @@ public class BaseBackingSpaceInstanceInterceptor {
 
 	protected boolean isScabAcceptanceTest(Context context, String requestToString) {
 		CloudFoundryContext cloudFoundryContext = (CloudFoundryContext) context;
+		if (context == null) {
+			LOG.info("No context specified in request, assuming not an acceptance test with a CF compliant client, " +
+				"therefore I'm not accepting the request");
+			return false;
+		}
 		String spaceName = cloudFoundryContext.getSpaceName();
 		boolean isTest = ! spaceName.equals(defaultSpaceName);
 		LOG.debug("Accept: isTest={} for spaceName={} and request={}", isTest, spaceName, requestToString);
