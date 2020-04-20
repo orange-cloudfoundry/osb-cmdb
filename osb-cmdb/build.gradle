@@ -34,6 +34,10 @@ description = "Osb Cmdb"
 // don't publish the jar for the acceptance tests project
 configurations.archives.artifacts.clear()
 
+ext {
+	wiremockVersion = "2.25.1"
+}
+
 apply plugin: 'org.springframework.boot'
 
 dependencies {
@@ -60,6 +64,8 @@ dependencies {
 	//For custom workflows
 	testImplementation("org.mockito:mockito-core")
 	testImplementation("org.mockito:mockito-junit-jupiter")
+	testImplementation("io.rest-assured:rest-assured")
+	testImplementation("com.github.tomakehurst:wiremock:${wiremockVersion}")
 }
 
 // build the test broker from /src into a jar that the tests can deploy

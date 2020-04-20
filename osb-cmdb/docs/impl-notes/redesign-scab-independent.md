@@ -129,6 +129,12 @@ What SCAB features would be lost and how to accomodate ?
    * src/test
       * java
          * component-tests: make OSB API calls, wiremock dependencies, springboot tests
+            * **component tests need a specific fork model ??**
+            ```
+            	// force a new fork for every test to eliminate issues with wiremock state
+            	forkEvery = 1
+            	maxHeapSize = '1G'
+            ```
          * acceptance-tests: make CF API calls, run against real dependencies, **depends on boot jar to be produced**
 
 ## Integation and acceptance tests
