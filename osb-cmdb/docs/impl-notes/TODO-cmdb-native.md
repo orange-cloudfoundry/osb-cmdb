@@ -8,6 +8,13 @@
          	testImplementation project(":osb-cmdb")
          ```
       * [ ] **Copy component tests in osb-cmdb module as a subpackage**
+         * [x] Create new package `com.orange.oss.osbcmdb.com.orange.oss.osbcmdb.integration`
+         * [x] Move cmdb classes from scab into it and make it compile. Pb
+           > Class com.orange.oss.osbcmdb.com.orange.oss.osbcmdb.integration.cmdb.CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest 
+           > uses package-private class org.springframework.cloud.appbroker.com.orange.oss.osbcmdb.integration.WiremockComponentTest
+             * [x] transiently make the class public                                                                 
+         * [x] Copy all `com.orange.oss.osbcmdb.integration-tests` module into `osb-cmdb` module
+         * [ ] Add external dependencies to cmdb package 
       * [ ] **Adapt `WiremockComponentTest` to load OsbCmdbApplication with some tunings**
             * [ ] Debug test failures resulting from SCAB rebase:
                * [ ] CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest: stub mismatch 
