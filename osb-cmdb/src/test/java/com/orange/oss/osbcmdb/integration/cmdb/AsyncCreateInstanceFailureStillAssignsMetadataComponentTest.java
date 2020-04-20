@@ -33,6 +33,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 
 import static com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SERVICE_NAME;
+import static com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture.serviceInstanceGuid;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -98,14 +99,13 @@ class AsyncCreateInstanceFailureStillAssignsMetadataComponentTest extends Wiremo
 
 		// will update the metadata on the service instance
 		// results
-
 		Map<String, Object> labels = new HashMap<>();
 		labels.put("brokered_service_instance_guid", BROKERED_SERVICE_INSTANCE_ID);
-		labels.put("backing_service_instance_guid", "my-db-service-GUID");
+		labels.put("backing_service_instance_guid", serviceInstanceGuid(BROKERED_SERVICE_INSTANCE_ID));
 		Map<String, Object> annotations = new HashMap<>();
 		cloudControllerFixture.stubUpdateServiceInstanceMetadata(BROKERED_SERVICE_INSTANCE_ID, labels, annotations);
 
-		// when a service instance is created
+		// when a service instance provisionning is requested
 		given(brokerFixture.serviceInstanceRequest())
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), BROKERED_SERVICE_INSTANCE_ID)

@@ -61,7 +61,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private final String defaultSpace;
 
-	protected final Logger LOG = Loggers.getLogger(AbstractOsbCmdbService.class);
+	protected final Logger LOG = Loggers.getLogger(OsbCmdbServiceInstance.class);
 
 	public OsbCmdbServiceInstance(CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		String defaultOrg, String defaultSpace, String userName,
@@ -304,10 +304,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	}
 
 	private void updateMetadata(ServiceInstance serviceInstance, MetaData metaData) {
-		LOG.debug("Assigning metadata to service instance with name={} annotations={} + " +
-				"backing_service_instance_guid " +
-				"and labels={}", serviceInstance.getName(),
-			metaData.getAnnotations(), metaData.getLabels());
+		metaData.getLabels().put("backing_service_instance_guid", serviceInstance.getId()); //Ideally should be
+		// assigned within MetadataFormatter instead to centralize the logic. Just avoids passing the Id around as a
+		// 1st step.
+		LOG.debug("Assigning metadata to service instance with name={} annotations={} and labels={}",
+			serviceInstance.getName(), metaData.getAnnotations(), metaData.getLabels());
 
 		client.serviceInstancesV3().update(org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceRequest.builder()
 			.serviceInstanceId(serviceInstance.getId())

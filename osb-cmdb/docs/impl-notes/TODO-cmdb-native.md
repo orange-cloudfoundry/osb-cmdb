@@ -58,7 +58,23 @@ GET                                                        | GET
                                                            |
                                                            |
 -----------------------------------------------------------------------------------------------------------------------
+                     * [x] metadata patch error: missing `backing_service_instance_guid` label 
 
+```
+
+```
+-----------------------------------------------------------------------------------------------------------------------
+| Closest stub                                             | Request                                                  |
+-----------------------------------------------------------------------------------------------------------------------
+                                                           |
+PATCH                                                      | PATCH
+/v3/service_instances/instance-id-INSTANCE-GUID            | /v3/service_instances/instance-id-INSTANCE-GUID
+                                                           |
+$.[?(@.metadata.labels ==                                  | {"metadata":{"annotations":{},"labels":{"brokered_service<<<<< Body does not match
+{"brokered_service_instance_guid":"instance-id","backing_  | _instance_guid":"instance-id"}}}
+service_instance_guid":"my-db-service-GUID"})]             |
+                                                           |
+-----------------------------------------------------------------------------------------------------------------------
 ```
 
             * In hope that some existing tests osb-cmdb SCAB-based can work without much changes:
