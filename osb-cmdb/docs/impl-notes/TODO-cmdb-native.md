@@ -10,7 +10,7 @@
       * [ ] **Copy component tests in osb-cmdb module as a subpackage**
          * [x] Create new package `com.orange.oss.osbcmdb.com.orange.oss.osbcmdb.integration`
          * [x] Move cmdb classes from scab into it and make it compile. Pb
-           > Class com.orange.oss.osbcmdb.com.orange.oss.osbcmdb.integration.cmdb.CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest 
+           > Class com.orange.oss.osbcmdb.com.orange.oss.osbcmdb.integration.cmdb.AsyncCreateInstanceFailureStillAssignsMetadataComponentTest 
            > uses package-private class org.springframework.cloud.appbroker.com.orange.oss.osbcmdb.integration.WiremockComponentTest
              * [x] transiently make the class public                                                                 
          * [x] Copy all `com.orange.oss.osbcmdb.integration-tests` module into `osb-cmdb` module
@@ -23,7 +23,44 @@
            
       * [ ] **Adapt `WiremockComponentTest` to load OsbCmdbApplication with some tunings**
             * [ ] Debug test failures resulting from SCAB rebase:
-               * [ ] CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest: stub mismatch 
+               * [x] CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest
+                  * [x] osb api permission 
+                     * [x] inject user name and password to osb fixture
+                  * [x] osb client request lacks context with targetted space: NPE 
+                  * [ ] logback.yml is common to all test packages => spring security logs become polution
+                     * [ ] transiently remove spring security verbose logs
+                     * [ ] control logback level with profiles: https://www.baeldung.com/spring-boot-testing-log-level#1-profile-based-logging-settings
+                  * [x] missing create space stub
+                  * [x] stub mismatch: 
+```
+| Closest stub                                             | Request                                                  |
+-----------------------------------------------------------------------------------------------------------------------
+                                                           |
+POST                                                       | POST
+/v2/service_instances                                      | /v2/service_instances?accepts_incomplete=true
+                                                           |
+Query: accepts_incomplete = true                           | accepts_incomplete: true
+                                                           |
+$.[?(@.name == 'my-db-service')]                           | {"name":"instance-id","parameters":{},"service_plan_guid"<<<<< Body does not match
+                                                           | :"standard-PLAN-GUID","space_guid":"TEST-SPACE-GUID"}
+
+```
+
+                     * [x] return async CSI response 
+                     * [x] stub GSI error response 
+
+```
+| Closest stub                                             | Request                                                  |
+-----------------------------------------------------------------------------------------------------------------------
+                                                           |
+GET                                                        | GET
+/v2/spaces/TEST-SPACE-GUID                                 | /v2/service_plans/doNotCare-PLAN-GUID               <<<<< URL does not match
+                                                           |
+                                                           |
+-----------------------------------------------------------------------------------------------------------------------
+
+```
+
             * In hope that some existing tests osb-cmdb SCAB-based can work without much changes:
                 ```
                 ├── CreateBindingWithServiceKeyComponentTest.java: PASS

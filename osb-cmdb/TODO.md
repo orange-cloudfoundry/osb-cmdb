@@ -74,7 +74,7 @@ Custom params:
                - submitted https://stackoverflow.com/questions/60641910/how-to-troubleshoot-springboottest-leading-to-no-tests-found-for-given-include
          - try to fix suspected incorrect spring context loading
             - check spring profile selection
-               - @ActiveProfiles("openservicebroker-catalog")
+               - @ActiveProfiles("openservicebroker-catalog"): in integration-tests: application.yml
         - **fix broken tests as the result of the dumps**
            - possibly related to blockhound
 

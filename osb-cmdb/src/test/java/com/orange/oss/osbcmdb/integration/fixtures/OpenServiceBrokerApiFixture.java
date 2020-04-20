@@ -44,6 +44,12 @@ public class OpenServiceBrokerApiFixture implements ApplicationListener<Applicat
 
 	private static final String SERVICE_KEY_CLIENT_ID = "service-key-client-id";
 
+	@Value("${spring.security.user.name}")
+	private String osbUserName;
+
+	@Value("${spring.security.user.password}")
+	private String osbUserPassword;
+
 	@Value("${spring.cloud.openservicebroker.catalog.services[0].plans[0].id}")
 	private String planId;
 
@@ -186,7 +192,8 @@ public class OpenServiceBrokerApiFixture implements ApplicationListener<Applicat
 		return with()
 			.baseUri("http://localhost:" + port + "/v2")
 			.accept(ContentType.JSON)
-			.contentType(ContentType.JSON);
+			.contentType(ContentType.JSON)
+			.auth().basic(osbUserName, osbUserPassword);
 	}
 
 	public String waitForAsyncOperationComplete(String serviceInstanceId) {
