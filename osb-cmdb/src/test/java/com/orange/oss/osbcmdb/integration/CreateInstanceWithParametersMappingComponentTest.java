@@ -19,21 +19,21 @@ package com.orange.oss.osbcmdb.integration;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import  com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
-import  com.orange.oss.osbcmdb.integration.fixtures.1;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.orange.oss.osbcmdb.integration.CreateInstanceWithParametersMappingComponentTest.APP_NAME;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithParametersMappingComponentTest.APP_NAME;
 
 @TestPropertySource(properties = {
 	"spring.cloud.appbroker.services[0].service-name=example",

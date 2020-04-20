@@ -8,7 +8,16 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orange.oss.osbcmdb.CloudFoundryTargetProperties;
+import com.orange.oss.osbcmdb.catalog.DynamicCatalogConstants;
+import com.orange.oss.osbcmdb.catalog.DynamicCatalogServiceAutoConfiguration;
+import com.orange.oss.osbcmdb.catalog.ServiceDefinitionMapperProperties;
 import com.orange.oss.osbcmdb.integration.cmdb.fixtures.ExtendedCloudControllerStubFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.CredHubStubFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.UaaStubFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.WiremockServerFixture;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.doppler.DopplerClient;
@@ -40,18 +49,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogConstants;
-import org.springframework.cloud.appbroker.autoconfigure.DynamicCatalogServiceAutoConfiguration;
-import org.springframework.cloud.appbroker.autoconfigure.ServiceDefinitionMapperProperties;
-import org.springframework.cloud.appbroker.deployer.BrokeredServices;
-import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryDeploymentProperties;
-import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryTargetProperties;
-import  com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
-import  com.orange.oss.osbcmdb.integration.fixtures.CredHubStubFixture;
-import  com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
-import  com.orange.oss.osbcmdb.integration.fixtures.TestBindingCredentialsProviderFixture;
-import  com.orange.oss.osbcmdb.integration.fixtures.UaaStubFixture;
-import  com.orange.oss.osbcmdb.integration.fixtures.WiremockServerFixture;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
@@ -72,8 +69,7 @@ import static org.assertj.core.api.Assertions.entry;
 	OpenServiceBrokerApiFixture.class,
 	ExtendedCloudControllerStubFixture.class,
 	UaaStubFixture.class,
-	CredHubStubFixture.class,
-	TestBindingCredentialsProviderFixture.class})
+	CredHubStubFixture.class})
 @TestPropertySource(properties = {
 	"spring.cloud.appbroker.deployer.cloudfoundry.api-host=localhost",
 	"spring.cloud.appbroker.deployer.cloudfoundry.api-port=8080",
@@ -149,10 +145,6 @@ class DynamicServiceAutoConfigurationComponentTest {
 
 		this.contextRunner
 			.run(context -> {
-				assertThat(context).hasSingleBean(BrokeredServices.class);
-				BrokeredServices brokeredServices = context.getBean(BrokeredServices.class);
-				assertThat(brokeredServices).isNotEmpty();
-
 				assertThat(context).hasSingleBean(Catalog.class);
 				Catalog catalog = context.getBean(Catalog.class);
 				assertThat(catalog.getServiceDefinitions()).isNotEmpty();
@@ -222,9 +214,6 @@ class DynamicServiceAutoConfigurationComponentTest {
 		customContextRunner
 			.run(context -> {
 				//then
-				BrokeredServices brokeredServices = context.getBean(BrokeredServices.class);
-				assertThat(brokeredServices).hasSize(1);
-
 				Catalog catalog = context.getBean(Catalog.class);
 				assertThat(catalog.getServiceDefinitions()).hasSize(1);
 			});
@@ -251,9 +240,6 @@ class DynamicServiceAutoConfigurationComponentTest {
 		customContextRunner
 			.run(context -> {
 				//then
-				BrokeredServices brokeredServices = context.getBean(BrokeredServices.class);
-				assertThat(brokeredServices).hasSize(2);
-
 				Catalog catalog = context.getBean(Catalog.class);
 				assertThat(catalog.getServiceDefinitions()).hasSize(2);
 			});
@@ -262,9 +248,6 @@ class DynamicServiceAutoConfigurationComponentTest {
 	private void assertCatalogCreatesWithoutError() {
 		this.contextRunner
 			.run(context -> {
-				BrokeredServices brokeredServices = context.getBean(BrokeredServices.class);
-				assertThat(brokeredServices).isNotEmpty();
-
 				Catalog catalog = context.getBean(Catalog.class);
 				List<ServiceDefinition> serviceDefinitions = catalog.getServiceDefinitions();
 				assertThat(serviceDefinitions).isNotEmpty();
@@ -307,15 +290,6 @@ class DynamicServiceAutoConfigurationComponentTest {
 		CloudFoundryTargetProperties cloudFoundryTargetProperties() {
 			return new CloudFoundryTargetProperties();
 		}
-
-
-		//Inspired from spring-cloud-app-broker-autoconfigure/src/main/java/org/springframework/cloud/appbroker/autoconfigure/CloudFoundryAppDeployerAutoConfiguration.java
-		@Bean
-		@ConfigurationProperties(PROPERTY_PREFIX + ".properties")
-		CloudFoundryDeploymentProperties cloudFoundryDeploymentProperties() {
-			return new CloudFoundryDeploymentProperties();
-		}
-
 	}
 
 	@ConfigurationProperties(TargetPropertiesConfiguration.PROPERTY_PREFIX)

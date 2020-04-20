@@ -16,13 +16,13 @@
 
 package com.orange.oss.osbcmdb.integration.cmdb;
 
+import com.orange.oss.osbcmdb.OsbCmdbApplication;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import  com.orange.oss.osbcmdb.integration.AppBrokerApplication;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -39,7 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(
 	webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-	classes = {AppBrokerApplication.class})
+	classes = {OsbCmdbApplication.class})
 @ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})
 class StaticOsbCatalogTest {
 
