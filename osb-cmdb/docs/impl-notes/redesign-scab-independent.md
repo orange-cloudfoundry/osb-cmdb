@@ -30,11 +30,13 @@ What SCAB features would be lost and how to accomodate ?
          - contribute fix
          - use custom app deployer
 - BackingService spec: what are use-cases that would require a configuration per brokered service ?
-   - coab custom params opt-in ?
+   - coab custom params support: 
+      - opt-in through metadata filtering: 
+         - broker name matching "coa" prefix. Depends on CF-java-client
+      - systematic opt-in but fallback in case of errors    
    - ~~dashboard Url configuration ? => serve it in nested brokers instead ?~~
    - ~~sync vs async processing~~
-
-
+- K8S collab => independent of cmdb code base
 
 # Design outline:
 
@@ -129,6 +131,70 @@ What SCAB features would be lost and how to accomodate ?
          * component-tests: make OSB API calls, wiremock dependencies, springboot tests
          * acceptance-tests: make CF API calls, run against real dependencies, **depends on boot jar to be produced**
 
+## Integation and acceptance tests
+
+* Q: should we keep SCAB-integration-tests and SCAB-acceptance-tests gradle modules, source code, packages ? Pros and cons ?
+* Benefits of keeping close ?
+   * get updates
+   * be able to compare among small steps
+* Cons of keeping close
+   * their refactorings break us
+   * gradle complexity
+   * additional complexity to try to extend rather than modify
+      * in particular for multi broker support 
+
+* Benefits of diverging
+   * simplify, and remove not needed code
+
+=> make a 1st small step of running component tests from scab against cmdb application, then migrate over and simplify
+
+## dashboard auth & aggregator
+
+cmdb
+   * osb endpoint /v2/catalog...
+   * Auth service: (route service): spring cloud gateway + config oauth multi tenant
+      * req route service-instance-guid-shield/prometheus/quota...
+         *  extract service-instance-guid. 
+         * oauth vers le sevreur du client
+         * API CF V2/service-instance-perm-service-instance-guid
+            *  OK/KO
+         * gateway proxifie le traffic
+   * dashboard aggregator: display-dashboard?url1={0}-shield.{1}&label1=shield&url
+   2={0}-prometheus.{1}&label1=prometheus
+ 
+Q: how to manage dependency to route service & gorouter in the long term?
+
+Steps:
+* CF4K8S: for CF-deployed aps (e.g. php-my-admin)
+   * Native route service support ?
+   * Istio
+* gorouter depreciation for other workload: bosh releases (such as shield/prometheus)
+   * K8S ingress/ Traeffic
+      * Custom authZ backed by REST API endpoint
+         * Native K8S ingress ?
+         * Native Istio ?
+         * Extension ?
+            * Traeffic middleware ?
+
+## high availability, zero downtime deployments         
+
+* State mgt for K8S: make a session store HA if we keep this approach
+* Scale cmdb to 2 instances
+* Enable ZDT V3: dependent on COA 
+
+## Multi tenancy
+
+* A single cmdb apps make multi osb-clients
+   * OSB API through
+      * route prefix per tenant
+      * distinct route per tenant
+   * Configuration: a list of each tenant with their own entries
+      * CF org
+      * dynamic catalog config
+      * OSB API auth
+   * Smoke test: either
+      * One smoke test per tenant (requires dedicated pipeline, or COA evolution)
+      * Smoke test iterates for each tenant
 
 # Implementation steps
 
