@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Spring cloud security integration test.
+ * Spring cloud security com.orange.oss.osbcmdb.integration test.
  * Uses spring web mvc mock support. See inspiration from https://www.baeldung.com/spring-security-integration-tests
  * Reference doc https://docs.spring.io/spring-security/site/docs/5.3.0.RELEASE/reference/html5/#running-as-a-user-in-spring-mvc-test-with-annotations
  * https://docs.spring.io/spring-security/site/docs/5.3.0.RELEASE/reference/html5/#testing-http-basic-authentication
