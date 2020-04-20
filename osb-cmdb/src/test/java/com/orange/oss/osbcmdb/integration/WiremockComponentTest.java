@@ -60,15 +60,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
 //		"spring.profiles.active=acceptanceTests",
-		//cf java client wire traces
-		"logging.level.cloudfoundry-client.wire=debug",
-//		"logging.level.cloudfoundry-client.wire=trace",
-		"logging.level.cloudfoundry-client.operations=debug",
-		"logging.level.cloudfoundry-client.request=debug",
-		"logging.level.cloudfoundry-client.response=debug",
-		"logging.level.okhttp3=debug",
+		// DON'T SET LOGGING PROPERTIES HERE, AS THEIR ASSIGNEMENT IS HARD TO TRACE, PREFER KEEPING THEM IN LOGBACK.XML
 
-		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false"
 
 	}

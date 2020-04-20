@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.orange.oss.osbcmdb.OsbCmdbBrokerConfiguration;
 
@@ -55,6 +56,7 @@ public class WiremockServerFixture {
 	@PostConstruct
 	public void startWiremock() {
 		ccUaaWiremockServer = new WireMockServer(wireMockConfig()
+			.gzipDisabled(true)
 			.port(cfApiPort)
 			.usingFilesUnderClasspath("recordings"));
 		ccUaaWiremockServer.start();

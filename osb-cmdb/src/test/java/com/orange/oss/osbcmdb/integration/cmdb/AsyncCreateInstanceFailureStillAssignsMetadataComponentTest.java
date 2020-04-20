@@ -90,11 +90,11 @@ class AsyncCreateInstanceFailureStillAssignsMetadataComponentTest extends Wiremo
 		cloudControllerFixture.stubServiceInstanceExists(BROKERED_SERVICE_INSTANCE_ID, BACKING_SERVICE_NAME,
 			BACKING_PLAN_NAME);
 
-		// given the service instance can be looked up by name in the space
+		// given the service instance can be looked up by name in the space, and returns PENDING state
 		cloudControllerFixture.stubGetBackingServiceInstance(BROKERED_SERVICE_INSTANCE_ID, BACKING_SERVICE_NAME,
 			CreateInstanceWithServicesComponentTest.BACKING_PLAN_NAME);
-
-		// will list the created service instance bindings with no results
+		// with Operations.getServiceInstance() listing the bindings, and returning with no
+		// bindings
 		cloudControllerFixture.stubListServiceBindingsWithNoResult(BROKERED_SERVICE_INSTANCE_ID);
 
 		// will update the metadata on the service instance

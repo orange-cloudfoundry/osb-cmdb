@@ -24,59 +24,155 @@
       * [ ] **Adapt `WiremockComponentTest` to load OsbCmdbApplication with some tunings**
             * [ ] Debug test failures resulting from SCAB rebase:
                * [x] CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest
-                  * [x] osb api permission 
-                     * [x] inject user name and password to osb fixture
-                  * [x] osb client request lacks context with targetted space: NPE 
                   * [ ] logback.yml is common to all test packages => spring security logs become polution
                      * [ ] transiently remove spring security verbose logs
                      * [ ] control logback level with profiles: https://www.baeldung.com/spring-boot-testing-log-level#1-profile-based-logging-settings
-                  * [x] missing create space stub
-                  * [x] stub mismatch: 
-```
-| Closest stub                                             | Request                                                  |
------------------------------------------------------------------------------------------------------------------------
-                                                           |
-POST                                                       | POST
-/v2/service_instances                                      | /v2/service_instances?accepts_incomplete=true
-                                                           |
-Query: accepts_incomplete = true                           | accepts_incomplete: true
-                                                           |
-$.[?(@.name == 'my-db-service')]                           | {"name":"instance-id","parameters":{},"service_plan_guid"<<<<< Body does not match
-                                                           | :"standard-PLAN-GUID","space_guid":"TEST-SPACE-GUID"}
+                  *  [ ] fixture fails to wiremock CC service instance stub to reach timeout
 
 ```
-
-                     * [x] return async CSI response 
-                     * [x] stub GSI error response 
-
-```
-| Closest stub                                             | Request                                                  |
------------------------------------------------------------------------------------------------------------------------
-                                                           |
-GET                                                        | GET
-/v2/spaces/TEST-SPACE-GUID                                 | /v2/service_plans/doNotCare-PLAN-GUID               <<<<< URL does not match
-                                                           |
-                                                           |
------------------------------------------------------------------------------------------------------------------------
-                     * [x] metadata patch error: missing `backing_service_instance_guid` label 
-
+20-04-2020 15:22:41.391 [cloudfoundry-client-epoll-4] DEBUG cloudfoundry-client.request.request - GET    /v2/spaces/TEST-SPACE-GUID/service_instances?q=name:instance-id&page=1&return_user_provided_service_instances=true
+20-04-2020 15:22:41.407 [cloudfoundry-client-epoll-4] DEBUG cloudfoundry-client.response.response - 200    /v2/spaces/TEST-SPACE-GUID/service_instances?q=name:instance-id&page=1&return_user_provided_service_instances=true (15 ms)
 ```
 
 ```
------------------------------------------------------------------------------------------------------------------------
-| Closest stub                                             | Request                                                  |
------------------------------------------------------------------------------------------------------------------------
-                                                           |
-PATCH                                                      | PATCH
-/v3/service_instances/instance-id-INSTANCE-GUID            | /v3/service_instances/instance-id-INSTANCE-GUID
-                                                           |
-$.[?(@.metadata.labels ==                                  | {"metadata":{"annotations":{},"labels":{"brokered_service<<<<< Body does not match
-{"brokered_service_instance_guid":"instance-id","backing_  | _instance_guid":"instance-id"}}}
-service_instance_guid":"my-db-service-GUID"})]             |
-                                                           |
------------------------------------------------------------------------------------------------------------------------
+$ cf curl /v2/spaces/ff120500-0550-4ce5-abb6-7ad52243c70c/service_instances
+{
+   "total_results": 1,
+   "total_pages": 1,
+   "prev_url": null,
+   "next_url": null,
+   "resources": [
+      {
+         "metadata": {
+            "guid": "00cefea6-b1fb-4d2a-8185-61230e526bbb",
+            "url": "/v2/service_instances/00cefea6-b1fb-4d2a-8185-61230e526bbb",
+            "created_at": "2020-04-20T13:38:58Z",
+            "updated_at": "2020-04-20T13:38:58Z"
+         },
+         "entity": {
+            "name": "gberche",
+            "credentials": {},
+            "service_plan_guid": "640e14b7-4677-4909-a97b-2b63f9276e1b",
+            "space_guid": "ff120500-0550-4ce5-abb6-7ad52243c70c",
+            "gateway_data": null,
+            "dashboard_url": "https://p-mysql.redacted-domain.org/manage/instances/00cefea6-b1fb-4d2a-8185-61230e526bbb",
+            "type": "managed_service_instance",
+            "last_operation": {
+               "type": "create",
+               "state": "succeeded",
+               "description": "",
+               "updated_at": "2020-04-20T13:38:58Z",
+               "created_at": "2020-04-20T13:38:58Z"
+            },
+            "tags": [],
+            "maintenance_info": {},
+            "service_guid": "f8fdfaa9-fdc1-4b68-8791-e55a1419a360",
+            "space_url": "/v2/spaces/ff120500-0550-4ce5-abb6-7ad52243c70c",
+            "service_plan_url": "/v2/service_plans/640e14b7-4677-4909-a97b-2b63f9276e1b",
+            "service_bindings_url": "/v2/service_instances/00cefea6-b1fb-4d2a-8185-61230e526bbb/service_bindings",
+            "service_keys_url": "/v2/service_instances/00cefea6-b1fb-4d2a-8185-61230e526bbb/service_keys",
+            "routes_url": "/v2/service_instances/00cefea6-b1fb-4d2a-8185-61230e526bbb/routes",
+            "service_url": "/v2/services/f8fdfaa9-fdc1-4b68-8791-e55a1419a360",
+            "shared_from_url": "/v2/service_instances/00cefea6-b1fb-4d2a-8185-61230e526bbb/shared_from",
+            "shared_to_url": "/v2/service_instances/00cefea6-b1fb-4d2a-8185-61230e526bbb/shared_to",
+            "service_instance_parameters_url": "/v2/service_instances/00cefea6-b1fb-4d2a-8185-61230e526bbb/parameters"
+         }
+      }
+   ]
+}
+
 ```
 
+vs ./osb-cmdb/src/test/resources/responses/cloudcontroller/list-space-service_instances.json
+
+```
+{
+	"total_results": 1,
+	"total_pages": 1,
+	"prev_url": null,
+	"next_url": null,
+	"resources": [
+		{
+			"metadata": {
+				"guid": "@guid",
+				"url": "/v2/service_instances/@guid",
+				"created_at": "2018-07-19T22:29:41Z",
+				"updated_at": "2018-07-19T22:29:41Z"
+			},
+			"entity": {
+				"name": "@name",
+				"credentials": {},
+				"space_guid": "@space-guid",
+				"service_guid": "@service-guid",
+				"service_plan_guid": "@plan-guid",
+				"type": "managed_service_instance",
+				"syslog_drain_url": "",
+				"route_service_url": "",
+				"space_url": "/v2/spaces/@space-guid",
+				"service_bindings_url": "/v2/service_instances/@guid/service_bindings",
+				"service_keys_url": "/v2/service_instances/@guid/service_keys",
+				"service_url": "/v2/services/@service-guid",
+				"service_plan_url": "/v2/service_plans/@plan-guid",
+				"routes_url": "/v2/service_instances/@guid/routes"
+			}
+		}
+	]
+}
+
+```
+
+Q: how is cf-javaclient accepting partially incomplete response ?
+  * wrong response returned ?
+  * [x] increase cf-java client traces to wire debug.
+     * does not take effect. Why ?
+        * [x] turn logback debug mode https://www.baeldung.com/logback#3-troubleshooting-configuration
+```
+16:04:37,484 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [com.orange.oss.osbcmdb.metadata] to DEBUG
+16:04:37,484 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client] to DEBUG
+16:04:37,484 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client.operations] to DEBUG
+16:04:37,485 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client.request] to DEBUG
+16:04:37,486 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client.response] to DEBUG
+16:04:37,486 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client.wire] to TRACE
+```
+
+Only getting request missing wire traces
+
+```
+20-04-2020 16:05:24.338 [cloudfoundry-client-epoll-4] DEBUG cloudfoundry-client.request.request - GET    /v2/spaces/TEST-SPACE-GUID/service_instances?q=name:instance-id&page=1&return_user_provided_service_instances=true
+20-04-2020 16:05:24.377 [cloudfoundry-client-epoll-4] DEBUG cloudfoundry-client.response.response - 200    /v2/spaces/TEST-SPACE-GUID/service_instances?q=name:instance-id&page=1&return_user_provided_service_instances=true (37 ms)
+```
+        * [ ] typo in logback.xml ?
+        * [x] overriden somewhere ?
+           * production logback ?
+```
+16:10:35,726 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Found resource [logback.xml] at [file:/home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/resources/test/logback.xml]
+```
+           * **WiremockComponentTest** properties !!
+        * [ ] something interfering ?
+           * [ ] missing http client lib in the classpath supporting wire traces ?
+        * [ ] log output redirected ?
+        * How to debug/fix ?
+           * [x] step into with debugger: confirm the wrong level
+              * [x] grep in all of the project the log category
+           * [ ] Read cf-java-client-doc
+           * [ ] Makesure wire traces work in acceptance tests
+           
+Pb: cf-java client logs gzip encoded content which can't be read
+   * [ ] turn gzip off in cf-java-client
+      * [x] ask for help
+         * [x] stackoverflow does not seem active
+         * [x] Prefer GH issue. https://github.com/cloudfoundry/cf-java-client/issues/1043
+   * [x] turn gzip off in wiremock.
+      * https://github.com/tomakehurst/wiremock/commit/3b46b0bcef963e675d7ea32a8bb968625c206486
+   * [ ] log at the wiremock side instead
+   
+
+
+Q: how to simulate an async service error ?
+* simplest: 1st response returns an error
+* statefull responses: http://wiremock.org/docs/stateful-behaviour/ 
+
+                        
             * In hope that some existing tests osb-cmdb SCAB-based can work without much changes:
                 ```
                 ├── CreateBindingWithServiceKeyComponentTest.java: PASS
