@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.appbroker.integration;
+package com.orange.oss.osbcmdb.integration;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationService;
 import org.springframework.cloud.appbroker.extensions.parameters.CreateBackingServicesMetadataTransformationServiceImpl;
+import org.springframework.cloud.appbroker.integration.WiremockComponentTest;
 import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;

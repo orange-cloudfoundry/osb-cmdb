@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.appbroker.integration;
+package com.orange.oss.osbcmdb.integration;
 
 import java.util.HashMap;
 
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.appbroker.integration.WiremockComponentTest;
 import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.springframework.http.HttpStatus;
