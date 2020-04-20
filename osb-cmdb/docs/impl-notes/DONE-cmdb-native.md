@@ -27,3 +27,21 @@
  > 	ServiceBrokerRequest request, String serviceInstanceId,
  > 	Context context) {
 
+
+* [x] Understand/refresh and document how scab integration tests work
+   * `WiremockComponentTest` starts the spring boot app from integration tests and configures it to talk wiremock server launched in jvm.
+      * In scab context, autoconfiguration classes are present in the classpath and thus automatically detected
+      * Requires the wiremock resources to be present in "classpath:/responses/"
+      * No auth is performed 
+   * [x] Test `DynamicCatalogComponentTest`: just checks that static v2/catalog from application.yml is served to junit
+      * [x] Fix changes to recorded mocks since rebase
+      * [x] Rename and comment          
+   * [x] Test `DynamicServiceAutoConfigurationComponentTest`
+      * Pb: wiremock port conflicts `java.io.IOException: Failed to bind to /0.0.0.0:8080`
+         * another scab rebase regression ? 
+         * multiple wiremock instances started that conflict
+         * compare with cmdb-master: WireMockServer fixture changed:
+           > 	@PostConstruct
+           >  	public void startWiremock() {
+         * check circle ci history on rebase osb-cmdb master: `cmdb-master-rebased-from-scab`
+      * [x] Fixed `ExtendedCloudControllerStubFixture` with now missing body id replacement
