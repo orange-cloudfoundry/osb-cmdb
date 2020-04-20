@@ -731,7 +731,7 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 		return planName + "-PLAN-GUID";
 	}
 
-	private static String serviceInstanceGuid(String serviceInstanceName) {
+	public static String serviceInstanceGuid(String serviceInstanceName) {
 		return serviceInstanceName + "-INSTANCE-GUID";
 	}
 
