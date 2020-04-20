@@ -25,8 +25,8 @@ import org.springframework.cloud.appbroker.deployer.DeploymentProperties;
 import org.springframework.cloud.appbroker.extensions.targets.ArtifactDetails;
 import org.springframework.cloud.appbroker.extensions.targets.Target;
 import org.springframework.cloud.appbroker.extensions.targets.TargetFactory;
-import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,9 +38,9 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.springframework.cloud.appbroker.integration.CreateInstanceWithSpacePerServiceInstanceTargetComponentTest.APP_NAME;
-import static org.springframework.cloud.appbroker.integration.CreateInstanceWithSpacePerServiceInstanceTargetComponentTest.BACKING_SERVICE_NAME;
-import static org.springframework.cloud.appbroker.integration.CreateInstanceWithSpacePerServiceInstanceTargetComponentTest.BACKING_SI_NAME;
+import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithSpacePerServiceInstanceTargetComponentTest.APP_NAME;
+import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithSpacePerServiceInstanceTargetComponentTest.BACKING_SERVICE_NAME;
+import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithSpacePerServiceInstanceTargetComponentTest.BACKING_SI_NAME;
 
 @TestPropertySource(properties = {
 	"spring.cloud.appbroker.services[0].service-name=example",

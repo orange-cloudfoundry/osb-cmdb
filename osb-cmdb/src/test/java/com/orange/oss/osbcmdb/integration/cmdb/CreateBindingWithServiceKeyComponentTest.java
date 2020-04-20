@@ -24,17 +24,17 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.appbroker.integration.WiremockComponentTest;
-import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
+import  com.orange.oss.osbcmdb.integration.WiremockComponentTest;
+import  com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 
 import static io.restassured.RestAssured.given;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.Matchers.equalTo;
-import static org.springframework.cloud.appbroker.integration.CreateInstanceWithServicesComponentTest.BACKING_SERVICE_NAME;
-import static org.springframework.cloud.appbroker.integration.CreateInstanceWithServicesComponentTest.BACKING_SI_NAME;
+import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SERVICE_NAME;
+import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SI_NAME;
 
 
 @TestPropertySource(properties = {

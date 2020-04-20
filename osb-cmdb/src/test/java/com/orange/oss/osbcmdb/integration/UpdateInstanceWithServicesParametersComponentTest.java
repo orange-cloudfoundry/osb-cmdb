@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
@@ -33,12 +33,12 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.springframework.cloud.appbroker.integration.UpdateInstanceWithServicesParametersComponentTest.APP_NAME;
-import static org.springframework.cloud.appbroker.integration.UpdateInstanceWithServicesParametersComponentTest.BACKING_PLAN_NAME;
-import static org.springframework.cloud.appbroker.integration.UpdateInstanceWithServicesParametersComponentTest.BACKING_SERVICE_NAME;
-import static org.springframework.cloud.appbroker.integration.UpdateInstanceWithServicesParametersComponentTest.BACKING_SI_NAME;
-import static org.springframework.cloud.appbroker.integration.UpdateInstanceWithServicesParametersComponentTest.PLAN_NAME;
-import static org.springframework.cloud.appbroker.integration.UpdateInstanceWithServicesParametersComponentTest.SERVICE_NAME;
+import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithServicesParametersComponentTest.APP_NAME;
+import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithServicesParametersComponentTest.BACKING_PLAN_NAME;
+import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithServicesParametersComponentTest.BACKING_SERVICE_NAME;
+import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithServicesParametersComponentTest.BACKING_SI_NAME;
+import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithServicesParametersComponentTest.PLAN_NAME;
+import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithServicesParametersComponentTest.SERVICE_NAME;
 
 @TestPropertySource(properties = {
 	"spring.cloud.appbroker.services[0].service-name=" + SERVICE_NAME,

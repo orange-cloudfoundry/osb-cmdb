@@ -26,11 +26,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import static com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture.planGuid;
+import static com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture.serviceGuid;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture.planGuid;
-import static org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture.serviceGuid;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(

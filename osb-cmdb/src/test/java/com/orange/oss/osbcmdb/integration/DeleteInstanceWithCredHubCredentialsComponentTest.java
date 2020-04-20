@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.CredHubStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.UaaStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.CredHubStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.UaaStubFixture;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
@@ -32,7 +32,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.springframework.cloud.appbroker.integration.DeleteInstanceWithCredHubCredentialsComponentTest.APP_NAME;
+import  static  com.orange.oss.osbcmdb.integration.DeleteInstanceWithCredHubCredentialsComponentTest.APP_NAME;
 
 @TestPropertySource(properties = {
 	"spring.cloud.appbroker.services[0].service-name=example",

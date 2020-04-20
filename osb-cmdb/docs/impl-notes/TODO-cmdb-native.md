@@ -14,7 +14,13 @@
            > uses package-private class org.springframework.cloud.appbroker.com.orange.oss.osbcmdb.integration.WiremockComponentTest
              * [x] transiently make the class public                                                                 
          * [x] Copy all `com.orange.oss.osbcmdb.integration-tests` module into `osb-cmdb` module
-         * [ ] Add external dependencies to cmdb package 
+         * [x] Add external dependencies to cmdb package 
+         * [ ] Handle wiremock state, in gradle config `// force a new fork for every test to eliminate issues with wiremock state`
+           * [ ] fork every junit tests in ocb-cmdb: slow
+           * [ ] identity/understand wiremock state pb 
+           * [ ] revert and keep two distinct modules with distinct config
+           * [ ] craft gradle syntax to only fork integration tests 
+           
       * [ ] **Adapt `WiremockComponentTest` to load OsbCmdbApplication with some tunings**
             * [ ] Debug test failures resulting from SCAB rebase:
                * [ ] CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest: stub mismatch 

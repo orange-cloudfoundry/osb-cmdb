@@ -16,19 +16,19 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import com.orange.oss.osbcmdb.integration.fixtures.CredHubStubFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.TestBindingCredentialsProviderFixture;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.appbroker.integration.fixtures.CredHubStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.TestBindingCredentialsProviderFixture;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.orange.oss.osbcmdb.integration.CreateBindingWithCredHubComponentTest.APP_NAME;
 import static io.restassured.RestAssured.given;
-import static org.springframework.cloud.appbroker.integration.CreateBindingWithCredHubComponentTest.APP_NAME;
 
 @TestPropertySource(properties = {
 	"spring.cloud.appbroker.services[0].service-name=example",

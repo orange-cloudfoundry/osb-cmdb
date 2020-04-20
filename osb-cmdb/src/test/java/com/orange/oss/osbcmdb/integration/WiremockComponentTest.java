@@ -25,11 +25,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.CredHubStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.UaaStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.WiremockServerFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.CredHubStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.UaaStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.WiremockServerFixture;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 

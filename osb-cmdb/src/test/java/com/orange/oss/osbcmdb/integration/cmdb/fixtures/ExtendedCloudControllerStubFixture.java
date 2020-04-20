@@ -1,6 +1,6 @@
 package com.orange.oss.osbcmdb.integration.cmdb.fixtures;
 
-import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
+import  com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
