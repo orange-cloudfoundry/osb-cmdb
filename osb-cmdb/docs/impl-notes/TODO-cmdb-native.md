@@ -1,32 +1,42 @@
 
 * [ ] **Set up component test, mocking CF API** to get faster feedback than AT
-   * [ ] Understand and document how integration tests work
-      * `WiremockComponentTest` starts the spring boot app from integration tests and configures it to talk wiremock server launched in jvm.
-         * In scab context, autoconfiguration classes are present in the classpath and thus automatically detected
-         * Requires the wiremock resources to be present in "classpath:/responses/"
-         * No auth is performed 
-   * [ ] Alternatives for reusing SCAB 
-      * Copy component tests in osb-cmdb module as a subpackage
-      * Adapt `WiremockComponentTest` to load OsbCmdbApplication with some tunings
-         * disable dynamic catalog with property
-         * handle default osb-cmdb auth
+   * [ ] set up SCAB component test infra and cmdb test cases
+      * [x] ~~Small step to get cmdb code status wih component tests: Add gradle dependency to cmdb~~
+         * Fails with both => squash it and try direct copy in osb-cmdb codebase 
+         ``` 
+         	implementation project(":osb-cmdb")
+         	testImplementation project(":osb-cmdb")
+         ```
+      * [ ] **Copy component tests in osb-cmdb module as a subpackage**
+      * [ ] **Adapt `WiremockComponentTest` to load OsbCmdbApplication with some tunings**
+            * [ ] Debug test failures resulting from SCAB rebase:
+               * [ ] CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest: stub mismatch 
+            * In hope that some existing tests osb-cmdb SCAB-based can work without much changes:
+                ```
+                ├── CreateBindingWithServiceKeyComponentTest.java: PASS
+                ├── CreateInstanceFailureWithOnlyABackingServiceAndMetadataTransformerComponentTest.java: FAIL
+                ├── CreateInstanceWithOnlyABackingServiceAndMetadataTransformerComponentTest.java
+                ├── CreateInstanceWithParametersOnlyABackingServiceComponentTest.java
+                ├── DeleteBindingWithServiceKeyComponentTest.java
+                ├── DynamicServiceAutoConfigurationComponentTest.java: PASS
+                ├── fixtures
+                │   ├── AbstractServiceInstanceWorkflow.java
+                │   ├── ExtendedCloudControllerStubFixture.java
+                │   ├── ServiceKeyCreateServiceBindingWorkflow.java
+                │   └── ServiceKeyDeleteServiceBindingWorkflow.java
+                └── StaticOsbCatalogTest.java
+                ```
+         * [ ] **disable dynamic catalog with property**
+         * [ ] **handle default osb-cmdb auth**
             * select a permissive spring security config to talk to osb api
                * using spring profile
             * modify org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture.serviceBrokerSpecification() to use basic auth
-       * [x] Test `DynamicCatalogComponentTest`: just checks that static v2/catalog from application.yml is served to junit
-          * [x] Fix changes to recorded mocks since rebase
-          * [x] Rename and comment          
-       * [x] Test `DynamicServiceAutoConfigurationComponentTest`
-          * Pb: wiremock port conflicts `java.io.IOException: Failed to bind to /0.0.0.0:8080`
-             * another scab rebase regression ? 
-             * multiple wiremock instances started that conflict
-             * compare with cmdb-master: WireMockServer fixture changed:
-               > 	@PostConstruct
-               >  	public void startWiremock() {
-             * check circle ci history on rebase osb-cmdb master: `cmdb-master-rebased-from-scab`
-          * [x] Fixed `ExtendedCloudControllerStubFixture` with now missing body id replacement
+      * [ ] Make sure `CreateBindingWithServiceKeyComponentTest` pass within cmdb code base
+      * [ ] Document component test (move 3 lines from `DONE-cmdb-native.md` in a README.md or package-info.java)
+      
+      
    * [ ] Initiate CmdbCreateServiceInstanceComponentTest from CreateInstanceWithSpacePerServiceInstanceTargetComponentTest
-      * [ ] configure scab-integration-tests to depend on osb-cmdb project
+      * [ ] ~~configure scab-integration-tests to depend on osb-cmdb project~~
       * [ ] adapt WiremockComponentTest to use OsbCmdbApplication and inject osb-cmdb props: catalog off + admin user
       * [ ] **assert dashboard properly returned**
    * [ ] async backing service with timeout
