@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.appbroker.integration.fixtures;
+package com.orange.oss.osbcmdb.integration.fixtures;
 
 import java.util.List;
 

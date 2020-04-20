@@ -1,4 +1,4 @@
-package org.springframework.cloud.appbroker.integration;
+package com.orange.oss.osbcmdb.integration;
 
 import java.net.URI;
 import java.util.Collection;
@@ -25,7 +25,6 @@ import org.cloudfoundry.reactor.uaa.ReactorUaaClient;
 import org.cloudfoundry.uaa.UaaClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -49,7 +48,7 @@ import org.springframework.cloud.appbroker.deployer.cloudfoundry.CloudFoundryTar
 import org.springframework.cloud.appbroker.integration.fixtures.CloudControllerStubFixture;
 
 import org.springframework.cloud.appbroker.integration.fixtures.CredHubStubFixture;
-import org.springframework.cloud.appbroker.integration.fixtures.ExtendedCloudControllerStubFixture;
+import com.orange.oss.osbcmdb.integration.fixtures.ExtendedCloudControllerStubFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.TestBindingCredentialsProviderFixture;
 import org.springframework.cloud.appbroker.integration.fixtures.UaaStubFixture;
@@ -58,7 +57,6 @@ import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
