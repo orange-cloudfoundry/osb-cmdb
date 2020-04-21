@@ -6,10 +6,13 @@ import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 @Profile("!offline-test-without-scab")
 @Configuration
@@ -37,14 +40,23 @@ public class OsbCmdbBrokerConfiguration {
 			new UpdateServiceMetadataFormatterService());
 	}
 
-	//TODO: condition that to spring profile or env var
 	@Bean
-	public ServiceInstanceInterceptor acceptanceTestBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
-		return new BackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	@Profile({"acceptanceTests","ASyncFailedBackingSpaceInstanceInterceptor"})
+	public ServiceInstanceInterceptor acceptanceTestFailedAsyncBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new ASyncFailedBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
-	//TODO: condition that to spring profile or env var
 	@Bean
+	@ConditionalOnMissingBean //other methods declaring beans must be declare before in the class!!
+	@Profile("acceptanceTests")
+	//	@Profile("SyncSuccessfullBackingSpaceInstanceInterceptor") // Default impl unless another profile is enabled
+	//	another bean
+	public ServiceInstanceInterceptor acceptanceTestBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new SyncSuccessfullBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests")
 	@ConditionalOnMissingBean
 	public ServiceBindingInterceptor noopServiceBindingInterceptor(CloudFoundryTargetProperties targetProperties) {
 		return new BackingServiceBindingInterceptor(targetProperties.getDefaultSpace());
