@@ -83,14 +83,17 @@ test {
 
 	//Propagate tags from gradle command line to fine tune test selection
 	//See https://javabydeveloper.com/run-tag-specific-junit-5-tests-from-gradle-command/
-	String itags = System.getProperty("includeTags")
-	String etags = System.getProperty("excludeTags")
+	String itagsProp = System.getProperty("includeTags")
+	String etagsProp = System.getProperty("excludeTags")
+
 
 	useJUnitPlatform{
-		if (itags !=null) {
+		if (itagsProp !=null) {
+			String[] itags = itagsProp.split(",");
 			includeTags  itags
 		}
-		if (etags != null) {
+		if (etagsProp != null) {
+			String[] etags = etagsProp.split(",");
 			excludeTags  etags
 		}
 	}
