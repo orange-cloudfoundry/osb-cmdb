@@ -20,7 +20,7 @@ import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstan
  * By default, behaves like noop
  */
 public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceInterceptor implements ServiceBindingInterceptor {
-	public static final Logger LOG = Loggers.getLogger(BackingSpaceInstanceInterceptor.class);
+	public static final Logger LOG = Loggers.getLogger(BackingServiceBindingInterceptor.class);
 
 	public static final Map<String, Object> CREDENTIALS = Collections.singletonMap("noop-binding-key", "noop-binding-value");
 
