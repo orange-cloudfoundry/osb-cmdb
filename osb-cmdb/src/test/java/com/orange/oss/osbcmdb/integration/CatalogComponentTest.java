@@ -38,7 +38,8 @@ import static org.hamcrest.CoreMatchers.is;
 @SpringBootTest(
 	webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 	classes = {OsbCmdbApplication.class})
-@ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})
+@ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})  //triggers loading of related application-{profile]
+// .yml loading sample catalog
 @Tag("scab")
 class CatalogComponentTest {
 

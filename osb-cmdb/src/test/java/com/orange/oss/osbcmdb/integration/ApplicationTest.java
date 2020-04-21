@@ -32,7 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = {OsbCmdbApplication.class})
-@ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})
+@ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})  //triggers loading of related application-{profile]
+// .yml loading sample catalog
 @Tag("scab")
 class ApplicationTest {
 
