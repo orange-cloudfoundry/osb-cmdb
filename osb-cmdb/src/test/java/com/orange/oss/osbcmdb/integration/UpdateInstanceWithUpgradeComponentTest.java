@@ -18,6 +18,7 @@ package com.orange.oss.osbcmdb.integration;
 
 import java.util.HashMap;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,7 @@ import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithUpgradeComp
 	"spring.cloud.appbroker.services[0].apps[0].parameters-transformers[0].name=PropertyMapping",
 	"spring.cloud.appbroker.services[0].apps[0].parameters-transformers[0].args.include=upgrade"
 })
+@Tag("scab")
 class UpdateInstanceWithUpgradeComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME_1 = "upgrade-first-app";

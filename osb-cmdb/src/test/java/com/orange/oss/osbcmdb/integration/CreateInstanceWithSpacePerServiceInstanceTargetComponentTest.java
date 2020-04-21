@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,7 @@ import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithSpacePerSer
 
 	"spring.cloud.appbroker.services[0].target.name=SpacePerServiceInstance"
 })
+@Tag("scab")
 class CreateInstanceWithSpacePerServiceInstanceTargetComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "app-new-services-target";

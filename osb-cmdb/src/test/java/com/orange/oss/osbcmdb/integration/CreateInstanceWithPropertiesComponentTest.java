@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,7 @@ import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithPropertiesC
 	"spring.cloud.appbroker.services[0].apps[0].properties.count=2",
 	"spring.cloud.appbroker.services[0].apps[0].properties.health-check-timeout=180"
 })
+@Tag("scab")
 class CreateInstanceWithPropertiesComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "app-with-properties";

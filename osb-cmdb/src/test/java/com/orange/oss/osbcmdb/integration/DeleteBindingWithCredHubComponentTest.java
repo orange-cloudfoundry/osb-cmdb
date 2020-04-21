@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,7 @@ import  static  com.orange.oss.osbcmdb.integration.DeleteBindingWithCredHubCompo
 
 	"spring.credhub.url=http://localhost:8888"
 })
+@Tag("scab")
 class DeleteBindingWithCredHubComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "delete-binding-credhub";

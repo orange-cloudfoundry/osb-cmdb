@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,7 @@ import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithServiceInst
 
 	"spring.cloud.appbroker.services[0].target.name=ServiceInstanceGuidSuffix"
 })
+@Tag("scab")
 class CreateInstanceWithServiceInstanceGuidSuffixTargetComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "app-with-target";

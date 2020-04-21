@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +57,7 @@ import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithBasicAuthCr
 	"spring.cloud.appbroker.services[0].apps[1].credential-providers[0].args.include-special=false",
 	"spring.cloud.appbroker.services[0].apps[1].properties.use-spring-application-json=false"
 })
+@Tag("scab")
 class CreateInstanceWithBasicAuthCredentialsComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME_1 = "app-with-credentials1";

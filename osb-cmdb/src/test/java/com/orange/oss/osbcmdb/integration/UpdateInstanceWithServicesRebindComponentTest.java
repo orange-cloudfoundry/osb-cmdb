@@ -17,6 +17,7 @@
 package com.orange.oss.osbcmdb.integration;
 
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,7 @@ import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithServicesReb
 	"spring.cloud.appbroker.services[0].services[0].plan=" + BACKING_PLAN_NAME,
 	"spring.cloud.appbroker.services[0].services[0].rebind-on-update=true"
 })
+@Tag("scab")
 class UpdateInstanceWithServicesRebindComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "app-update-rebind-with-services";

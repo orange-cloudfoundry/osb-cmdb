@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,7 @@ import  static  com.orange.oss.osbcmdb.integration.DeleteInstanceComponentTest.S
 	"spring.cloud.appbroker.services[0].apps[1].path=classpath:demo.jar",
 	"spring.cloud.appbroker.services[0].apps[1].name=" + APP_NAME_2
 })
+@Tag("scab")
 class DeleteInstanceComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME_1 = "first-app";

@@ -17,6 +17,7 @@
 package com.orange.oss.osbcmdb.integration;
 
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +62,7 @@ import  static  com.orange.oss.osbcmdb.integration.DeleteInstanceWithCredHubCred
 })
 @Disabled
 // See https://github.com/spring-cloud/spring-cloud-app-broker/issues/315
+@Tag("scab")
 class DeleteInstanceWithCredHubCredentialsComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "first-app";

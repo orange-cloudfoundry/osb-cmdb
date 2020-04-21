@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,7 @@ import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithNewServiceC
 	"spring.cloud.appbroker.services[0].services[0].name=" + NEW_BACKING_SERVICE_NAME,
 	"spring.cloud.appbroker.services[0].services[0].plan=" + NEW_BACKING_PLAN_NAME
 })
+@Tag("scab")
 class UpdateInstanceWithNewServiceComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "app-update-with-new-service";
