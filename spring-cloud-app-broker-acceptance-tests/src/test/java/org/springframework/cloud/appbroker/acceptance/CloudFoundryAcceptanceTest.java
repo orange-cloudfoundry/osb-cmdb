@@ -42,6 +42,7 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationEnvironments;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
@@ -115,6 +116,10 @@ abstract class CloudFoundryAcceptanceTest {
 	private AcceptanceTestProperties acceptanceTestProperties;
 
 	private final WebClient webClient = getSslIgnoringWebClient();
+
+	protected ServiceInstanceEntity getServiceInstanceEntity(String serviceInstanceId) {
+		return cloudFoundryService.getServiceInstanceEntity(serviceInstanceId).block();
+	}
 
 	protected abstract String testSuffix();
 
