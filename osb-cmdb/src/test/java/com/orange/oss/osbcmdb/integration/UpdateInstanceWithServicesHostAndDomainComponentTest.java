@@ -19,6 +19,7 @@ package com.orange.oss.osbcmdb.integration;
 import java.util.HashMap;
 
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,7 @@ import  static  com.orange.oss.osbcmdb.integration.UpdateInstanceWithServicesHos
 	"spring.cloud.appbroker.services[0].apps[0].parameters-transformers[0].name=PropertyMapping",
 	"spring.cloud.appbroker.services[0].apps[0].parameters-transformers[0].args.include=host,domain"
 })
+@Tag("scab")
 class UpdateInstanceWithServicesHostAndDomainComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "app-update-hostname-param";

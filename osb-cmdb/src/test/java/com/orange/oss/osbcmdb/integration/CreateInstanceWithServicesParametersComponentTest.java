@@ -19,6 +19,7 @@ package com.orange.oss.osbcmdb.integration;
 import java.util.Collections;
 import java.util.HashMap;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,7 @@ import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesPar
 	"spring.cloud.appbroker.services[0].services[0].parameters-transformers[0].name=ParameterMapping",
 	"spring.cloud.appbroker.services[0].services[0].parameters-transformers[0].args.include=paramA,paramC"
 })
+@Tag("scab")
 class CreateInstanceWithServicesParametersComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "app-services-param";

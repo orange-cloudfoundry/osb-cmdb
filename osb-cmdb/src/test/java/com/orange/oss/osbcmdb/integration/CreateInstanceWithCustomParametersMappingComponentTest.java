@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
 import com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,7 @@ import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithCustomParam
 	"spring.cloud.appbroker.services[0].apps[0].name=" + APP_NAME,
 	"spring.cloud.appbroker.services[0].apps[0].parameters-transformers[0].name=CustomMapping"
 })
+@Tag("scab")
 class CreateInstanceWithCustomParametersMappingComponentTest extends WiremockComponentTest {
 
 	private static final Logger LOG =

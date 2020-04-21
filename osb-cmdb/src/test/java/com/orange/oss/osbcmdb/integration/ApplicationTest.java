@@ -18,6 +18,7 @@ package com.orange.oss.osbcmdb.integration;
 
 import com.orange.oss.osbcmdb.OsbCmdbApplication;
 import org.cloudfoundry.operations.CloudFoundryOperations;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -32,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = {OsbCmdbApplication.class})
 @ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})
+@Tag("scab")
 class ApplicationTest {
 
 	@Autowired(required = false)

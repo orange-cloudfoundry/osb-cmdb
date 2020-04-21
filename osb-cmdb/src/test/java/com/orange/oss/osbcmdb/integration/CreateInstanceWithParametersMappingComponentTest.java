@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
 import com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,7 @@ import static org.hamcrest.Matchers.is;
 	"spring.cloud.appbroker.services[0].apps[0].parameters-transformers[1].name=PropertyMapping",
 	"spring.cloud.appbroker.services[0].apps[0].parameters-transformers[1].args.include=count,memory"
 })
+@Tag("scab")
 class CreateInstanceWithParametersMappingComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME = "app-with-env-create-params";

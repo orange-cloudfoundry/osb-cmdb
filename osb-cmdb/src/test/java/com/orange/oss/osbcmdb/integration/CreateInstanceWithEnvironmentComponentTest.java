@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb.integration;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,7 @@ import  static  com.orange.oss.osbcmdb.integration.CreateInstanceWithEnvironment
 	"spring.cloud.appbroker.services[0].apps[1].environment.ENV_VAR_3=value3",
 	"spring.cloud.appbroker.services[0].apps[1].environment.ENV_VAR_4=true"
 })
+@Tag("scab")
 class CreateInstanceWithEnvironmentComponentTest extends WiremockComponentTest {
 
 	protected static final String APP_NAME_1 = "app-with-env1";
