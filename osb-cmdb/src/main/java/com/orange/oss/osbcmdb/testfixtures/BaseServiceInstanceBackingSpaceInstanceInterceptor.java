@@ -1,8 +1,7 @@
-package com.orange.oss.osbcmdb;
+package com.orange.oss.osbcmdb.testfixtures;
 
+import com.orange.oss.osbcmdb.ServiceInstanceInterceptor;
 import reactor.core.publisher.Mono;
-import reactor.util.Logger;
-import reactor.util.Loggers;
 
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
@@ -15,16 +14,17 @@ import org.springframework.cloud.servicebroker.model.instance.GetServiceInstance
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse;
 
+
 /**
- * Simulates a successful synchornous backing service requested in backing space.
+ * Base class to accept Backing services requested in backing space. Only accept OSB calls when space is a
+ * backing space, i.e. not the default space.
  *
- * Only accept OSB calls when space is a backing space, i.e. not the default space
+ * Default implementation is to succeed to all requests
  */
-public class SyncSuccessfullBackingSpaceInstanceInterceptor extends BaseBackingSpaceInstanceInterceptor implements ServiceInstanceInterceptor {
+public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBackingSpaceInstanceInterceptor implements ServiceInstanceInterceptor {
 
-	private static final Logger LOG = Loggers.getLogger(SyncSuccessfullBackingSpaceInstanceInterceptor.class);
-
-	public SyncSuccessfullBackingSpaceInstanceInterceptor(String defaultSpaceName) {
+	public BaseServiceInstanceBackingSpaceInstanceInterceptor(
+		String defaultSpaceName) {
 		super(defaultSpaceName);
 	}
 

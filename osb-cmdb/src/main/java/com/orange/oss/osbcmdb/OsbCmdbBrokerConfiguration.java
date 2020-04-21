@@ -2,17 +2,18 @@ package com.orange.oss.osbcmdb;
 
 import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
+import com.orange.oss.osbcmdb.testfixtures.ASyncFailedBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfullBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 
 @Profile("!offline-test-without-scab")
 @Configuration
@@ -47,9 +48,15 @@ public class OsbCmdbBrokerConfiguration {
 	}
 
 	@Bean
-	@Profile("acceptanceTests & SyncFailedBackingSpaceInstanceInterceptor")
-	public ServiceInstanceInterceptor acceptanceTestFailedSyncBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
-		return new SyncFailedBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	@Profile("acceptanceTests & SyncFailedCreateBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestSyncFailedCreateBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new SyncFailedCreateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & SyncFailedUpdateBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestSyncFailedUpdateBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new SyncFailedUpdateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean

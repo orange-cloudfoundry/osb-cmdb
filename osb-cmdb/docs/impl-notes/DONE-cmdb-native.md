@@ -121,4 +121,9 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
                * Pb: requires duplicating some private methods in cf-java-client to replicate same reactive code 
             * [x] use  service instance status  
 * [x] Fix OsbCmdbService Instance: **check service instance status in last operation before returning async completion status**
-   * [ ] Still need to fetch the proper backing service plan id. Passing the brokered service instance id obviously fails :-( 
+   * [x] fix sync backing service failure handling in CSI
+   * [x] fix async backing service failure handling
+      * [x] Still need to fetch the proper backing service plan id. Passing the brokered service instance id obviously fails :-(
+      * [x] Refine acceptance test to poll service instance status, and then check its status
+   
+ 
