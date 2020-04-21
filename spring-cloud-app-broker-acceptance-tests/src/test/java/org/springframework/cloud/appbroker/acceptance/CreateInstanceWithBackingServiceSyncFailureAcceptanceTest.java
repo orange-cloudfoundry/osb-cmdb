@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
-import java.util.Collections;
-
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -25,11 +23,11 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
-class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
+class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-create-service-keys";
+	private static final String SI_NAME = "si-create-service";
 
-	private static final String SUFFIX = "create-instance-with-async-backing-failure";
+	private static final String SUFFIX = "create-instance-with-sync-backing-failure";
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
@@ -60,7 +58,7 @@ class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
 		// control backing service response: have it fail async
-		"spring.profiles.active=acceptanceTests,ASyncFailedBackingSpaceInstanceInterceptor",
+		"spring.profiles.active=acceptanceTests,SyncFailedBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 		"logging.level.cloudfoundry-client.wire=trace",
@@ -74,11 +72,10 @@ class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 	})
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
 		// given a brokered service instance is created
-		// and a backing service is asked to fail asynchronously
-		ServiceInstance brokeredServiceInstance = createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME,
-			SI_NAME, Collections.emptyMap());
-
-		// then the brokered service instance once completes, is expected to be failed
+		// and a backing service is asked to fail synchronously
+		createServiceInstance(SI_NAME);
+		// then the brokered service instance sync fails
+		ServiceInstance brokeredServiceInstance = getServiceInstance(SI_NAME);
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("failed");
 
 		// and an async backing service instance is created in the backing service with the id as service name
