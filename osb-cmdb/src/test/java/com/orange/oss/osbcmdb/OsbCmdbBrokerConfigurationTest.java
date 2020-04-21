@@ -16,7 +16,7 @@
 
 package com.orange.oss.osbcmdb;
 
-import com.orange.oss.osbcmdb.testfixtures.ASyncFailedBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
@@ -110,14 +110,14 @@ class OsbCmdbBrokerConfigurationTest {
 	void asyncFailingCreateInterceptorIsCreatedWithAssociatedProfile() {
 		this.contextRunner
 			.withPropertyValues(
-				"spring.profiles.active=acceptanceTests,ASyncFailedBackingSpaceInstanceInterceptor"
+				"spring.profiles.active=acceptanceTests,ASyncFailedCreateBackingSpaceInstanceInterceptor"
 			)
 			.withPropertyValues(cloudFoundryDeploymentProperties())
 			.run((context) -> {
 				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
 				assertThat(context)
 					.getBean(ServiceInstanceInterceptor.class)
-					.isInstanceOf(ASyncFailedBackingSpaceInstanceInterceptor.class);
+					.isInstanceOf(ASyncFailedCreateBackingSpaceInstanceInterceptor.class);
 			});
 	}
 

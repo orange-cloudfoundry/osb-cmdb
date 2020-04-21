@@ -62,7 +62,7 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
 		// control backing service response: have it fail async
-		"spring.profiles.active=acceptanceTests,SyncFailedBackingSpaceInstanceInterceptor",
+		"spring.profiles.active=acceptanceTests,SyncFailedCreateBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 		"logging.level.cloudfoundry-client.wire=trace",
