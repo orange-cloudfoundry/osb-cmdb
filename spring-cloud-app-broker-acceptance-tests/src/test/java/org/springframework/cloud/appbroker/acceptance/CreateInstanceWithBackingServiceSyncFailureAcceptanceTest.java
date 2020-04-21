@@ -16,7 +16,11 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
+import java.util.Collections;
+
+import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.operations.services.ServiceInstance;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -73,10 +77,15 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
 		// given a brokered service instance is created
 		// and a backing service is asked to fail synchronously
-		createServiceInstance(SI_NAME);
-		// then the brokered service instance sync fails
-		ServiceInstance brokeredServiceInstance = getServiceInstance(SI_NAME);
-		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("failed");
+		ServiceInstance brokeredServiceInstance = null;
+		try {
+			brokeredServiceInstance = createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME,
+				SI_NAME, Collections.emptyMap());
+			Assertions.fail("Expected sync CSI failure");
+		}
+		catch (ClientV2Exception e) {
+			// then the brokered service instance sync fails
+		}
 
 		// and an async backing service instance is created in the backing service with the id as service name
 		String backingServiceName = brokeredServiceInstance.getId();
