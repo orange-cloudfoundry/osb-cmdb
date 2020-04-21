@@ -13,6 +13,7 @@ import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
 import org.cloudfoundry.client.v3.Metadata;
 import org.cloudfoundry.operations.CloudFoundryOperations;
+import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
 import org.cloudfoundry.operations.services.ListServiceKeysRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
@@ -20,6 +21,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceRequest;
@@ -83,42 +85,55 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
-
-		boolean asyncProvisionning;
-		try {
-			spacedTargetedOperations.services()
-				.createInstance(org.cloudfoundry.operations.services.CreateServiceInstanceRequest.builder()
-					.serviceName(request.getServiceDefinition().getName())
-					.serviceInstanceName(request.getServiceInstanceId())
-					.planName(request.getPlan().getName())
-					.parameters(request.getParameters())
-					.completionTimeout(SYNC_COMPLETION_TIMEOUT)
-					.build())
-				.block();
-			asyncProvisionning = false;
-		}
-		//sync timeout exception: reactor.netty.internal.shaded.reactor.pool.PoolAcquireTimeoutException: Pool#acquire
-		// (Duration) has been pending for more than the configured timeout of 45000ms
-//		catch Exception timeoutException) {
-//			LOG.error("Unable to create backing service instance, got {}", timeoutException.toString());
-//			// timeout to 5s: would return an error if service instance is "in_progress" state
-//			asyncProvisionning = true;
-//		} //Already existing exception should flow up and be returned to osb client
-		catch (Exception unexpectedException) {
-			LOG.error("Unable to create backing service instance, got {}", unexpectedException.toString());
-			throw unexpectedException;
-		} //Already existing exception should flow up and be returned to osb client
-
-		ServiceInstance provisionnedSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
-		updateServiceInstanceMetadata(provisionnedSi, request);
+		DefaultCloudFoundryOperations spacedTargetedOperationsInternals = (DefaultCloudFoundryOperations) spacedTargetedOperations;
 
 		CreateServiceInstanceResponse.CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse
-			.builder()
-			.dashboardUrl(provisionnedSi.getDashboardUrl())
-			.async(asyncProvisionning)
-			.operation(toJson(new CmdbOperationState(provisionnedSi.getId(), OsbOperation.CREATE)));
-				//make get last operation faster by tracking the underlying CF instance
-				// GUID
+			.builder();
+		String provisionnedInstanceId = null;
+		try {
+			org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceResponse createServiceInstanceResponse;
+			createServiceInstanceResponse = client.serviceInstances()
+				.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
+					.name(request.getServiceInstanceId())
+					.servicePlanId(request.getServiceDefinition().getId())
+					.parameters(request.getParameters())
+					.spaceId(spacedTargetedOperationsInternals.getSpaceId().block())
+					.build())
+				.block();
+
+			provisionnedInstanceId = createServiceInstanceResponse.getMetadata().getId();
+			LastOperation lastOperation = createServiceInstanceResponse.getEntity().getLastOperation();
+			if (lastOperation == null) {
+				LOG.error("Unexpected missing last operation from CSI. Full response was {}",
+					createServiceInstanceResponse);
+				throw new ServiceBrokerException("Internal CF protocol error");
+			}
+			boolean asyncProvisioning;
+			switch (lastOperation.getState()) {
+				case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
+					asyncProvisioning= true;
+					//make get last operation faster by tracking the underlying CF instance
+					// GUID
+					responseBuilder.operation(toJson(new CmdbOperationState(createServiceInstanceResponse.getMetadata().getId(),
+						OsbOperation.CREATE)));
+					break;
+				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
+					asyncProvisioning = false;
+					break;
+				case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
+					LOG.info("Backing service failed to provision with {}, flowing up the error to the osb client",
+						lastOperation);
+					throw new ServiceBrokerException(lastOperation.getDescription());
+				default:
+					LOG.error("Unexpected last operation state:" + lastOperation.getState());
+					throw new ServiceBrokerException("Internal CF protocol error");
+			}
+			responseBuilder.async(asyncProvisioning);
+		}
+		finally {
+			updateServiceInstanceMetadata(request, provisionnedInstanceId);
+		}
+
 		return Mono.just(responseBuilder.build());
 	}
 
@@ -274,7 +289,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			asyncProvisionning = true;
 		} //Other exceptions should flow up and be returned to osb client
 		finally {
-			updateServiceInstanceMetadata(existingSi, request);
+			updateServiceInstanceMetadata(request, existingSi.getId());
 		}
 
 
@@ -293,25 +308,25 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 	}
 
-	private void updateServiceInstanceMetadata(ServiceInstance serviceInstance, CreateServiceInstanceRequest request) {
+	private void updateServiceInstanceMetadata(CreateServiceInstanceRequest request, String serviceInstanceId) {
 		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
-		updateMetadata(serviceInstance, metaData);
+		updateMetadata(metaData, serviceInstanceId);
 	}
 
-	private void updateServiceInstanceMetadata(ServiceInstance serviceInstance, UpdateServiceInstanceRequest request) {
+	private void updateServiceInstanceMetadata(UpdateServiceInstanceRequest request, String serviceInstanceId) {
 		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
-		updateMetadata(serviceInstance, metaData);
+		updateMetadata(metaData, serviceInstanceId);
 	}
 
-	private void updateMetadata(ServiceInstance serviceInstance, MetaData metaData) {
-		metaData.getLabels().put("backing_service_instance_guid", serviceInstance.getId()); //Ideally should be
+	private void updateMetadata(MetaData metaData, String serviceInstanceId) {
+		metaData.getLabels().put("backing_service_instance_guid", serviceInstanceId); //Ideally should be
 		// assigned within MetadataFormatter instead to centralize the logic. Just avoids passing the Id around as a
 		// 1st step.
-		LOG.debug("Assigning metadata to service instance with name={} annotations={} and labels={}",
-			serviceInstance.getName(), metaData.getAnnotations(), metaData.getLabels());
+		LOG.debug("Assigning metadata to service instance with id={} annotations={} and labels={}",
+			serviceInstanceId, metaData.getAnnotations(), metaData.getLabels());
 
 		client.serviceInstancesV3().update(org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceRequest.builder()
-			.serviceInstanceId(serviceInstance.getId())
+			.serviceInstanceId(serviceInstanceId)
 			.metadata(Metadata.builder()
 				.annotations(metaData.getAnnotations())
 				.labels(metaData.getLabels())

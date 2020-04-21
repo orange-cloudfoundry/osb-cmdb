@@ -91,3 +91,33 @@ Pb: cf-java client logs gzip encoded content which can't be read
    * [ ] log at the wiremock side instead
    
 
+Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createInstance(CreateServiceInstanceRequest) seems to ignore the last operation status, and thus backing service instances failure is silently ignored
+
+* [x] Reproduce in an acceptance test
+   * [x] Inject an interceptor impl which always fails
+      * Pb: despites @ConditionalOnMissingBean acceptanceTestFailedAsyncBackingServiceInstanceInterceptor is still created
+```
+   2020-04-21T09:35:42.97+0200 [APP/PROC/WEB/0] OUT    OsbCmdbBrokerConfiguration#acceptanceTestBackingServiceInstanceInterceptor matched:
+   2020-04-21T09:35:42.97+0200 [APP/PROC/WEB/0] OUT       - @ConditionalOnMissingBean (types: com.orange.oss.osbcmdb.ServiceInstanceInterceptor; SearchStrategy: all) did not find any beans (OnBeanConditio
+
+
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT Parameter 3 of method osbCmdbServiceInstance in com.orange.oss.osbcmdb.OsbCmdbBrokerConfiguration required a single bean, but 2 were found:
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT     - acceptanceTestBackingServiceInstanceInterceptor: defined by method 'acceptanceTestBackingServiceInstanceInterceptor' in class path resource [com/orange/oss/osbcmdb/OsbCmdbBrokerConfiguration.class]
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT     - acceptanceTestFailedAsyncBackingServiceInstanceInterceptor: defined by method 'acceptanceTestFailedAsyncBackingServiceInstanceInterceptor' in class path resource [com/orange/oss/osbcmdb/OsbCmdbBrokerConfiguration.class]
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT Action:
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT Consider marking one of the beans as @Primary, updating the consumer to accept multiple beans, or using @Qualifier to identify the bean that should be consumed
+
+```      
+      * [x] Reproduce in a unit test to iterate faster than in AT
+      * [ ] AT is running a stale version: missing a springboot jar task before !!
+         * [ ] Find a way for acceptance tests to always run gradle bootjar before
+          
+   * [x] Create a new acceptance test class
+      * Pb: cf java client getServiceInstance() is also mangling the lastOperation state, and only returns the last operation operation
+      * Solution: use `status` field which complements `lastOperation` field.
+         * [ ] ~~submit one issue to cf-java-client ?~~ Rather use accepteable workaround     
+         * possible workarounds: 
+            * use low-level CF-java-client v2/v3 instead of high level CfOperations
+               * Pb: requires duplicating some private methods in cf-java-client to replicate same reactive code 
+            * [x] use  service instance status  
+* [x] Fix OsbCmdbService Instance: **check service instance status in last operation before returning async completion status** 
