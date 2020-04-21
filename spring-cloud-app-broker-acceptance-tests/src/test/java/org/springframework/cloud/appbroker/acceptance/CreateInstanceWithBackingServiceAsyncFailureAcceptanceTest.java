@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-create-service-keys";
+	private static final String SI_NAME = "si-create-service-async-fail";
 
 	private static final String SUFFIX = "create-instance-with-async-backing-failure";
 

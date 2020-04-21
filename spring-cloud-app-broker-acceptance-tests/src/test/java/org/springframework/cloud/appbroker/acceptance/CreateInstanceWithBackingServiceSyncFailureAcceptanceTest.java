@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-create-service";
+	private static final String SI_NAME = "si-create-service-sync-fail";
 
 	private static final String SUFFIX = "create-instance-with-sync-backing-failure";
 
