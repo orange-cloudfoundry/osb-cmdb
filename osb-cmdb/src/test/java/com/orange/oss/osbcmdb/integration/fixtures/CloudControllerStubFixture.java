@@ -20,6 +20,7 @@ import java.util.Map;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.matching.ContentPattern;
+import com.orange.oss.osbcmdb.OsbApiConstants;
 import org.json.JSONObject;
 
 import org.springframework.boot.test.context.TestComponent;
@@ -43,11 +44,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 public class CloudControllerStubFixture extends WiremockStubFixture {
 
 	protected static final String TEST_SPACE_GUID = "TEST-SPACE-GUID";
-
-	//See https://apidocs.cloudfoundry.org/12.43.0/service_instances/retrieve_a_particular_service_instance.html
-	public static final String LAST_OPERATION_STATE_SUCCEEDED = "succeeded";
-	public static final String LAST_OPERATION_STATE_INPROGRESS = "in progress";
-	public static final String LAST_OPERATION_STATE_FAILED = "failed";
 
 	private static final String TEST_ORG_GUID = "TEST-ORG-GUID";
 
@@ -508,7 +504,7 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 	}
 
 	public void stubGetBackingServiceInstance(String serviceInstanceName, String serviceName, String planName) {
-		stubGetBackingServiceInstance(serviceInstanceName, serviceName, planName, LAST_OPERATION_STATE_SUCCEEDED);
+		stubGetBackingServiceInstance(serviceInstanceName, serviceName, planName, OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED);
 	}
 
 	public void stubGetBackingServiceInstance(String serviceInstanceName, String serviceName, String planName,
