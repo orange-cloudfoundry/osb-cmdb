@@ -27,7 +27,11 @@
                   * [ ] logback.yml is common to all test packages => spring security logs become polution
                      * [ ] transiently remove spring security verbose logs
                      * [ ] control logback level with profiles: https://www.baeldung.com/spring-boot-testing-log-level#1-profile-based-logging-settings
-                  *  [ ] fixture fails to wiremock CC service instance stub to reach timeout
+                  *  [ ] fixture fails to wiremock CC service instance stub to reach timeout and trigger failure
+
+Q: how to simulate an async service error ?
+* simplest: 1st response `last_operation` returns an error
+* statefull responses: http://wiremock.org/docs/stateful-behaviour/ 
 
 ```
 20-04-2020 15:22:41.391 [cloudfoundry-client-epoll-4] DEBUG cloudfoundry-client.request.request - GET    /v2/spaces/TEST-SPACE-GUID/service_instances?q=name:instance-id&page=1&return_user_provided_service_instances=true
@@ -123,54 +127,76 @@ vs ./osb-cmdb/src/test/resources/responses/cloudcontroller/list-space-service_in
 
 Q: how is cf-javaclient accepting partially incomplete response ?
   * wrong response returned ?
-  * [x] increase cf-java client traces to wire debug.
-     * does not take effect. Why ?
-        * [x] turn logback debug mode https://www.baeldung.com/logback#3-troubleshooting-configuration
-```
-16:04:37,484 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [com.orange.oss.osbcmdb.metadata] to DEBUG
-16:04:37,484 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client] to DEBUG
-16:04:37,484 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client.operations] to DEBUG
-16:04:37,485 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client.request] to DEBUG
-16:04:37,486 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client.response] to DEBUG
-16:04:37,486 |-INFO in ch.qos.logback.classic.joran.action.LoggerAction - Setting level of logger [cloudfoundry-client.wire] to TRACE
-```
+  * **response without last operation** 
 
-Only getting request missing wire traces
+Somehow, this gets ignored and no retry is attempted despite org.cloudfoundry.util.LastOperationUtils.waitForCompletion():
 
 ```
-20-04-2020 16:05:24.338 [cloudfoundry-client-epoll-4] DEBUG cloudfoundry-client.request.request - GET    /v2/spaces/TEST-SPACE-GUID/service_instances?q=name:instance-id&page=1&return_user_provided_service_instances=true
-20-04-2020 16:05:24.377 [cloudfoundry-client-epoll-4] DEBUG cloudfoundry-client.response.response - 200    /v2/spaces/TEST-SPACE-GUID/service_instances?q=name:instance-id&page=1&return_user_provided_service_instances=true (37 ms)
+    public static Mono<Void> waitForCompletion(Duration completionTimeout, Supplier<Mono<LastOperation>> lastOperationSupplier) {
+        return lastOperationSupplier.get()
+            .map(LastOperation::getState)
+            .filter(state -> !IN_PROGRESS.equals(state))
+            .repeatWhenEmpty(DelayUtils.exponentialBackOff(Duration.ofSeconds(1), Duration.ofSeconds(15), completionTimeout))
+            .onErrorResume(t -> t instanceof ClientV2Exception && ((ClientV2Exception) t).getStatusCode() == 404, t -> Mono.empty())
+            .then();
+    } 
 ```
-        * [ ] typo in logback.xml ?
-        * [x] overriden somewhere ?
-           * production logback ?
-```
-16:10:35,726 |-INFO in ch.qos.logback.classic.LoggerContext[default] - Found resource [logback.xml] at [file:/home/guillaume/code/osb-cmdb-spike/osb-cmdb/build/resources/test/logback.xml]
-```
-           * **WiremockComponentTest** properties !!
-        * [ ] something interfering ?
-           * [ ] missing http client lib in the classpath supporting wire traces ?
-        * [ ] log output redirected ?
-        * How to debug/fix ?
-           * [x] step into with debugger: confirm the wrong level
-              * [x] grep in all of the project the log category
-           * [ ] Read cf-java-client-doc
-           * [ ] Makesure wire traces work in acceptance tests
-           
-Pb: cf-java client logs gzip encoded content which can't be read
-   * [ ] turn gzip off in cf-java-client
-      * [x] ask for help
-         * [x] stackoverflow does not seem active
-         * [x] Prefer GH issue. https://github.com/cloudfoundry/cf-java-client/issues/1043
-   * [x] turn gzip off in wiremock.
-      * https://github.com/tomakehurst/wiremock/commit/3b46b0bcef963e675d7ea32a8bb968625c206486
-   * [ ] log at the wiremock side instead
-   
+=> modify usage of response to use `status` field.
+=> rather modify to use client low level API and avoid unnecessary polling of last operation in create.
 
-
-Q: how to simulate an async service error ?
-* simplest: 1st response returns an error
+Q: how to simulate and assert proper async service error support ?
+* simplest:  
+   * [ ] responses to `last_operation` returns immediately an error
+   * [ ] response to "spaces/id/serviceinstance" to return entity with last-operation-state=error
+   * improve OsbCmdbServiceInstance to also look at returned ServiceInstance.status to fail synchronously when faster than configured timeout  ?
+   * improve OsbCmdbServiceInstance to also look at returned ServiceInstance.status to fail synchronously when faster than configured timeout  ?
 * statefull responses: http://wiremock.org/docs/stateful-behaviour/ 
+
+
+* [ ] reduce risk by getting feedback from smoke tests
+   * [ ] fix circle ci build preventing last commits from being included into the tarball
+      * [ ] exclude scab tests from integration tests
+         * [x] add @Tag("scab") to scab test
+         * [ ] add -PexcludeTag to circle ci arg
+         * [ ] add -PexcludeTag to concourse  arg
+   * [ ] diagnose/fix missing matching backing service
+
+
+
+Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createInstance(CreateServiceInstanceRequest) seems to ignore the last operation status
+
+* [x] Reproduce in an acceptance test
+   * [x] Inject an interceptor impl which always fails
+      * Pb: despites @ConditionalOnMissingBean acceptanceTestFailedAsyncBackingServiceInstanceInterceptor is still created
+```
+   2020-04-21T09:35:42.97+0200 [APP/PROC/WEB/0] OUT    OsbCmdbBrokerConfiguration#acceptanceTestBackingServiceInstanceInterceptor matched:
+   2020-04-21T09:35:42.97+0200 [APP/PROC/WEB/0] OUT       - @ConditionalOnMissingBean (types: com.orange.oss.osbcmdb.ServiceInstanceInterceptor; SearchStrategy: all) did not find any beans (OnBeanConditio
+
+
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT Parameter 3 of method osbCmdbServiceInstance in com.orange.oss.osbcmdb.OsbCmdbBrokerConfiguration required a single bean, but 2 were found:
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT     - acceptanceTestBackingServiceInstanceInterceptor: defined by method 'acceptanceTestBackingServiceInstanceInterceptor' in class path resource [com/orange/oss/osbcmdb/OsbCmdbBrokerConfiguration.class]
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT     - acceptanceTestFailedAsyncBackingServiceInstanceInterceptor: defined by method 'acceptanceTestFailedAsyncBackingServiceInstanceInterceptor' in class path resource [com/orange/oss/osbcmdb/OsbCmdbBrokerConfiguration.class]
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT Action:
+   2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT Consider marking one of the beans as @Primary, updating the consumer to accept multiple beans, or using @Qualifier to identify the bean that should be consumed
+
+```      
+      * [x] Reproduce in a unit test to iterate faster than in AT
+      * [ ] AT is running a stale version: missing a springboot jar task before !!
+         * [ ] Find a way for acceptance tests to always run gradle bootjar before
+          
+   * [x] Create a new acceptance test class
+      * Pb: getServiceInstance() is also mangling the lastOperation state, and only returns the last operation operation
+      * Solution: use `status` field which complements `lastOperation` field.
+      
+      
+* [ ] ~~submit one issue to cf-java-client ?~~ Rather use accepteable workaround     
+* possible workarounds: 
+   * use low-level CF-java-client v2/v3 instead of high level CfOperations
+      * Pb: requires duplicating some private methods in cf-java-client to replicate same reactive code 
+   * [x] **check service instance status in last operation before returning async completion status** 
+      * actually already implemented :-) 
+      
+   https://github.com/cloudfoundry/cf-java-client/blob/8ec06b4cdd61dda0f0ba5e4d546651b880735faa/cloudfoundry-operations/src/main/java/org/cloudfoundry/operations/services/DefaultServices.java#L945-L971
 
                         
             * In hope that some existing tests osb-cmdb SCAB-based can work without much changes:

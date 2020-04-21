@@ -31,6 +31,7 @@ import org.cloudfoundry.client.v2.organizations.AssociateOrganizationUserRespons
 import org.cloudfoundry.client.v2.organizations.RemoveOrganizationManagerRequest;
 import org.cloudfoundry.client.v2.organizations.RemoveOrganizationUserRequest;
 import org.cloudfoundry.client.v2.privatedomains.DeletePrivateDomainRequest;
+import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperRequest;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperResponse;
 import org.cloudfoundry.client.v2.spaces.RemoveSpaceDeveloperRequest;
@@ -331,6 +332,14 @@ public class CloudFoundryService {
 				.build())
 			.doOnSuccess(item -> LOG.info("Got service instance " + serviceInstanceName))
 			.doOnError(error -> LOG.error("Error getting service instance " + serviceInstanceName + ": " + error));
+	}
+
+	public Mono<ServiceInstanceEntity> getServiceInstanceEntity(String serviceInstanceId) {
+		return cloudFoundryClient.serviceInstances()
+			.get(org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest.builder()
+				.serviceInstanceId(serviceInstanceId)
+				.build())
+			.map(getServiceInstanceResponse -> getServiceInstanceResponse.getEntity());
 	}
 
 	private Mono<ServiceKey> getServiceKey(CloudFoundryOperations operations,

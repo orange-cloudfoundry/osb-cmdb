@@ -95,6 +95,7 @@ What SCAB features would be lost and how to accomodate ?
          1- have two different branches of code for sync and async CSI
             - OSB catalog does not describe whether provisionning is sync or async
             - configured per BackingService
+            - **just depending on returned last operation state: in_progress, succeeded, failed** 
          2- inline cf-java-client DefaultServices.createServiceInstance() to not wait for last operation completion
          3- **configure a very short completion timeout in CF-Java-client and perform ourselves the last operation polling in get_last_operation**
 
