@@ -24,6 +24,7 @@ import com.orange.oss.osbcmdb.integration.WiremockComponentTest;
 import com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture;
 import com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Hooks;
 
@@ -33,6 +34,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 
 import static com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SERVICE_NAME;
+import static com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture.LAST_OPERATION_STATE_FAILED;
 import static com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture.serviceInstanceGuid;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +52,7 @@ import static org.hamcrest.Matchers.is;
 	"spring.cloud.openservicebroker.catalog.services[0].plans[0].description=A simple plan",
 	"spring.cloud.openservicebroker.catalog.services[0].plans[0].free=true",
 })
+@Disabled("Still fix of bug in OsbCmdbServiceInstanceService")
 class AsyncCreateInstanceFailureStillAssignsMetadataComponentTest extends WiremockComponentTest {
 
 	protected static final String BACKING_SI_NAME = "my-db-service";
@@ -90,14 +93,14 @@ class AsyncCreateInstanceFailureStillAssignsMetadataComponentTest extends Wiremo
 		cloudControllerFixture.stubServiceInstanceExists(BROKERED_SERVICE_INSTANCE_ID, BACKING_SERVICE_NAME,
 			BACKING_PLAN_NAME);
 
-		// given the service instance can be looked up by name in the space, and returns PENDING state
+		// given the service instance can be looked up by name in the space, and returns FAILED state
 		cloudControllerFixture.stubGetBackingServiceInstance(BROKERED_SERVICE_INSTANCE_ID, BACKING_SERVICE_NAME,
-			CreateInstanceWithServicesComponentTest.BACKING_PLAN_NAME);
+			CreateInstanceWithServicesComponentTest.BACKING_PLAN_NAME, LAST_OPERATION_STATE_FAILED);
 		// with Operations.getServiceInstance() listing the bindings, and returning with no
 		// bindings
 		cloudControllerFixture.stubListServiceBindingsWithNoResult(BROKERED_SERVICE_INSTANCE_ID);
 
-		// will update the metadata on the service instance
+		// then should this update the metadata on the service instance
 		// results
 		Map<String, Object> labels = new HashMap<>();
 		labels.put("brokered_service_instance_guid", BROKERED_SERVICE_INSTANCE_ID);

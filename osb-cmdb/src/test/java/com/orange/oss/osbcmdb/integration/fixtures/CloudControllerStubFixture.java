@@ -43,6 +43,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 public class CloudControllerStubFixture extends WiremockStubFixture {
 
 	protected static final String TEST_SPACE_GUID = "TEST-SPACE-GUID";
+
+	//See https://apidocs.cloudfoundry.org/12.43.0/service_instances/retrieve_a_particular_service_instance.html
+	public static final String LAST_OPERATION_STATE_SUCCEEDED = "succeeded";
+	public static final String LAST_OPERATION_STATE_INPROGRESS = "in progress";
+	public static final String LAST_OPERATION_STATE_FAILED = "failed";
+
 	private static final String TEST_ORG_GUID = "TEST-ORG-GUID";
 
 	private static final String TEST_QUOTA_DEFINITION_GUID = "TEST-QUOTA-DEFINITION-GUID";
@@ -458,8 +464,13 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 		stubServiceInstanceExists(serviceInstanceGuid(serviceInstanceName), serviceInstanceName, serviceName, planName);
 	}
 
-	private void stubServiceInstanceExists(String serviceInstanceId, String serviceInstanceName, String serviceName,
+	public void stubServiceInstanceExists(String serviceInstanceId, String serviceInstanceName, String serviceName,
 		String planName) {
+		stubServiceInstanceExists(serviceInstanceId, serviceInstanceName, serviceName, planName, "succeeded");
+	}
+
+	private void stubServiceInstanceExists(String serviceInstanceId, String serviceInstanceName, String serviceName,
+		String planName, String lastOperationState) {
 		stubFor(get(urlPathEqualTo("/v2/spaces/" + TEST_SPACE_GUID + "/service_instances"))
 			.withQueryParam("q", equalTo("name:" + serviceInstanceName))
 			.withQueryParam("page", equalTo("1"))
@@ -470,7 +481,9 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 					replace("@service-guid", serviceGuid(serviceName)),
 					replace("@plan-guid", planGuid(planName)),
 					replace("@name", serviceInstanceName),
-					replace("@guid", serviceInstanceId)))));
+					replace("@guid", serviceInstanceId),
+					replace("@type", "create"),
+					replace("@state", lastOperationState)))));
 	}
 
 	public void stubGetServiceInstanceWithNoBinding(String serviceInstanceId, String serviceInstanceName, String serviceName,
@@ -495,8 +508,13 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 	}
 
 	public void stubGetBackingServiceInstance(String serviceInstanceName, String serviceName, String planName) {
-		String serviceInstanceId = serviceInstanceGuid(serviceInstanceName);
-		stubServiceInstanceExists(serviceInstanceId, serviceInstanceName, serviceName, planName);
+		stubGetBackingServiceInstance(serviceInstanceName, serviceName, planName, LAST_OPERATION_STATE_SUCCEEDED);
+	}
+
+	public void stubGetBackingServiceInstance(String serviceInstanceName, String serviceName, String planName,
+		String lastOperationState) {
+		stubServiceInstanceExists(serviceInstanceGuid(serviceInstanceName), serviceInstanceName, serviceName, planName,
+			lastOperationState);
 		stubGetServiceAndGetPlan(serviceName, planName);
 	}
 
@@ -678,7 +696,7 @@ public class CloudControllerStubFixture extends WiremockStubFixture {
 			.willReturn(ok()));
 	}
 
-	private void stubGetServiceAndGetPlan(String serviceName, String planName) {
+	public void stubGetServiceAndGetPlan(String serviceName, String planName) {
 		stubFor(get(urlPathEqualTo("/v2/service_plans/" + planGuid(planName)))
 			.willReturn(ok()
 				.withBody(cc("get-service-plan")
