@@ -77,9 +77,8 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
 		// given a brokered service instance is created
 		// and a backing service is asked to fail synchronously
-		ServiceInstance brokeredServiceInstance = null;
 		try {
-			brokeredServiceInstance = createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME,
+			createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME,
 				SI_NAME, Collections.emptyMap());
 			Assertions.fail("Expected sync CSI failure");
 		}
@@ -88,6 +87,7 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 		}
 
 		// and an async backing service instance is created in the backing service with the id as service name
+		ServiceInstance brokeredServiceInstance = getServiceInstance(SI_NAME);
 		String backingServiceName = brokeredServiceInstance.getId();
 		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
 		//and the backing service has the right type
