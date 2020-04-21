@@ -15,12 +15,12 @@ import org.springframework.cloud.servicebroker.model.instance.OperationState;
  *
  * Only accept OSB calls when space is a backing space, i.e. not the default space
  */
-public class ASyncFailedBackingSpaceInstanceInterceptor extends BaseServiceInstanceBackingSpaceInstanceInterceptor
+public class ASyncFailedCreateBackingSpaceInstanceInterceptor extends BaseServiceInstanceBackingSpaceInstanceInterceptor
 	implements ServiceInstanceInterceptor {
 
-	private static final Logger LOG = Loggers.getLogger(ASyncFailedBackingSpaceInstanceInterceptor.class);
+	private static final Logger LOG = Loggers.getLogger(ASyncFailedCreateBackingSpaceInstanceInterceptor.class);
 
-	public ASyncFailedBackingSpaceInstanceInterceptor(String defaultSpaceName) {
+	public ASyncFailedCreateBackingSpaceInstanceInterceptor(String defaultSpaceName) {
 		super(defaultSpaceName);
 	}
 

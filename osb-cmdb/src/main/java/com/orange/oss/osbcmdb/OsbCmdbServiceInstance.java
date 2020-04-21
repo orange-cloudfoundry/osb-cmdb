@@ -13,21 +13,16 @@ import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
 import org.cloudfoundry.client.v2.serviceplans.ListServicePlansRequest;
-import org.cloudfoundry.client.v2.services.GetServiceRequest;
-import org.cloudfoundry.client.v2.services.ListServicesRequest;
-import org.cloudfoundry.client.v2.services.ServiceResource;
 import org.cloudfoundry.client.v2.spaces.ListSpaceServicesRequest;
 import org.cloudfoundry.client.v3.Metadata;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
 import org.cloudfoundry.operations.services.ListServiceKeysRequest;
-import org.cloudfoundry.operations.services.ListServiceOfferingsRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.util.ExceptionUtils;
 import org.cloudfoundry.util.PaginationUtils;
 import org.cloudfoundry.util.ResourceUtils;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
@@ -43,6 +38,7 @@ import org.springframework.cloud.servicebroker.model.instance.GetLastServiceOper
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse;
+import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse.UpdateServiceInstanceResponseBuilder;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 
 @SuppressWarnings("BlockingMethodInNonBlockingContext")
@@ -100,18 +96,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		String backingServicePlanName = request.getPlan().getName();
 
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
-		DefaultCloudFoundryOperations spacedTargetedOperationsInternals = (DefaultCloudFoundryOperations) spacedTargetedOperations;
-		String spaceId = spacedTargetedOperationsInternals.getSpaceId().block();
-		if(spaceId == null) {
-			LOG.error("Unexpected null spaceId in DefaultCloudFoundryOperations {}", spacedTargetedOperationsInternals);
-			throw new ServiceBrokerException("Internal CF client error");
-		}
-
+		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
 
 
 		CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
-		String provisionedInstanceId = null;
+		String backingServiceInstanceInstanceId = null;
 		try {
 			org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceResponse createServiceInstanceResponse;
 			createServiceInstanceResponse = client.serviceInstances()
@@ -123,7 +113,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.build())
 				.block();
 
-			provisionedInstanceId = createServiceInstanceResponse.getMetadata().getId();
+			backingServiceInstanceInstanceId = createServiceInstanceResponse.getMetadata().getId();
 			LastOperation lastOperation = createServiceInstanceResponse.getEntity().getLastOperation();
 			if (lastOperation == null) {
 				LOG.error("Unexpected missing last operation from CSI. Full response was {}",
@@ -153,12 +143,22 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			responseBuilder.async(asyncProvisioning);
 		}
 		finally {
-			if (provisionedInstanceId != null) {
-				updateServiceInstanceMetadata(request, provisionedInstanceId);
+			if (backingServiceInstanceInstanceId != null) {
+				updateServiceInstanceMetadata(request, backingServiceInstanceInstanceId);
 			}
 		}
 
 		return Mono.just(responseBuilder.build());
+	}
+
+	private String getSpacedIdFromTargettedOperationsInternals(CloudFoundryOperations spacedTargetedOperations) {
+		DefaultCloudFoundryOperations spacedTargetedOperationsInternals = (DefaultCloudFoundryOperations) spacedTargetedOperations;
+		String spaceId = spacedTargetedOperationsInternals.getSpaceId().block();
+		if(spaceId == null) {
+			LOG.error("Unexpected null spaceId in DefaultCloudFoundryOperations {}", spacedTargetedOperationsInternals);
+			throw new ServiceBrokerException("Internal CF client error");
+		}
+		return spaceId;
 	}
 
 	private String fetchBackingServicePlanId(String backingServiceName, String backingServicePlanName, String spaceId) {
@@ -321,38 +321,62 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return osbInterceptor.updateServiceInstance(request);
 		}
 
-		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(
-			request.getServiceDefinition().getName()); //ignore race condition during space
-		// creation for K8S dupl requests
-		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
+		String backingServiceName = request.getServiceDefinition().getName();
+		String backingServicePlanName = request.getPlan().getName();
 
-		//set completion
-		// timeout to 5s: would return an error if service instance is "in_progress" state
-		boolean asyncProvisionning;
+		//ignore race condition during space creation for K8S dupl requests
+		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
+		ServiceInstance existingBackingServiceInstance = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
+		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
+		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
+
+		UpdateServiceInstanceResponseBuilder responseBuilder = UpdateServiceInstanceResponse.builder();
+
 		try {
-			spacedTargetedOperations.services()
-				.updateInstance(org.cloudfoundry.operations.services.UpdateServiceInstanceRequest.builder()
-					.serviceInstanceName(existingSi.getName())
-					.planName(request.getPlan().getName())
+			org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceResponse updateServiceInstanceResponse;
+			updateServiceInstanceResponse = client.serviceInstances()
+				.update(org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceRequest.builder()
+					.serviceInstanceId(existingBackingServiceInstance.getId())
+					.servicePlanId(backingServicePlanId)
 					.parameters(request.getParameters())
-					.completionTimeout(SYNC_COMPLETION_TIMEOUT)
 					.build())
 				.block();
-			asyncProvisionning = false;
+
+			LastOperation lastOperation = updateServiceInstanceResponse.getEntity().getLastOperation();
+			if (lastOperation == null) {
+				LOG.error("Unexpected missing last operation from USI. Full response was {}",
+					updateServiceInstanceResponse);
+				throw new ServiceBrokerException("Internal CF protocol error");
+			}
+			boolean asyncProvisioning;
+			switch (lastOperation.getState()) {
+				case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
+					asyncProvisioning = true;
+					//make get last operation faster by tracking the underlying CF instance
+					// GUID
+					responseBuilder
+						.operation(toJson(new CmdbOperationState(updateServiceInstanceResponse.getMetadata().getId(),
+							OsbOperation.UPDATE)));
+					break;
+				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
+					asyncProvisioning = false;
+					break;
+				case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
+					LOG.info("Backing service failed to update with {}, flowing up the error to the osb " +
+							"client",
+						lastOperation);
+					throw new ServiceBrokerException(lastOperation.getDescription());
+				default:
+					LOG.error("Unexpected last operation state:" + lastOperation.getState());
+					throw new ServiceBrokerException("Internal CF protocol error");
+			}
+			responseBuilder.async(asyncProvisioning);
 		}
-		catch (Exception timeoutException) {
-			// timeout to 5s: would return an error if service instance is "in_progress" state
-			asyncProvisionning = true;
-		} //Other exceptions should flow up and be returned to osb client
 		finally {
-			updateServiceInstanceMetadata(request, existingSi.getId());
+			//systematically try to update metadata (e.g. service instance rename) even if update failed
+			updateServiceInstanceMetadata(request, existingBackingServiceInstance.getId());
 		}
-
-
-		return Mono.just(UpdateServiceInstanceResponse.builder()
-			.async(asyncProvisionning)
-			.operation(toJson(new CmdbOperationState(existingSi.getId(), OsbOperation.UPDATE)))
-			.build());
+		return Mono.just(responseBuilder.build());
 	}
 
 	protected CmdbOperationState fromJson(String operation) {
