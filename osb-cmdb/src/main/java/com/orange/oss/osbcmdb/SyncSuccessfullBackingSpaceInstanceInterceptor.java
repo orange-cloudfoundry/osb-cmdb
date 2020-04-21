@@ -16,14 +16,15 @@ import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInsta
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse;
 
 /**
- * Simulates Backing services requested in backing space. Only accept OSB calls when space is a backing space, i.e.
- * not the default space
+ * Simulates a successful synchornous backing service requested in backing space.
+ *
+ * Only accept OSB calls when space is a backing space, i.e. not the default space
  */
-public class BackingSpaceInstanceInterceptor extends BaseBackingSpaceInstanceInterceptor implements ServiceInstanceInterceptor {
+public class SyncSuccessfullBackingSpaceInstanceInterceptor extends BaseBackingSpaceInstanceInterceptor implements ServiceInstanceInterceptor {
 
-	private static final Logger LOG = Loggers.getLogger(BackingSpaceInstanceInterceptor.class);
+	private static final Logger LOG = Loggers.getLogger(SyncSuccessfullBackingSpaceInstanceInterceptor.class);
 
-	public BackingSpaceInstanceInterceptor(String defaultSpaceName) {
+	public SyncSuccessfullBackingSpaceInstanceInterceptor(String defaultSpaceName) {
 		super(defaultSpaceName);
 	}
 
