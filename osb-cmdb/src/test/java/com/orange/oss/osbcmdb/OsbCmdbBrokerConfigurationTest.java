@@ -82,6 +82,26 @@ class OsbCmdbBrokerConfigurationTest {
 	void syncFailingInterceptorIsCreatedWithAcceptanceProfileAndFailingProfile() {
 		this.contextRunner
 			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,SyncFailedBackingSpaceInstanceInterceptor",
+				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.local",
+				"spring.cloud.appbroker.deployer.cloudfoundry.api-port=443",
+				"spring.cloud.appbroker.deployer.cloudfoundry.default-org=example-org",
+				"spring.cloud.appbroker.deployer.cloudfoundry.default-space=example-space",
+				"spring.cloud.appbroker.deployer.cloudfoundry.username=user",
+				"spring.cloud.appbroker.deployer.cloudfoundry.password=secret"
+			)
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(SyncFailedBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void asyncFailingInterceptorIsCreatedWithAcceptanceProfileAndFailingProfile() {
+		this.contextRunner
+			.withPropertyValues(
 				"spring.profiles.active=acceptanceTests,ASyncFailedBackingSpaceInstanceInterceptor",
 				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.local",
 				"spring.cloud.appbroker.deployer.cloudfoundry.api-port=443",

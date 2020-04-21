@@ -11,6 +11,15 @@
    * [ ] backport service instance name factory
    * [ ] backport service key name factory
 
+* [x] fix sync backing service failure handling in CSI
+* [ ] fix sync backing service failure handling in USI
+   * [ ] Set up acceptance test
+   * [ ] Fix OsbServiceInstanceService
+* [ ] fix async backing service failure handling
+   * [ ] Refine acceptance test to poll service instance status, and then check its status
+
+* [ ] Fix concourse ci so that we get result of osb-cmdb unit tests. Currently in osb-cmdb we only get test matching profile acceptance tests (`-DincludeTags=AcceptanceTest`)
+   * [ ] Try removing `-DincludeTags=AcceptanceTest` and see if we still have conflicts among test cases and requested args, and need more gradle launches passes
 
 
 * [ ] **Set up component test, mocking CF API** to get faster feedback than AT

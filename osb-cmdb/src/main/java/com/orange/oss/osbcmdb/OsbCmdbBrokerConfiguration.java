@@ -41,9 +41,15 @@ public class OsbCmdbBrokerConfiguration {
 	}
 
 	@Bean
-	@Profile({"acceptanceTests","ASyncFailedBackingSpaceInstanceInterceptor"})
+	@Profile("acceptanceTests & ASyncFailedBackingSpaceInstanceInterceptor")
 	public ServiceInstanceInterceptor acceptanceTestFailedAsyncBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
 		return new ASyncFailedBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & SyncFailedBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestFailedSyncBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new SyncFailedBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean

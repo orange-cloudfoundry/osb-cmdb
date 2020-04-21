@@ -1,6 +1,7 @@
 package com.orange.oss.osbcmdb;
 
 import java.time.Duration;
+import java.util.NoSuchElementException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,12 +12,22 @@ import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
+import org.cloudfoundry.client.v2.serviceplans.ListServicePlansRequest;
+import org.cloudfoundry.client.v2.services.GetServiceRequest;
+import org.cloudfoundry.client.v2.services.ListServicesRequest;
+import org.cloudfoundry.client.v2.services.ServiceResource;
+import org.cloudfoundry.client.v2.spaces.ListSpaceServicesRequest;
 import org.cloudfoundry.client.v3.Metadata;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
 import org.cloudfoundry.operations.services.ListServiceKeysRequest;
+import org.cloudfoundry.operations.services.ListServiceOfferingsRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
+import org.cloudfoundry.util.ExceptionUtils;
+import org.cloudfoundry.util.PaginationUtils;
+import org.cloudfoundry.util.ResourceUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
@@ -24,6 +35,7 @@ import reactor.util.Loggers;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
+import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse.CreateServiceInstanceResponseBuilder;
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.GetLastServiceOperationRequest;
@@ -84,24 +96,34 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return osbInterceptor.createServiceInstance(request);
 		}
 
-		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
-		DefaultCloudFoundryOperations spacedTargetedOperationsInternals = (DefaultCloudFoundryOperations) spacedTargetedOperations;
+		String backingServiceName = request.getServiceDefinition().getName();
+		String backingServicePlanName = request.getPlan().getName();
 
-		CreateServiceInstanceResponse.CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse
-			.builder();
-		String provisionnedInstanceId = null;
+		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
+		DefaultCloudFoundryOperations spacedTargetedOperationsInternals = (DefaultCloudFoundryOperations) spacedTargetedOperations;
+		String spaceId = spacedTargetedOperationsInternals.getSpaceId().block();
+		if(spaceId == null) {
+			LOG.error("Unexpected null spaceId in DefaultCloudFoundryOperations {}", spacedTargetedOperationsInternals);
+			throw new ServiceBrokerException("Internal CF client error");
+		}
+
+		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
+
+
+		CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
+		String provisionedInstanceId = null;
 		try {
 			org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceResponse createServiceInstanceResponse;
 			createServiceInstanceResponse = client.serviceInstances()
 				.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
 					.name(request.getServiceInstanceId())
-					.servicePlanId(request.getServiceDefinition().getId())
+					.servicePlanId(backingServicePlanId)
 					.parameters(request.getParameters())
-					.spaceId(spacedTargetedOperationsInternals.getSpaceId().block())
+					.spaceId(spaceId)
 					.build())
 				.block();
 
-			provisionnedInstanceId = createServiceInstanceResponse.getMetadata().getId();
+			provisionedInstanceId = createServiceInstanceResponse.getMetadata().getId();
 			LastOperation lastOperation = createServiceInstanceResponse.getEntity().getLastOperation();
 			if (lastOperation == null) {
 				LOG.error("Unexpected missing last operation from CSI. Full response was {}",
@@ -131,10 +153,44 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			responseBuilder.async(asyncProvisioning);
 		}
 		finally {
-			updateServiceInstanceMetadata(request, provisionnedInstanceId);
+			if (provisionedInstanceId != null) {
+				updateServiceInstanceMetadata(request, provisionedInstanceId);
+			}
 		}
 
 		return Mono.just(responseBuilder.build());
+	}
+
+	private String fetchBackingServicePlanId(String backingServiceName, String backingServicePlanName, String spaceId) {
+		//Inspired from first instrcutions of cf-java-client:
+		// org.cloudfoundry.operations.services.DefaultServices.createInstance()
+		String backingServiceId = PaginationUtils
+			.requestClientV2Resources(page -> client.spaces()
+				.listServices(ListSpaceServicesRequest.builder()
+					.label(backingServiceName)
+					.page(page)
+					.spaceId(spaceId)
+					.build()))
+			.single()
+			.onErrorResume(
+				NoSuchElementException.class, t -> ExceptionUtils.illegalArgument("Service %s does not exist", backingServiceName))
+			.map(ResourceUtils::getId)
+			.block();
+
+		return PaginationUtils
+			.requestClientV2Resources(page -> client.servicePlans()
+				.list(ListServicePlansRequest.builder()
+					.page(page)
+					.serviceId(backingServiceId)
+					.build()))
+			.filter(resource -> {
+				return backingServicePlanName.equals(ResourceUtils.getEntity(resource).getName());
+			})
+			.single()
+			.map(ResourceUtils::getId)
+			.onErrorResume(NoSuchElementException.class,
+				t -> ExceptionUtils.illegalArgument("Service plan %s does not exist", backingServicePlanName))
+			.block();
 	}
 
 	protected String toJson(CmdbOperationState cmdbOperationState)  {
@@ -245,13 +301,13 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private OperationState convertCfStateToOsbState(String cfServiceInstanceState) {
 		//Source of truth: https://apidocs.cloudfoundry.org/12.42.0/service_instances/creating_a_service_instance.html
-		//TODO: move the values in the enum and remove the switch statement
+		//TODO: consider moving the values in the enum and remove the switch statement
 		switch (cfServiceInstanceState) {
-			case "succeeded":
+			case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
 				return OperationState.SUCCEEDED;
-			case "failed":
+			case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
 				return OperationState.FAILED;
-			case "in progress":
+			case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
 				return OperationState.IN_PROGRESS;
 			default:
 				LOG.error("Unknown CF service instance state {}", cfServiceInstanceState);
