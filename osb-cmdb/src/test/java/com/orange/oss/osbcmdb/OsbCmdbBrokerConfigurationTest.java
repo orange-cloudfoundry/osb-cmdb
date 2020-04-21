@@ -18,18 +18,12 @@ package com.orange.oss.osbcmdb;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
-import org.cloudfoundry.reactor.ConnectionContext;
-import org.cloudfoundry.reactor.DefaultConnectionContext;
-import org.cloudfoundry.reactor.TokenProvider;
-import org.cloudfoundry.reactor.client.ReactorCloudFoundryClient;
-import org.cloudfoundry.reactor.doppler.ReactorDopplerClient;
-import org.cloudfoundry.reactor.tokenprovider.ClientCredentialsGrantTokenProvider;
-import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider;
-import org.cloudfoundry.reactor.uaa.ReactorUaaClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener;
+import org.springframework.boot.logging.LogLevel;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,26 +32,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class OsbCmdbBrokerConfigurationTest {
 
+	//See https://docs.spring.io/spring-boot/docs/2.1.12.RELEASE/reference/html/boot-features-developing-auto-configuration.html#boot-features-test-autoconfig
+	ConditionEvaluationReportLoggingListener conditionEvaluationReportLoggingListener = new ConditionEvaluationReportLoggingListener(LogLevel.INFO);
+
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+		.withInitializer(conditionEvaluationReportLoggingListener)
 		.withConfiguration(AutoConfigurations.of(OsbCmdbBrokerConfiguration.class))
-		.withUserConfiguration(InjectMockCloudFoundryBeansConfiguration.class)
-		.withSystemProperties("debug:true");
+		.withUserConfiguration(InjectMockCloudFoundryBeansConfiguration.class);
+
 
 	@Configuration
 	public static class InjectMockCloudFoundryBeansConfiguration {
 
 		@Bean
-		public CloudFoundryOperations cloudFoundryOperations() {
-			return Mockito.mock(CloudFoundryOperations.class, Mockito.RETURNS_SMART_NULLS);
-		}
-		@Bean
 		public CloudFoundryClient cloudFoundryClient() {
 			return Mockito.mock(CloudFoundryClient.class, Mockito.RETURNS_SMART_NULLS);
 		}
+
+		@Bean
+		public CloudFoundryOperations cloudFoundryOperations() {
+			return Mockito.mock(CloudFoundryOperations.class, Mockito.RETURNS_SMART_NULLS);
+		}
+
 		@Bean
 		public CloudFoundryTargetProperties targetProperties() {
 			return Mockito.mock(CloudFoundryTargetProperties.class, Mockito.RETURNS_SMART_NULLS);
 		}
+
 	}
 
 	@Test
