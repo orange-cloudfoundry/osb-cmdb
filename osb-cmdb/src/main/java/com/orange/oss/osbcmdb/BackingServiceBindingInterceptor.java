@@ -3,6 +3,8 @@ package com.orange.oss.osbcmdb;
 import java.util.Collections;
 import java.util.Map;
 
+import com.orange.oss.osbcmdb.testfixtures.BaseBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.BaseServiceInstanceBackingSpaceInstanceInterceptor;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;

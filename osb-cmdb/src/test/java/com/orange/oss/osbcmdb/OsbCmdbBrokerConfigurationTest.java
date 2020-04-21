@@ -16,6 +16,9 @@
 
 package com.orange.oss.osbcmdb;
 
+import com.orange.oss.osbcmdb.testfixtures.ASyncFailedBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.junit.jupiter.api.Test;
@@ -65,51 +68,51 @@ class OsbCmdbBrokerConfigurationTest {
 	void singleInterceptorIsCreatedWithAcceptanceProfile() {
 		this.contextRunner
 			.withPropertyValues(
-				"spring.profiles.active=acceptanceTests",
-				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.local",
-				"spring.cloud.appbroker.deployer.cloudfoundry.api-port=443",
-				"spring.cloud.appbroker.deployer.cloudfoundry.default-org=example-org",
-				"spring.cloud.appbroker.deployer.cloudfoundry.default-space=example-space",
-				"spring.cloud.appbroker.deployer.cloudfoundry.username=user",
-				"spring.cloud.appbroker.deployer.cloudfoundry.password=secret"
+				"spring.profiles.active=acceptanceTests"
 			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
 			.run((context) -> {
 				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
 			});
 	}
 
 	@Test
-	void syncFailingInterceptorIsCreatedWithAcceptanceProfileAndFailingProfile() {
+	void syncFailingCreateInterceptorIsCreatedWithAssociatedProfile() {
 		this.contextRunner
 			.withPropertyValues(
-				"spring.profiles.active=acceptanceTests,SyncFailedBackingSpaceInstanceInterceptor",
-				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.local",
-				"spring.cloud.appbroker.deployer.cloudfoundry.api-port=443",
-				"spring.cloud.appbroker.deployer.cloudfoundry.default-org=example-org",
-				"spring.cloud.appbroker.deployer.cloudfoundry.default-space=example-space",
-				"spring.cloud.appbroker.deployer.cloudfoundry.username=user",
-				"spring.cloud.appbroker.deployer.cloudfoundry.password=secret"
+				"spring.profiles.active=acceptanceTests,SyncFailedCreateBackingSpaceInstanceInterceptor"
 			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
 			.run((context) -> {
 				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
 				assertThat(context)
 					.getBean(ServiceInstanceInterceptor.class)
-					.isInstanceOf(SyncFailedBackingSpaceInstanceInterceptor.class);
+					.isInstanceOf(SyncFailedCreateBackingSpaceInstanceInterceptor.class);
 			});
 	}
 
 	@Test
-	void asyncFailingInterceptorIsCreatedWithAcceptanceProfileAndFailingProfile() {
+	void syncFailingUpdateInterceptorIsCreatedWithAssociatedProfile() {
 		this.contextRunner
 			.withPropertyValues(
-				"spring.profiles.active=acceptanceTests,ASyncFailedBackingSpaceInstanceInterceptor",
-				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.local",
-				"spring.cloud.appbroker.deployer.cloudfoundry.api-port=443",
-				"spring.cloud.appbroker.deployer.cloudfoundry.default-org=example-org",
-				"spring.cloud.appbroker.deployer.cloudfoundry.default-space=example-space",
-				"spring.cloud.appbroker.deployer.cloudfoundry.username=user",
-				"spring.cloud.appbroker.deployer.cloudfoundry.password=secret"
+				"spring.profiles.active=acceptanceTests,SyncFailedUpdateBackingSpaceInstanceInterceptor"
 			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(SyncFailedUpdateBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void asyncFailingCreateInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,ASyncFailedBackingSpaceInstanceInterceptor"
+			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
 			.run((context) -> {
 				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
 				assertThat(context)
@@ -122,18 +125,21 @@ class OsbCmdbBrokerConfigurationTest {
 	void noInterceptorIsCreatedWithoutAcceptanceProfile() {
 		this.contextRunner
 			.withPropertyValues(
-				"spring.profiles.active=cloud",
-				"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.local",
-				"spring.cloud.appbroker.deployer.cloudfoundry.api-port=443",
-				"spring.cloud.appbroker.deployer.cloudfoundry.default-org=example-org",
-				"spring.cloud.appbroker.deployer.cloudfoundry.default-space=example-space",
-				"spring.cloud.appbroker.deployer.cloudfoundry.username=user",
-				"spring.cloud.appbroker.deployer.cloudfoundry.password=secret"
+				"spring.profiles.active=cloud"
 			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
 			.run((context) -> {
 				assertThat(context).doesNotHaveBean(ServiceInstanceInterceptor.class);
 			});
 	}
 
+	private String[] cloudFoundryDeploymentProperties() {
+		return new String[] {"spring.cloud.appbroker.deployer.cloudfoundry.api-host=api.example.local",
+			"spring.cloud.appbroker.deployer.cloudfoundry.api-port=443",
+			"spring.cloud.appbroker.deployer.cloudfoundry.default-org=example-org",
+			"spring.cloud.appbroker.deployer.cloudfoundry.default-space=example-space",
+			"spring.cloud.appbroker.deployer.cloudfoundry.username=user",
+			"spring.cloud.appbroker.deployer.cloudfoundry.password=secret"};
+	}
 
 }

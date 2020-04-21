@@ -1,4 +1,4 @@
-package com.orange.oss.osbcmdb;
+package com.orange.oss.osbcmdb.testfixtures;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -10,11 +10,6 @@ import reactor.util.Loggers;
 import org.springframework.cloud.servicebroker.model.CloudFoundryContext;
 import org.springframework.cloud.servicebroker.model.Context;
 
-
-/**
- * Base class to accept Backing services requested in backing space. Only accept OSB calls when space is a
- * backing space, i.e. not the default space
- */
 public class BaseBackingSpaceInstanceInterceptor {
 
 	private static final Logger LOG = Loggers.getLogger(BaseBackingSpaceInstanceInterceptor.class);
