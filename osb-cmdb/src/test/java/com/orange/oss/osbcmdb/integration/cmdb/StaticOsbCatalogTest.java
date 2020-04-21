@@ -39,8 +39,22 @@ import static org.hamcrest.CoreMatchers.is;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(
 	webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-	classes = {OsbCmdbApplication.class})
-@ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"})
+	classes = {OsbCmdbApplication.class},
+	properties = {
+
+	"debug=true", //Spring boot debug mode
+	//osb-cmdb auth
+	"spring.security.user.name=user",
+	"spring.security.user.password=password",
+	"osbcmdb.admin.user=admin",
+	"osbcmdb.admin.password=password",
+//		"spring.profiles.active=acceptanceTests",
+	// DON'T SET LOGGING PROPERTIES HERE, AS THEIR ASSIGNEMENT IS HARD TO TRACE, PREFER KEEPING THEM IN LOGBACK.XML
+
+	"osbcmdb.dynamic-catalog.enabled=false"}
+	)
+@ActiveProfiles({"openservicebroker-catalog", "appbroker-cf"}) //triggers loading of related application-{profile]
+// .yml loading sample catalog
 class StaticOsbCatalogTest {
 
 	private String baseUrl;
@@ -54,8 +68,9 @@ class StaticOsbCatalogTest {
 	}
 
 	@Test
-	void shouldRetrieveCatalog() {
+	void should_retrieve_static_catalog_when_dynamic_catalog_is_disabled() {
 		given()
+			.auth().basic("user", "password")
 			.get(baseUrl + "/v2/catalog")
 			.then()
 			.statusCode(HttpStatus.OK.value())

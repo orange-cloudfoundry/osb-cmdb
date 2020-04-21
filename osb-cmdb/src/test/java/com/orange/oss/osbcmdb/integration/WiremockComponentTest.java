@@ -66,6 +66,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 	}
 )
+//triggers loading of related application-{profile].yml which define catalog
 @ActiveProfiles("openservicebroker-catalog")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class WiremockComponentTest {
