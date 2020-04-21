@@ -52,7 +52,7 @@ jobs:
           #          - _JAVA_OPTIONS: "-Djdk.net.URLClassPath.disableClassPathURLCheck=true"
           # Note: we exclude AT from circle using junit tags to be flexible on unit tests selection.
           command: |
-            ./gradlew --continue -DexcludeTags=AcceptanceTest osb-cmdb:check -x checkstyleNohttp -x checkstyleMain -x checkstyleTest -x pmdMain -x pmdTest
+            ./gradlew --continue -DexcludeTags=AcceptanceTest,scab osb-cmdb:check -x checkstyleNohttp -x checkstyleMain -x checkstyleTest -x pmdMain -x pmdTest
   build_n_deploy:
     working_directory: ~/osb-cmdb-spike
     docker:
