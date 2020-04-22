@@ -60,7 +60,7 @@ class UpdateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
 		// control backing service response: have it fail async
-		"spring.profiles.active=acceptanceTests,ASyncFailedUpdateBackingSpaceInstanceInterceptor",
+		"spring.profiles.active=acceptanceTests,AsyncFailedUpdateBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 		"logging.level.cloudfoundry-client.wire=trace",
