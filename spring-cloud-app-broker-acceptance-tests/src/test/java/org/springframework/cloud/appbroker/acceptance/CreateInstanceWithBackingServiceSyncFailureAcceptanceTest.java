@@ -100,7 +100,7 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 		deleteServiceInstance(SI_NAME);
 
 		// and the backing service instance is deleted
-		assertThat(listServiceInstances(BROKERED_SERVICE_NAME)).doesNotContain(backingServiceName);
+		assertThat(listServiceInstances(BROKERED_SERVICE_NAME)).isEmpty();
 	}
 
 }
