@@ -29,6 +29,8 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse.CreateServiceInstanceResponseBuilder;
@@ -49,7 +51,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private final UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService;
 
-	private ServiceInstanceInterceptor osbInterceptor;
+	private final ServiceInstanceInterceptor osbInterceptor;
 
 	public static final CreateServiceInstanceResponse RESPONSE_CREATE_202_ACCEPTED = CreateServiceInstanceResponse
 		.builder()
@@ -94,6 +96,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		String backingServicePlanName = request.getPlan().getName();
 
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
+		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
 
@@ -111,6 +114,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.build())
 				.block();
 
+			//noinspection ConstantConditions
 			backingServiceInstanceInstanceId = createServiceInstanceResponse.getMetadata().getId();
 			LastOperation lastOperation = createServiceInstanceResponse.getEntity().getLastOperation();
 			if (lastOperation == null) {
@@ -175,15 +179,14 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			.map(ResourceUtils::getId)
 			.block();
 
+		//noinspection ConstantConditions
 		return PaginationUtils
 			.requestClientV2Resources(page -> client.servicePlans()
 				.list(ListServicePlansRequest.builder()
 					.page(page)
 					.serviceId(backingServiceId)
 					.build()))
-			.filter(resource -> {
-				return backingServicePlanName.equals(ResourceUtils.getEntity(resource).getName());
-			})
+			.filter(resource -> backingServicePlanName.equals(ResourceUtils.getEntity(resource).getName()))
 			.single()
 			.map(ResourceUtils::getId)
 			.onErrorResume(NoSuchElementException.class,
@@ -213,11 +216,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		if (existingSi == null) {
 			LOG.info("No such backing service instance id={} to delete, return early.", backingServiceInstanceName);
-			return Mono.just(DeleteServiceInstanceResponse.builder().build());
+			throw new ServiceInstanceDoesNotExistException(request.getServiceInstanceId());
 		}
 
-		//List and delete service keys first
-		//Delete service keys if any. Ignore race
+		// Don't not ask to purge the service instance, as this would create leaks in backing service instance
+		// broker. Rather, list and delete service keys first Delete service keys if any.
+		// TODO: Ignore race condition
 		spacedTargetedOperations.services().listServiceKeys(ListServiceKeysRequest.builder()
 			.serviceInstanceName(backingServiceInstanceName).build())
 			.flatMap(sk -> spacedTargetedOperations.services().deleteServiceKey(DeleteServiceKeyRequest.builder()
@@ -226,25 +230,49 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				.build()))
 			.blockLast();
 
-
-		//set completion
-		// timeout to 5s: would return an error if service instance is "in_progress" state
-		//expects noop on missing service instance
-		spacedTargetedOperations.services()
-			.deleteInstance(org.cloudfoundry.operations.services.DeleteServiceInstanceRequest.builder()
-				.name(backingServiceInstanceName)
-				.completionTimeout(SYNC_COMPLETION_TIMEOUT)
+		client.serviceInstances()
+			.delete(org.cloudfoundry.client.v2.serviceinstances.DeleteServiceInstanceRequest.builder()
+				.serviceInstanceId(existingSi.getId())
+				.acceptsIncomplete(request.isAsyncAccepted())
 				.build())
 			.block();
-		boolean asyncProvisionning = false;
+		//Even if DELETE /v2/service_instances/guid is observed to return service instance entity during async delete
+		//Cf-java-client does not parse it
+		//We have no other choice than refetching it
+		ServiceInstance deletedSi = getCfServiceInstance(spacedTargetedOperations, backingServiceInstanceName);
 
-		DeleteServiceInstanceResponse.DeleteServiceInstanceResponseBuilder builder = DeleteServiceInstanceResponse
-			.builder()
-			.async(asyncProvisionning);
-		if (asyncProvisionning) {
-			builder.operation(toJson(new CmdbOperationState(existingSi.getId(), OsbOperation.DELETE)));
+		DeleteServiceInstanceResponse.DeleteServiceInstanceResponseBuilder responseBuilder = DeleteServiceInstanceResponse.builder();
+		if (deletedSi != null) {
+			if ("delete".equals(deletedSi.getLastOperation())) {
+				LOG.error("Unexpected si state after delete {} full si is {}", deletedSi.getLastOperation(), deletedSi);
+				throw new ServiceBrokerException("Internal CF protocol error");
+			}
+			boolean asyncProvisioning;
+			switch (deletedSi.getStatus()) {
+				case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
+					asyncProvisioning = true;
+					//make get last operation faster by tracking the underlying CF instance
+					// GUID
+					responseBuilder
+						.operation(toJson(new CmdbOperationState(deletedSi.getId(),
+							OsbOperation.DELETE)));
+					break;
+				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED: //unlikely, deletedSi would be null instead
+					asyncProvisioning = false;
+					break;
+				case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
+					LOG.info("Backing service failed to delete with {}, flowing up the error to the osb " +
+							"client",
+						deletedSi.getMessage());
+					throw new ServiceBrokerException(deletedSi.getMessage());
+				default:
+					LOG.error("Unexpected last operation state:" + deletedSi.getStatus());
+					throw new ServiceBrokerException("Internal CF protocol error");
+			}
+			responseBuilder.async(asyncProvisioning);
+
 		}
-		return Mono.just(builder.build());
+		return Mono.just(responseBuilder.build());
 	}
 
 	@Override
@@ -271,18 +299,22 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		OperationState operationState;
 		if (serviceInstanceResponse == null) {
-			operationState = OperationState.FAILED;
 			switch (cmdbOperationState.operationType) {
 				case UPDATE: // fall through
 				case CREATE:
+					String exceptionToString = getServiceInstanceException !=null ?
+						getServiceInstanceException.toString() : "";
 					LOG.error("Unable to provide last operation for {} operation of guid={} Missing service instance " +
 							"with exception:{} ",
-						cmdbOperationState.operationType, cfServiceGuid, getServiceInstanceException.toString());
+						cmdbOperationState.operationType, cfServiceGuid, exceptionToString);
 					operationState = OperationState.FAILED;
 					break;
 				case DELETE:
 					operationState = OperationState.SUCCEEDED;
 					break;
+				default:
+					LOG.error("Unexpected last operation state:" + cmdbOperationState.operationType);
+					throw new ServiceBrokerInvalidParametersException("Invalid state operation value:" + cmdbOperationState.operationType);
 			}
 		}
 		else {
@@ -327,6 +359,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
 		ServiceInstance existingBackingServiceInstance = getCfServiceInstance(spacedTargetedOperations,
 			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()));
+		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
 
@@ -342,6 +375,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.build())
 				.block();
 
+			//noinspection ConstantConditions
 			LastOperation lastOperation = updateServiceInstanceResponse.getEntity().getLastOperation();
 			if (lastOperation == null) {
 				LOG.error("Unexpected missing last operation from USI. Full response was {}",
@@ -384,7 +418,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return OBJECT_MAPPER.readValue(operation, CmdbOperationState.class);
 		}
 		catch (JsonProcessingException e) {
-			throw new RuntimeException(e);
+			throw new ServiceBrokerInvalidParametersException("Invalid operation content: " + operation + " parsing " +
+				"failed with:" + e);
 		}
 	}
 
@@ -430,6 +465,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		/**
 		 * Required for Jackson deserialization. See https://www.baeldung.com/jackson-exception#2-the-solution
 		 */
+		@SuppressWarnings("unused")
 		public CmdbOperationState() {
 		}
 
@@ -439,10 +475,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			this.operationType = operationType;
 		}
 
+		@SuppressWarnings("unused")
 		public String getBackingCfServiceInstanceGuid() {
 			return backingCfServiceInstanceGuid;
 		}
 
+		@SuppressWarnings("unused")
 		public OsbOperation getOperationType() {
 			return operationType;
 		}

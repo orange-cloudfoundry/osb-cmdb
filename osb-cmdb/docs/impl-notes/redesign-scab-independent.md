@@ -62,7 +62,22 @@ What SCAB features would be lost and how to accomodate ?
             - use persistent backend in the future if needed
       - Decorate ServiceInstanceService impl with K8Sdupls Impl
       - Fail fast on errors from CF in main cse
-
+   - service instance delete
+      - deletes nested key to avoid be more strict than osb api
+      - does not ask to purge the service instance, as this would create leaks in backing service instance broker.
+   - error handling: does not try to hide/recover from backing service errors
+      - on failed backing delete
+         - CF will perform retries to delete backing service
+         - Eventually backing instance will be removed either
+            - manually by an operator 
+            - upon CF max retry
+         - brokered delete will return failure
+            - CF will perform retries to delete brokered service
+            - Brokered service delete should avoid asking deletion again ? 
+               - to avoid interruptin CF orphan deletion
+               - to avoid error traces polution, 
+            - Instead, cmdb just polls the backing service status
+             
    - can coexist with scab if necessary
 	> @ConditionalOnMissingBean(ServiceInstanceService.class)
    - maps 1-to-1 CSIR to CSIR

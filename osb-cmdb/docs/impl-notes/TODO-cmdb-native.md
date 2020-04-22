@@ -7,13 +7,19 @@
 * [ ] fix async backing service failure handling in DSI
    * [ ] Set up acceptance test
 
+* [ ] handle isAsync accepted in create
+* [ ] handle isAsync accepted in update
+* [ ] add timeout to reactor blocking calls ? 
+   * Are cf-java-client timeouts sufficient ?
+   * Check default values 
 
 * [ ] assert dashboard is properly returned
 * [ ] assert params are properly returned in AT
    * [ ] implement GSI
    * add asserts on create
    * add asserts on update: copy plan update test into params update test
-      
+* [ ] assert metadata is properly assigned in AT ?
+* [ ] Handle race conditions (including for K8S dups)      
 
 * [ ] reduce pipeline feedback time by tuning gradle fork policy
 * [ ] refine pipeline notifications to include the commit message
