@@ -1,3 +1,5 @@
+
+
       
 * [ ] fix async backing service failure handling in USI
    * [ ] Set up acceptance test
@@ -8,7 +10,7 @@
    * [ ] Set up acceptance test
 
 
-
+* [ ] refine pipeline notifications to include the commit message
 * [ ] automate triggering of smoke tests when concourse acceptance tests pass
 
 
