@@ -41,7 +41,7 @@ public class OsbCmdbBrokerConfiguration {
 		@Autowired(required = false)
 			ServiceInstanceInterceptor serviceInstanceInterceptor) {
 		return new OsbCmdbServiceInstance(cloudFoundryOperations, cloudFoundryClient,
-			targetProperties.getDefaultOrg(), targetProperties.getDefaultSpace(), targetProperties.getUsername(),
+			targetProperties.getDefaultOrg(), targetProperties.getUsername(),
 			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(),
 			new UpdateServiceMetadataFormatterService());
 	}

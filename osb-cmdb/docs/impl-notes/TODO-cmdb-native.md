@@ -1,11 +1,11 @@
 * [ ] study backward compat impact of backing service key name change. 
    * Likely break production code
    * Likely break out acceptance tests
-   * [ ] Space name is service definition name unlimited
-   * [ ] Backing service name is service definition truncated
+   * [x] Space name is service definition name unlimited
+   * [x] Backing service name is service definition truncated
    * [ ] Service Key Name is 
    * Fix it
-      * [ ] backport service instance name factory
+      * [x] backport service instance name factory
       * [ ] backport service key name factory
       * [ ] refactor acceptance tests to share same code/logic for tests
 
