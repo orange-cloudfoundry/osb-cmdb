@@ -175,3 +175,7 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
 ```
 .name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(brokeredServiceInstanceId)) 
 ```
+
+* [x] fix async backing service failure handling in USI
+   * [x] Set up acceptance test
+

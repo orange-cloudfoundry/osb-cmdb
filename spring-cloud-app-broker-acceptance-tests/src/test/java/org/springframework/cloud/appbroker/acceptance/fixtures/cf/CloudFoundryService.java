@@ -242,6 +242,38 @@ public class CloudFoundryService {
 			.onErrorResume(e -> Mono.empty());
 	}
 
+	public Mono<Void> purgeServiceInstance(String serviceInstanceName) {
+		return getServiceInstance(serviceInstanceName)
+			.flatMap(si -> cloudFoundryClient.serviceInstances()
+				.delete(org.cloudfoundry.client.v2.serviceinstances.DeleteServiceInstanceRequest.builder()
+					.serviceInstanceId(si.getId())
+					.purge(true)
+					.build())
+				.then()
+				.doOnSuccess(item -> LOG.info("Deleted service instance " + serviceInstanceName))
+				.doOnError(
+					error -> LOG.error("Error deleting service instance " + serviceInstanceName + ": " + error))
+				.onErrorResume(e -> Mono.empty()))
+			.doOnError(error -> LOG.warn("Error getting service instance " + serviceInstanceName + ": " + error))
+			.onErrorResume(e -> Mono.empty());
+	}
+
+	public Mono<Void> purgeServiceInstance(String serviceInstanceName, String spaceName) {
+		return getServiceInstance(serviceInstanceName, spaceName)
+			.flatMap(si -> cloudFoundryClient.serviceInstances()
+				.delete(org.cloudfoundry.client.v2.serviceinstances.DeleteServiceInstanceRequest.builder()
+					.serviceInstanceId(si.getId())
+					.purge(true)
+					.build())
+				.then()
+				.doOnSuccess(item -> LOG.info("Deleted service instance " + serviceInstanceName))
+				.doOnError(
+					error -> LOG.error("Error deleting service instance " + serviceInstanceName + ": " + error))
+				.onErrorResume(e -> Mono.empty()))
+			.doOnError(error -> LOG.warn("Error getting service instance " + serviceInstanceName + ": " + error))
+			.onErrorResume(e -> Mono.empty());
+	}
+
 	public Mono<Void> createServiceInstance(String planName,
 		String serviceName,
 		String serviceInstanceName,
