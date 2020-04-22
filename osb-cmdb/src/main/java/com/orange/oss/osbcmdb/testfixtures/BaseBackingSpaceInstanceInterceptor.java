@@ -12,7 +12,7 @@ import org.springframework.cloud.servicebroker.model.Context;
 
 public class BaseBackingSpaceInstanceInterceptor {
 
-	private static final Logger LOG = Loggers.getLogger(BaseBackingSpaceInstanceInterceptor.class);
+	private final Logger LOG = Loggers.getLogger(this.getClass());
 
 	protected String defaultSpaceName;
 
