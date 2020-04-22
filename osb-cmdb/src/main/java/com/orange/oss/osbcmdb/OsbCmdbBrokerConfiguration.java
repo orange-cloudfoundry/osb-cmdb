@@ -9,11 +9,12 @@ import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedUpdateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.BackingServiceBindingInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
-import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfullBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 
@@ -68,6 +69,12 @@ public class OsbCmdbBrokerConfiguration {
 	}
 
 	@Bean
+	@Profile("acceptanceTests & AsyncSuccessfulUpdateBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestSyncSuccessfulUpdateBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new AsyncSuccessfulUpdateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
 	@Profile("acceptanceTests & AsyncFailedUpdateBackingSpaceInstanceInterceptor")
 	public ServiceInstanceInterceptor acceptanceTestAsyncFailedUpdateBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
 		return new AsyncFailedUpdateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
@@ -88,10 +95,10 @@ public class OsbCmdbBrokerConfiguration {
 	@Bean
 	@ConditionalOnMissingBean //other methods declaring beans must be declare before in the class!!
 	@Profile("acceptanceTests")
-	//	@Profile("SyncSuccessfullBackingSpaceInstanceInterceptor") // Default impl unless another profile is enabled
+	//	@Profile("SyncSuccessfulBackingSpaceInstanceInterceptor") // Default impl unless another profile is enabled
 	//	another bean
 	public ServiceInstanceInterceptor acceptanceTestBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
-		return new SyncSuccessfullBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+		return new SyncSuccessfulBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean

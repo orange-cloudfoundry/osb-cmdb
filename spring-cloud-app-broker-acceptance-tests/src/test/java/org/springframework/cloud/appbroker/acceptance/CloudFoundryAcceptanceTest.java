@@ -99,10 +99,12 @@ abstract class CloudFoundryAcceptanceTest {
 	private static final String SERVICE_ID = UUID.randomUUID().toString();
 
 	private static final String PLAN_ID = UUID.randomUUID().toString();
+	private static final String PLAN2_ID = UUID.randomUUID().toString();
 
 	private static final String BACKING_SERVICE_ID = UUID.randomUUID().toString();
 
 	protected static final String PLAN_NAME = "standard";
+	protected static final String PLAN2_NAME = "standard2";
 
 	protected static final String BACKING_APP_PATH = "classpath:backing-app.jar";
 
@@ -158,10 +160,15 @@ abstract class CloudFoundryAcceptanceTest {
 			"spring.cloud.openservicebroker.catalog.services[0].description=A service that deploys a backing app",
 			"spring.cloud.openservicebroker.catalog.services[0].bindable=true",
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].id=" + PLAN_ID,
-			"spring.cloud.openservicebroker.catalog.services[0].plans[0].name=standard",
+			"spring.cloud.openservicebroker.catalog.services[0].plans[0].name=" + PLAN_NAME,
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].bindable=true",
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].description=A simple plan",
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].free=true",
+			"spring.cloud.openservicebroker.catalog.services[0].plans[1].id=" + PLAN2_ID,
+			"spring.cloud.openservicebroker.catalog.services[0].plans[1].name=" + PLAN2_NAME,
+			"spring.cloud.openservicebroker.catalog.services[0].plans[1].bindable=true",
+			"spring.cloud.openservicebroker.catalog.services[0].plans[1].description=A 2nd simple plan",
+			"spring.cloud.openservicebroker.catalog.services[0].plans[1].free=true",
 			"spring.cloud.openservicebroker.catalog.services[1].id=" + BACKING_SERVICE_ID,
 			"spring.cloud.openservicebroker.catalog.services[1].name=" + backingServiceName(),
 			"spring.cloud.openservicebroker.catalog.services[1].description=A backing service that can be bound to backing apps",
@@ -316,6 +323,18 @@ abstract class CloudFoundryAcceptanceTest {
 			.block();
 	}
 
+	protected void updateServiceInstance(String serviceInstanceName, String planName) {
+		cloudFoundryService.updateServiceInstance(serviceInstanceName, planName)
+			.then(getServiceInstanceMono(serviceInstanceName))
+			.flatMap(serviceInstance -> {
+				assertThat(serviceInstance.getStatus())
+					.withFailMessage("Update service instance failed:" + serviceInstance.getMessage())
+					.isEqualTo("succeeded");
+				return Mono.empty();
+			})
+			.block();
+	}
+
 	protected void deleteServiceInstance(String serviceInstanceName) {
 		blockingSubscribe(cloudFoundryService.deleteServiceInstance(serviceInstanceName));
 	}
@@ -449,6 +468,7 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	protected Mono<String> manageApps(String serviceInstanceName, String operation) {
+		//noinspection ReactiveStreamsNullableInLambdaInTransform
 		return cloudFoundryService
 			.getServiceInstance(serviceInstanceName)
 			.map(ServiceInstance::getId)

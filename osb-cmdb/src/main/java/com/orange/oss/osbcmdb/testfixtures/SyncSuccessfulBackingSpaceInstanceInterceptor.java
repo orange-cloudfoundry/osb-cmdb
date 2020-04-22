@@ -8,11 +8,11 @@ import reactor.util.Loggers;
  *
  * Note: doesn't add behavior w.r.t. base class, only here to have explicit naming when used.
  */
-public class SyncSuccessfullBackingSpaceInstanceInterceptor extends BaseServiceInstanceBackingSpaceInstanceInterceptor {
+public class SyncSuccessfulBackingSpaceInstanceInterceptor extends BaseServiceInstanceBackingSpaceInstanceInterceptor {
 
-	private static final Logger LOG = Loggers.getLogger(SyncSuccessfullBackingSpaceInstanceInterceptor.class);
+	private static final Logger LOG = Loggers.getLogger(SyncSuccessfulBackingSpaceInstanceInterceptor.class);
 
-	public SyncSuccessfullBackingSpaceInstanceInterceptor(String defaultSpaceName) {
+	public SyncSuccessfulBackingSpaceInstanceInterceptor(String defaultSpaceName) {
 		super(defaultSpaceName);
 	}
 
