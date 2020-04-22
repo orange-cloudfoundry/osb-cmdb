@@ -313,7 +313,7 @@ abstract class CloudFoundryAcceptanceTest {
 			.block();
 	}
 
-	protected void updateServiceInstance(String serviceInstanceName, Map<String, Object> parameters) {
+	public void updateServiceInstance(String serviceInstanceName, Map<String, Object> parameters) {
 		cloudFoundryService.updateServiceInstance(serviceInstanceName, parameters)
 			.then(getServiceInstanceMono(serviceInstanceName))
 			.flatMap(serviceInstance -> {
@@ -322,6 +322,12 @@ abstract class CloudFoundryAcceptanceTest {
 					.isEqualTo("succeeded");
 				return Mono.empty();
 			})
+			.block();
+	}
+
+	public ServiceInstance updateServiceInstanceWithoutAsserts(String serviceInstanceName, Map<String, Object> parameters) {
+		return cloudFoundryService.updateServiceInstance(serviceInstanceName, parameters)
+			.then(getServiceInstanceMono(serviceInstanceName))
 			.block();
 	}
 

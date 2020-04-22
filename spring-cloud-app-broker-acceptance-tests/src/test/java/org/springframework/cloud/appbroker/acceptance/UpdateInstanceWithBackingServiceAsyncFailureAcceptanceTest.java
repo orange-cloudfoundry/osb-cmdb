@@ -35,12 +35,6 @@ class UpdateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 
 	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
 
-
-	@Override
-	protected String testSuffix() {
-		return SUFFIX;
-	}
-
 	@Override
 	protected String appServiceName() {
 		return BROKERED_SERVICE_NAME;
@@ -49,6 +43,11 @@ class UpdateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 	@Override
 	protected String backingServiceName() {
 		return BACKING_SERVICE_NAME;
+	}
+
+	@Override
+	protected String testSuffix() {
+		return SUFFIX;
 	}
 
 	@Test
@@ -78,24 +77,11 @@ class UpdateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 
 		//given a backend service is configured to async reject any update
 		//when a brokered service update is requested
-		updateServiceInstance(SI_NAME, Collections.emptyMap());
+		ServiceInstance brokeredServiceInstance = updateServiceInstanceWithoutAsserts(SI_NAME, Collections.emptyMap());
 
-		//then a brokered service is updated
-		ServiceInstance brokeredServiceInstance = getServiceInstance(SI_NAME);
-		// then the brokered service instance once completes, is expected to be failed
+		//then a brokered service is updated with failed status
 		assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("update");
-		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("in progress");
-
-
-		for (int i=0; i<5; i++) {
-			brokeredServiceInstance = getServiceInstance(SI_NAME);
-			if (brokeredServiceInstance.getStatus().equals("failed")) {
-				break;
-			}
-		}
-		assertThat(brokeredServiceInstance.getStatus())
-			.withFailMessage("expected last operation to fail within max retries")
-			.isEqualTo("in progress");
+		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("failed");
 
 		//and backing service was indeed updated
 		String backingServiceName = brokeredServiceInstance.getId();
