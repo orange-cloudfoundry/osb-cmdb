@@ -163,3 +163,15 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
       * [ ] Add a dependency to osb-cmdb main
       
       
+* [x] study backward compat impact of backing service key name change. 
+   * Likely break production code
+   * Likely break out acceptance tests
+   * [x] Space name is service definition name unlimited
+   * [x] Backing service name is service definition truncated
+   * [x] Service Key Name is straight brokered service instance id 
+   * Fix it
+      * [x] backport service instance name factory
+* [ ] cleanup 
+```
+.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(brokeredServiceInstanceId)) 
+```

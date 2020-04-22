@@ -1,18 +1,3 @@
-* [ ] study backward compat impact of backing service key name change. 
-   * Likely break production code
-   * Likely break out acceptance tests
-   * [x] Space name is service definition name unlimited
-   * [x] Backing service name is service definition truncated
-   * [ ] Service Key Name is 
-   * Fix it
-      * [x] backport service instance name factory
-      * [ ] backport service key name factory
-      * [ ] refactor acceptance tests to share same code/logic for tests
-
-```
-.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(brokeredServiceInstanceId)) 
-```
-      
       
 * [ ] fix async backing service failure handling in USI
    * [ ] Set up acceptance test
