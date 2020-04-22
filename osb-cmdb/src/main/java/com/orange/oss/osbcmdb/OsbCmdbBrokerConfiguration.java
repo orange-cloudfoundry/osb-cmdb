@@ -23,82 +23,68 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 
 @Profile("!offline-test-without-scab")
 @Configuration
 public class OsbCmdbBrokerConfiguration {
 
 
-	/**
-	 * Provide a {@link OsbCmdbServiceInstance} bean
-	 *
-	 * @param cloudFoundryOperations the CloudFoundryOperations bean
-	 * @param cloudFoundryClient the CloudFoundryClient bean
-	 * @param targetProperties the CloudFoundryTargetProperties bean
-	 * @param serviceInstanceInterceptor an optional bean supporting testing
-	 * @return the bean
-	 */
 	@Bean
-	public OsbCmdbServiceInstance osbCmdbServiceInstance(CloudFoundryOperations cloudFoundryOperations,
-		CloudFoundryClient cloudFoundryClient,
-		CloudFoundryTargetProperties targetProperties,
-		@Autowired(required = false)
-			ServiceInstanceInterceptor serviceInstanceInterceptor) {
-		return new OsbCmdbServiceInstance(cloudFoundryOperations, cloudFoundryClient,
-			targetProperties.getDefaultOrg(), targetProperties.getUsername(),
-			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(),
-			new UpdateServiceMetadataFormatterService());
+	@Profile("acceptanceTests & AsyncFailedDeleteBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestAsyncFailedDeleteBackingServiceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new AsyncFailedDeleteBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & AsyncFailedUpdateBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestAsyncFailedUpdateBackingServiceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new AsyncFailedUpdateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & SyncSuccessfulBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestBackingServiceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new SyncSuccessfulBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean
 	@Profile("acceptanceTests & ASyncFailedCreateBackingSpaceInstanceInterceptor")
-	public ServiceInstanceInterceptor acceptanceTestFailedAsyncBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+	public ServiceInstanceInterceptor acceptanceTestFailedAsyncBackingServiceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
 		return new ASyncFailedCreateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean
 	@Profile("acceptanceTests & SyncFailedCreateBackingSpaceInstanceInterceptor")
-	public ServiceInstanceInterceptor acceptanceTestSyncFailedCreateBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+	public ServiceInstanceInterceptor acceptanceTestSyncFailedCreateBackingServiceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
 		return new SyncFailedCreateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean
+	@Profile("acceptanceTests & SyncFailedDeleteBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestSyncFailedDeleteBackingServiceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new SyncFailedDeleteBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
 	@Profile("acceptanceTests & SyncFailedUpdateBackingSpaceInstanceInterceptor")
-	public ServiceInstanceInterceptor acceptanceTestSyncFailedUpdateBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+	public ServiceInstanceInterceptor acceptanceTestSyncFailedUpdateBackingServiceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
 		return new SyncFailedUpdateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean
 	@Profile("acceptanceTests & AsyncSuccessfulUpdateBackingSpaceInstanceInterceptor")
-	public ServiceInstanceInterceptor acceptanceTestSyncSuccessfulUpdateBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+	public ServiceInstanceInterceptor acceptanceTestSyncSuccessfulUpdateBackingServiceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
 		return new AsyncSuccessfulUpdateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
-	}
-
-	@Bean
-	@Profile("acceptanceTests & AsyncFailedUpdateBackingSpaceInstanceInterceptor")
-	public ServiceInstanceInterceptor acceptanceTestAsyncFailedUpdateBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
-		return new AsyncFailedUpdateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
-	}
-
-	@Bean
-	@Profile("acceptanceTests & SyncFailedDeleteBackingSpaceInstanceInterceptor")
-	public ServiceInstanceInterceptor acceptanceTestSyncFailedDeleteBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
-		return new SyncFailedDeleteBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
-	}
-
-	@Bean
-	@Profile("acceptanceTests & AsyncFailedDeleteBackingSpaceInstanceInterceptor")
-	public ServiceInstanceInterceptor acceptanceTestAsyncFailedDeleteBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
-		return new AsyncFailedDeleteBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
-	}
-
-	@Bean
-	@ConditionalOnMissingBean //other methods declaring beans must be declare before in the class!!
-	@Profile("acceptanceTests")
-	//	@Profile("SyncSuccessfulBackingSpaceInstanceInterceptor") // Default impl unless another profile is enabled
-	//	another bean
-	public ServiceInstanceInterceptor acceptanceTestBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
-		return new SyncSuccessfulBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean
@@ -128,5 +114,32 @@ public class OsbCmdbBrokerConfiguration {
 			targetProperties.getUsername(), cloudFoundryOperations, serviceBindingInterceptor);
 	}
 
+	/**
+	 * Provide a {@link OsbCmdbServiceInstance} bean
+	 *
+	 * @param cloudFoundryOperations the CloudFoundryOperations bean
+	 * @param cloudFoundryClient the CloudFoundryClient bean
+	 * @param targetProperties the CloudFoundryTargetProperties bean
+	 * @param serviceInstanceInterceptor an optional bean when not running acceptance tests.
+	 * Otherwise, it is mandatory in order to mock backing brokers
+	 * @return the bean
+	 */
+	@Bean
+	public OsbCmdbServiceInstance osbCmdbServiceInstance(CloudFoundryOperations cloudFoundryOperations,
+		CloudFoundryClient cloudFoundryClient,
+		CloudFoundryTargetProperties targetProperties,
+		@Autowired(required = false)
+			ServiceInstanceInterceptor serviceInstanceInterceptor,
+		Environment environment) {
+		String acceptanceTestsProfile = "acceptanceTests";
+		if (serviceInstanceInterceptor == null && environment.acceptsProfiles(Profiles.of(acceptanceTestsProfile))) {
+			throw new IllegalArgumentException("With " + acceptanceTestsProfile + " profile, at least one interceptor" +
+				" profile should be defined to mock backing service broker");
+		}
+		return new OsbCmdbServiceInstance(cloudFoundryOperations, cloudFoundryClient,
+			targetProperties.getDefaultOrg(), targetProperties.getUsername(),
+			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(),
+			new UpdateServiceMetadataFormatterService());
+	}
 
 }

@@ -58,7 +58,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAccepta
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
 		// control backing service response: use default interceptor which accepts all requests
-		"spring.profiles.active=acceptanceTests",
+		"spring.profiles.active=acceptanceTests,SyncSuccessfulBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 		"logging.level.cloudfoundry-client.wire=trace",

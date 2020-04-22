@@ -70,13 +70,13 @@ class OsbCmdbBrokerConfigurationTest {
 	}
 
 	@Test
-	void singleInterceptorIsCreatedWithAcceptanceProfile() {
+	void contextFailsWithOnlyAcceptanceProfile() {
 		this.contextRunner
 			.withPropertyValues(
 				"spring.profiles.active=acceptanceTests"
 			)
 			.withPropertyValues(cloudFoundryDeploymentProperties())
-			.run((context) -> assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class));
+			.run((context) -> assertThat(context).hasFailed());
 	}
 
 	@Test
