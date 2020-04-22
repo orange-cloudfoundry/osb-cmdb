@@ -70,18 +70,15 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-	private final String defaultSpace;
-
 	protected final Logger LOG = Loggers.getLogger(OsbCmdbServiceInstance.class);
 
 	public OsbCmdbServiceInstance(CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
-		String defaultOrg, String defaultSpace, String userName,
+		String defaultOrg, String userName,
 		ServiceInstanceInterceptor osbInterceptor,
 		CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService,
 		UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService) {
 		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
 
-		this.defaultSpace = defaultSpace;
 		this.osbInterceptor = osbInterceptor;
 		this.createServiceMetadataFormatterService = createServiceMetadataFormatterService;
 		this.updateServiceMetadataFormatterService = updateServiceMetadataFormatterService;
@@ -107,7 +104,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceResponse createServiceInstanceResponse;
 			createServiceInstanceResponse = client.serviceInstances()
 				.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
-					.name(request.getServiceInstanceId())
+					.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()))
 					.servicePlanId(backingServicePlanId)
 					.parameters(request.getParameters())
 					.spaceId(spaceId)
@@ -208,7 +205,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		if (osbInterceptor != null && osbInterceptor.accept(request)) {
 			return osbInterceptor.deleteServiceInstance(request);
 		}
-		String backingServiceInstanceName = request.getServiceInstanceId();
+		String backingServiceInstanceName =
+			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
 
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
 		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, backingServiceInstanceName);
@@ -327,7 +325,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		//ignore race condition during space creation for K8S dupl requests
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
-		ServiceInstance existingBackingServiceInstance = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
+		ServiceInstance existingBackingServiceInstance = getCfServiceInstance(spacedTargetedOperations,
+			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()));
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
 
