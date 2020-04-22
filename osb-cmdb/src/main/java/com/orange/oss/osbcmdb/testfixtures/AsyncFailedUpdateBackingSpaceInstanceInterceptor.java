@@ -28,6 +28,7 @@ public class AsyncFailedUpdateBackingSpaceInstanceInterceptor extends BaseServic
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
+		LOG.debug("Async update returned");
 		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(UpdateServiceInstanceResponse.builder()
 			.async(true)
@@ -36,6 +37,7 @@ public class AsyncFailedUpdateBackingSpaceInstanceInterceptor extends BaseServic
 
 	@Override
 	public Mono<GetLastServiceOperationResponse> getLastOperation(GetLastServiceOperationRequest request) {
+		LOG.debug("Last operation failure returned");
 		return Mono.just(GetLastServiceOperationResponse.builder()
 			.operationState(OperationState.FAILED)
 			.build());
