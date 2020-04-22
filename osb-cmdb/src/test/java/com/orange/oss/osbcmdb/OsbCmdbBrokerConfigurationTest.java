@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb;
 
+import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;

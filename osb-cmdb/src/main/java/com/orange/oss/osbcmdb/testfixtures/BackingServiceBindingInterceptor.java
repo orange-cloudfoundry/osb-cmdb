@@ -1,10 +1,9 @@
-package com.orange.oss.osbcmdb;
+package com.orange.oss.osbcmdb.testfixtures;
 
 import java.util.Collections;
 import java.util.Map;
 
-import com.orange.oss.osbcmdb.testfixtures.BaseBackingSpaceInstanceInterceptor;
-import com.orange.oss.osbcmdb.testfixtures.BaseServiceInstanceBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.servicebinding.ServiceBindingInterceptor;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
@@ -21,7 +20,8 @@ import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstan
  *
  * By default, behaves like noop
  */
-public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceInterceptor implements ServiceBindingInterceptor {
+public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceInterceptor implements
+	ServiceBindingInterceptor {
 	public static final Logger LOG = Loggers.getLogger(BackingServiceBindingInterceptor.class);
 
 	public static final Map<String, Object> CREDENTIALS = Collections.singletonMap("noop-binding-key", "noop-binding-value");

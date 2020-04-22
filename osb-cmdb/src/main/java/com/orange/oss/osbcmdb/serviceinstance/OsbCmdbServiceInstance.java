@@ -1,10 +1,11 @@
-package com.orange.oss.osbcmdb;
+package com.orange.oss.osbcmdb.serviceinstance;
 
 import java.time.Duration;
 import java.util.NoSuchElementException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orange.oss.osbcmdb.AbstractOsbCmdbService;
 import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
 import com.orange.oss.osbcmdb.metadata.MetaData;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;

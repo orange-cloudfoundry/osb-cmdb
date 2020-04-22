@@ -2,7 +2,12 @@ package com.orange.oss.osbcmdb;
 
 import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
+import com.orange.oss.osbcmdb.servicebinding.OsbCmdbServiceBinding;
+import com.orange.oss.osbcmdb.servicebinding.ServiceBindingInterceptor;
+import com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstance;
+import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.BackingServiceBindingInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfullBackingSpaceInstanceInterceptor;

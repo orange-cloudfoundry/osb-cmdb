@@ -284,7 +284,7 @@ Steps:
                    * [ ] Contribute support in cf-java-client
        * [x] Json serialization issue
           > java.lang.RuntimeException: com.fasterxml.jackson.databind.exc.InvalidDefinitionException: 
-          > No serializer found for class com.orange.oss.osbcmdb.OsbCmdbServiceInstance$CmdbOperationState and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS)
+          > No serializer found for class com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstance$CmdbOperationState and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS)
     * [ ] ~~optimize cf api calls:~~ delayed
              > START  Get Organization, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587054025530176414}
              > GET    /v2/organizations?q=name:osb-cmdb-services-acceptance-tests&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587054025675803922}
@@ -349,7 +349,7 @@ Steps:
         >       java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:132
         >           Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:798
         >               Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException at DefaultListableBeanFactory.java:1700
-        >   FAILED test: com.orange.oss.osbcmdb.OsbCmdbServiceInstanceTest > createServiceInstanceWithTarget()
+        >   FAILED test: com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstanceTest > createServiceInstanceWithTarget()
         >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > unAuthenticatedActuactorHealth_shouldSucceedWith200()
         >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > unAuthenticatedSensitiveActuactorEndPoints_shouldFailWith401()
         >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > authenticatedPostOsbRequest_shouldSucceedWith200()
