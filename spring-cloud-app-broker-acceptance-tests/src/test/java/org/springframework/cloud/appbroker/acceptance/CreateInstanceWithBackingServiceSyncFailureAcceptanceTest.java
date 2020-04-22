@@ -86,14 +86,15 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 			// then the brokered service instance sync fails
 		}
 
-		// and an async backing service instance is created in the backing service with the id as service name
-		ServiceInstance brokeredServiceInstance = getServiceInstance(SI_NAME);
-		String backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
-		//and the backing service has the right type
-		assertThat(backingServiceInstance.getService()).isEqualTo(BROKERED_SERVICE_NAME);
-		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
-
+		// and a sync backing service instance is not created
+		ServiceInstance brokeredServiceInstance = null;
+		try {
+			brokeredServiceInstance = getServiceInstance(SI_NAME);
+			Assertions.fail("Expected backing service to be missing due to sync failure");
+		}
+		catch (IllegalArgumentException e) {
+			// Service instance si-create-service-sync-fail does not exist
+		}
 
 		// when the service instance is deleted
 		deleteServiceInstance(SI_NAME);
