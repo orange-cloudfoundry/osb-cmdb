@@ -26,8 +26,7 @@ public class SyncFailedCreateBackingSpaceInstanceInterceptor extends BaseService
 
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
-		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
-		throw new ServiceBrokerException("SyncFailedCreateBackingSpaceInstanceInterceptor");
+		throw new ServiceBrokerException(this.getClass().getName());
 	}
 
 

@@ -10,7 +10,7 @@ import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInsta
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse;
 
 /**
- * Simulates a failed sync backing service requested in backing space: update/delete always succeed, update
+ * Simulates a failed sync backing service requested in backing space: create/delete always succeed, update
  * always fails (synchronously)
  *
  * Only accept OSB calls when space is a backing space, i.e. not the default space
@@ -26,8 +26,7 @@ public class SyncFailedUpdateBackingSpaceInstanceInterceptor extends BaseService
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
-		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
-		throw new ServiceBrokerException("SyncFailedCreateBackingSpaceInstanceInterceptor");
+		throw new ServiceBrokerException(this.getClass().getName());
 	}
 
 }

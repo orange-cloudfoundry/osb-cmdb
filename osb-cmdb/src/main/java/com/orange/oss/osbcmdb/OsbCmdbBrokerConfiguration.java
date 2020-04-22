@@ -7,8 +7,11 @@ import com.orange.oss.osbcmdb.servicebinding.ServiceBindingInterceptor;
 import com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstance;
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.AsyncFailedDeleteBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.AsyncFailedUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.BackingServiceBindingInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfullBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
@@ -31,7 +34,7 @@ public class OsbCmdbBrokerConfiguration {
 	 * @param cloudFoundryOperations the CloudFoundryOperations bean
 	 * @param cloudFoundryClient the CloudFoundryClient bean
 	 * @param targetProperties the CloudFoundryTargetProperties bean
-	 * @param serviceInstanceInterceptor
+	 * @param serviceInstanceInterceptor an optional bean supporting testing
 	 * @return the bean
 	 */
 	@Bean
@@ -65,6 +68,24 @@ public class OsbCmdbBrokerConfiguration {
 	}
 
 	@Bean
+	@Profile("acceptanceTests & AsyncFailedUpdateBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestAsyncFailedUpdateBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new AsyncFailedUpdateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & SyncFailedDeleteBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestSyncFailedDeleteBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new SyncFailedDeleteBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & AsyncFailedDeleteBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestAsyncFailedDeleteBackingServiceInstanceInterceptor(CloudFoundryTargetProperties targetProperties) {
+		return new AsyncFailedDeleteBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
 	@ConditionalOnMissingBean //other methods declaring beans must be declare before in the class!!
 	@Profile("acceptanceTests")
 	//	@Profile("SyncSuccessfullBackingSpaceInstanceInterceptor") // Default impl unless another profile is enabled
@@ -86,7 +107,7 @@ public class OsbCmdbBrokerConfiguration {
 	 * @param cloudFoundryOperations the CloudFoundryOperations bean
 	 * @param cloudFoundryClient the CloudFoundryClient bean
 	 * @param targetProperties the CloudFoundryTargetProperties bean
-	 * @param serviceBindingInterceptor
+	 * @param serviceBindingInterceptor an optional bean supporting testing
 	 * @return the bean
 	 */
 	@Bean

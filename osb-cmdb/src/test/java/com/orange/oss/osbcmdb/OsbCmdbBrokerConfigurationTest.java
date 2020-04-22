@@ -18,7 +18,10 @@ package com.orange.oss.osbcmdb;
 
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.AsyncFailedDeleteBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.AsyncFailedUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
@@ -72,9 +75,7 @@ class OsbCmdbBrokerConfigurationTest {
 				"spring.profiles.active=acceptanceTests"
 			)
 			.withPropertyValues(cloudFoundryDeploymentProperties())
-			.run((context) -> {
-				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
-			});
+			.run((context) -> assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class));
 	}
 
 	@Test
@@ -108,6 +109,51 @@ class OsbCmdbBrokerConfigurationTest {
 	}
 
 	@Test
+	void asyncFailingUpdateInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,AsyncFailedUpdateBackingSpaceInstanceInterceptor"
+			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(AsyncFailedUpdateBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void syncFailingDeleteInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,SyncFailedDeleteBackingSpaceInstanceInterceptor"
+			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(SyncFailedDeleteBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void asyncFailingDeleteInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,AsyncFailedDeleteBackingSpaceInstanceInterceptor"
+			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(AsyncFailedDeleteBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
 	void asyncFailingCreateInterceptorIsCreatedWithAssociatedProfile() {
 		this.contextRunner
 			.withPropertyValues(
@@ -129,9 +175,7 @@ class OsbCmdbBrokerConfigurationTest {
 				"spring.profiles.active=cloud"
 			)
 			.withPropertyValues(cloudFoundryDeploymentProperties())
-			.run((context) -> {
-				assertThat(context).doesNotHaveBean(ServiceInstanceInterceptor.class);
-			});
+			.run((context) -> assertThat(context).doesNotHaveBean(ServiceInstanceInterceptor.class));
 	}
 
 	private String[] cloudFoundryDeploymentProperties() {
