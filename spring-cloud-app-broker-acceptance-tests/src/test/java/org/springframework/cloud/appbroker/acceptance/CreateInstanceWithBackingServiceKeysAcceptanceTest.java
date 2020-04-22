@@ -65,7 +65,7 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		"spring.security.user.password=password",
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
-		"spring.profiles.active=acceptanceTests",
+		"spring.profiles.active=acceptanceTests,SyncSuccessfulBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 //		"logging.level.cloudfoundry-client.wire=trace",
