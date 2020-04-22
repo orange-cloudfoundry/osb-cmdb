@@ -5,6 +5,8 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
+import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.GetLastServiceOperationRequest;
 import org.springframework.cloud.servicebroker.model.instance.GetLastServiceOperationResponse;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
@@ -22,6 +24,14 @@ public class ASyncFailedCreateBackingSpaceInstanceInterceptor extends BaseServic
 
 	public ASyncFailedCreateBackingSpaceInstanceInterceptor(String defaultSpaceName) {
 		super(defaultSpaceName);
+	}
+
+	@Override
+	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
+		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
+		return Mono.just(CreateServiceInstanceResponse.builder()
+			.async(true)
+			.build());
 	}
 
 	@Override
