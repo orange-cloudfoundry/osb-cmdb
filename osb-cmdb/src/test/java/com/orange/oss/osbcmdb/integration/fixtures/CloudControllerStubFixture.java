@@ -20,7 +20,7 @@ import java.util.Map;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.matching.ContentPattern;
-import com.orange.oss.osbcmdb.OsbApiConstants;
+import com.orange.oss.osbcmdb.serviceinstance.OsbApiConstants;
 import org.json.JSONObject;
 
 import org.springframework.boot.test.context.TestComponent;

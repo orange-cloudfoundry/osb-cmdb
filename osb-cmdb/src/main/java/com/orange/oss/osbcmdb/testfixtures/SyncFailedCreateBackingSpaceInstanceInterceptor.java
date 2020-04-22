@@ -1,6 +1,6 @@
 package com.orange.oss.osbcmdb.testfixtures;
 
-import com.orange.oss.osbcmdb.ServiceInstanceInterceptor;
+import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;

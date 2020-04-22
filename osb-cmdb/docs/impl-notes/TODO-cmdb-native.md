@@ -1,35 +1,31 @@
 * [ ] study backward compat impact of backing service key name change. 
    * Likely break production code
    * Likely break out acceptance tests
+   * [ ] Space name is service definition name unlimited
+   * [ ] Backing service name is service definition truncated
+   * [ ] Service Key Name is 
    * Fix it
       * [ ] backport service instance name factory
       * [ ] backport service key name factory
       * [ ] refactor acceptance tests to share same code/logic for tests
 
+```
+.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(brokeredServiceInstanceId)) 
+```
+      
+      
+* [ ] fix async backing service failure handling in USI
+   * [ ] Set up acceptance test
+* [ ] fix sync backing service failure handling in DSI
+   * [ ] Set up acceptance test
+   * [ ] Fix OsbServiceInstanceService
+* [ ] fix async backing service failure handling in DSI
+   * [ ] Set up acceptance test
+
+
 
 * [ ] automate triggering of smoke tests when concourse acceptance tests pass
 
-
-* [x] reduce risk by getting feedback from smoke tests
-   * [x] fix circle ci build preventing last commits from being included into the tarball
-      * [x] exclude scab tests from integration tests
-         * [x] add @Tag("scab") to scab test
-         * [x] add -PexcludeTag to circle ci arg
-         * [x] add -PexcludeTag to concourse  arg
-   * [x] diagnose/fix missing matching backing service
-      * [x] interceptor not excluded outside acceptance tests ?
-
-* [ ] fix sync backing service failure handling in USI
-   * [x] Set up acceptance test
-      * What kind of update to to ?
-         * Update plan
-         * Update params
-         * **Update noop**: simplest for failure test
-   * [ ] Fix OsbServiceInstanceService
-
-
-* [ ] Fix concourse ci so that we get result of osb-cmdb unit tests. Currently in osb-cmdb we only get test matching profile acceptance tests (`-DincludeTags=AcceptanceTest`)
-   * [ ] Try removing `-DincludeTags=AcceptanceTest` and see if we still have conflicts among test cases and requested args, and need more gradle launches passes
 
 
 * [ ] **Set up component test, mocking CF API** to get faster feedback than AT

@@ -1,4 +1,4 @@
-package com.orange.oss.osbcmdb;
+package com.orange.oss.osbcmdb.servicebinding;
 
 import reactor.core.publisher.Mono;
 

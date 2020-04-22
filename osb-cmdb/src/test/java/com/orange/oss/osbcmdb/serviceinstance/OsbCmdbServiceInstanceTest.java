@@ -1,9 +1,10 @@
-package com.orange.oss.osbcmdb;
+package com.orange.oss.osbcmdb.serviceinstance;
 
 import java.time.Duration;
 
 import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
+import com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstance;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.organizations.ListOrganizationSpacesRequest;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstances;

@@ -34,7 +34,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 
 import static com.orange.oss.osbcmdb.integration.CreateInstanceWithServicesComponentTest.BACKING_SERVICE_NAME;
-import static com.orange.oss.osbcmdb.OsbApiConstants.LAST_OPERATION_STATE_FAILED;
+import static com.orange.oss.osbcmdb.serviceinstance.OsbApiConstants.LAST_OPERATION_STATE_FAILED;
 import static com.orange.oss.osbcmdb.integration.fixtures.CloudControllerStubFixture.serviceInstanceGuid;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

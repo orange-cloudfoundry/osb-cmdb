@@ -4,7 +4,7 @@
         >       java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:132
         >           Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:798
         >               Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException at DefaultListableBeanFactory.java:1700
-        >   FAILED test: com.orange.oss.osbcmdb.OsbCmdbServiceInstanceTest > createServiceInstanceWithTarget()
+        >   FAILED test: com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstanceTest > createServiceInstanceWithTarget()
         >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > unAuthenticatedActuactorHealth_shouldSucceedWith200()
         >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > unAuthenticatedSensitiveActuactorEndPoints_shouldFailWith401()
         >   FAILED test: com.orange.oss.osbcmdb.SecurityConfigTest > authenticatedPostOsbRequest_shouldSucceedWith200()
@@ -98,7 +98,7 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
       * Pb: despites @ConditionalOnMissingBean acceptanceTestFailedAsyncBackingServiceInstanceInterceptor is still created
 ```
    2020-04-21T09:35:42.97+0200 [APP/PROC/WEB/0] OUT    OsbCmdbBrokerConfiguration#acceptanceTestBackingServiceInstanceInterceptor matched:
-   2020-04-21T09:35:42.97+0200 [APP/PROC/WEB/0] OUT       - @ConditionalOnMissingBean (types: com.orange.oss.osbcmdb.ServiceInstanceInterceptor; SearchStrategy: all) did not find any beans (OnBeanConditio
+   2020-04-21T09:35:42.97+0200 [APP/PROC/WEB/0] OUT       - @ConditionalOnMissingBean (types: com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor; SearchStrategy: all) did not find any beans (OnBeanConditio
 
 
    2020-04-21T09:35:42.99+0200 [APP/PROC/WEB/0] OUT Parameter 3 of method osbCmdbServiceInstance in com.orange.oss.osbcmdb.OsbCmdbBrokerConfiguration required a single bean, but 2 were found:
@@ -127,3 +127,39 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
       * [x] Refine acceptance test to poll service instance status, and then check its status
    
  
+* [x] reduce risk by getting feedback from smoke tests
+   * [x] fix circle ci build preventing last commits from being included into the tarball
+      * [x] exclude scab tests from integration tests
+         * [x] add @Tag("scab") to scab test
+         * [x] add -PexcludeTag to circle ci arg
+         * [x] add -PexcludeTag to concourse  arg
+   * [x] diagnose/fix missing matching backing service
+      * [x] interceptor not excluded outside acceptance tests ?
+
+* [x] fix sync backing service failure handling in USI
+   * [x] Set up acceptance test
+      * What kind of update to to ?
+         * Update plan
+         * Update params
+         * **Update noop**: simplest for failure test
+   * [x] Fix OsbServiceInstanceService
+
+
+* [x] Fix concourse ci so that we get result of osb-cmdb unit tests. Currently in osb-cmdb we only get test matching profile acceptance tests (`-DincludeTags=AcceptanceTest`)
+   * [x] Try removing `-DincludeTags=AcceptanceTest` and see if we still have conflicts among test cases and requested args, and need more gradle launches passes
+
+
+* [ ] Refactor interceptor profile management to be safer to class renamings
+   * [ ] ~~Configuration class uses class.getName()~~: annotation need a constant value, and can't make method calls
+   ```
+	public static String profileFor(Class aClass) {
+		return ACCEPTANCE_TESTS_AND + aClass.getSimpleName();
+	}
+	
+	@Bean
+	@Profile(profileFor(ASyncFailedCreateBackingSpaceInstanceInterceptor.class))
+   ```
+   * [ ] Acceptance test uses class.getName()
+      * [ ] Add a dependency to osb-cmdb main
+      
+      

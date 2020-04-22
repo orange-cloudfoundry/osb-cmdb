@@ -1,7 +1,8 @@
-package com.orange.oss.osbcmdb;
+package com.orange.oss.osbcmdb.servicebinding;
 
 import java.time.Duration;
 
+import com.orange.oss.osbcmdb.AbstractOsbCmdbService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.servicekeys.CreateServiceKeyRequest;
 import org.cloudfoundry.client.v2.servicekeys.CreateServiceKeyResponse;
