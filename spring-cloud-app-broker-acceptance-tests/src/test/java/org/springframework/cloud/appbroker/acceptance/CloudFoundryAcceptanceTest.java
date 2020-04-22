@@ -346,6 +346,12 @@ abstract class CloudFoundryAcceptanceTest {
 	protected void deleteServiceInstance(String serviceInstanceName) {
 		blockingSubscribe(cloudFoundryService.deleteServiceInstance(serviceInstanceName));
 	}
+	protected void purgeServiceInstance(String serviceInstanceName) {
+		cloudFoundryService.purgeServiceInstance(serviceInstanceName).block();
+	}
+	protected void purgeServiceInstance(String serviceInstanceName, String spaceName) {
+		cloudFoundryService.purgeServiceInstance(serviceInstanceName, spaceName).block();
+	}
 
 	protected void deleteServiceKey(String serviceKeyName, String serviceInstanceName) {
 		blockingSubscribe(cloudFoundryService.deleteServiceKey(serviceInstanceName, serviceKeyName));

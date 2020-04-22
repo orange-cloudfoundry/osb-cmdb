@@ -1,10 +1,11 @@
 
 
       
-* [ ] fix async backing service failure handling in USI
-   * [ ] Set up acceptance test
 * [ ] fix sync backing service failure handling in DSI
-   * [ ] Set up acceptance test
+   * [x] Set up acceptance test: 
+      * [x] backing service delete fails
+      * [x] test cleans up brokered service using cf-java-client purge 
+      * [x] test cleans up backing service using cf-java-client purge 
    * [ ] Fix OsbServiceInstanceService
 * [ ] fix async backing service failure handling in DSI
    * [ ] Set up acceptance test
