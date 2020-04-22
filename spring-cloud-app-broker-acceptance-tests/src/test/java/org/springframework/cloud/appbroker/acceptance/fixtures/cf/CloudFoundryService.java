@@ -31,6 +31,7 @@ import org.cloudfoundry.client.v2.organizations.AssociateOrganizationUserRespons
 import org.cloudfoundry.client.v2.organizations.RemoveOrganizationManagerRequest;
 import org.cloudfoundry.client.v2.organizations.RemoveOrganizationUserRequest;
 import org.cloudfoundry.client.v2.privatedomains.DeletePrivateDomainRequest;
+import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperRequest;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperResponse;
@@ -290,6 +291,16 @@ public class CloudFoundryService {
 			.doOnError(error -> LOG.error("Error updating service instance " + serviceInstanceName + ": " + error));
 	}
 
+	public Mono<Void> updateServiceInstance(String serviceInstanceName, String planName) {
+		return cloudFoundryOperations.services()
+			.updateInstance(UpdateServiceInstanceRequest.builder()
+				.serviceInstanceName(serviceInstanceName)
+				.planName(planName)
+				.build())
+			.doOnSuccess(item -> LOG.info("Updated service instance " + serviceInstanceName))
+			.doOnError(error -> LOG.error("Error updating service instance " + serviceInstanceName + ": " + error));
+	}
+
 	public Flux<ServiceInstanceSummary> listServiceInstances() {
 		return listServiceInstances(this.cloudFoundryOperations);
 	}
@@ -339,7 +350,7 @@ public class CloudFoundryService {
 			.get(org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest.builder()
 				.serviceInstanceId(serviceInstanceId)
 				.build())
-			.map(getServiceInstanceResponse -> getServiceInstanceResponse.getEntity());
+			.map(GetServiceInstanceResponse::getEntity);
 	}
 
 	private Mono<ServiceKey> getServiceKey(CloudFoundryOperations operations,
