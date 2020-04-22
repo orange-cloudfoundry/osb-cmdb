@@ -26,9 +26,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-update-service-async-fail";
+	private static final String SI_NAME = "si-delete-service-async-fail";
 
-	private static final String SUFFIX = "update-instance-with-async-backing-failure";
+	private static final String SUFFIX = "delete-instance-with-async-backing-failure";
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 

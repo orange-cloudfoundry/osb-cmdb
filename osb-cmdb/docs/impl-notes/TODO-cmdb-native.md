@@ -1,6 +1,3 @@
-
-
-      
 * [ ] fix sync backing service failure handling in DSI
    * [x] Set up acceptance test: 
       * [x] backing service delete fails
@@ -11,6 +8,14 @@
    * [ ] Set up acceptance test
 
 
+* [ ] assert dashboard is properly returned
+* [ ] assert params are properly returned in AT
+   * [ ] implement GSI
+   * add asserts on create
+   * add asserts on update: copy plan update test into params update test
+      
+
+* [ ] reduce pipeline feedback time by tuning gradle fork policy
 * [ ] refine pipeline notifications to include the commit message
 * [ ] automate triggering of smoke tests when concourse acceptance tests pass
 
