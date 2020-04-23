@@ -88,7 +88,7 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 	void deployAppsAndCreateServiceKeysOnBindService() {
 		// given a brokered service instance is created
 		createServiceInstance(getSiName());
-		// then the brokered service instance is indeed succesfully created
+		// then the brokered service instance is indeed successfully created
 		ServiceInstance brokeredServiceInstance = getServiceInstance(getSiName());
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
 

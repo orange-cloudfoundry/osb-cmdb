@@ -2,11 +2,18 @@
 * [ ] handle isAsync accepted in create
    * [x] add polling if necessary: not necessary test class uses CF Operations which does the polling
       * [ ] Pb: the test fails to find the backing service instance, whereas the brokered service instance has returned from async polling, and saw the backing service
+         * the CFJC traces show that brokered service is indeed returning async provision ack
+         * but client Test is making get requets on backing service 2s before 
+            * brokered service returns last operation completion
+      * hypothesis
+         * Test createServiceInstance is not properly waiting for async status and returns early
+            * 
    * [x] new interceptor
 * [ ] handle isAsync accepted in update
    * [x] new interceptor
    * [x] new test class
       * [ ] Pb: the test fails to find the backing service instance, whereas the brokered service instance has returned from async polling, and saw the backing service
+      
 
 * [ ] assert metadata is properly assigned in AT
    
