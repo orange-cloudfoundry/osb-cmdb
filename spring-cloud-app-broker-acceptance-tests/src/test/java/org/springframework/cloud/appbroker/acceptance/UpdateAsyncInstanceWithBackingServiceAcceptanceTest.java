@@ -16,27 +16,22 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
-import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 @Tag("cmdb")
-class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAcceptanceTest {
+class UpdateAsyncInstanceWithBackingServiceAcceptanceTest extends UpdateInstanceWithBackingServiceAcceptanceTest {
 
-	private static final String SI_NAME = "si-update-service";
+	private static final String SI_NAME = "si-async-update-service";
 
-	private static final String SUFFIX = "update-instance";
+	private static final String SUFFIX = "async-update-instance";
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
 	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
 
-	public String getSiName() {
-		return SI_NAME;
-	}
-
+	@Override
+	public String getSiName() { return SI_NAME; } //avoid race condition with parent test
 
 	@Override
 	protected String testSuffix() {
@@ -62,7 +57,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAccepta
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
 		// control backing service response: use default interceptor which accepts all requests
-		"spring.profiles.active=acceptanceTests,SyncSuccessfulBackingSpaceInstanceInterceptor",
+		"spring.profiles.active=acceptanceTests,AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 		"logging.level.cloudfoundry-client.wire=trace",
@@ -75,32 +70,8 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAccepta
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
 	void brokeredServiceUpdates() {
-		// given a brokered service instance is created
-		createServiceInstance(getSiName());
-
-		//given a backend service is configured to accept any update
-		//when a brokered service update plan is requested
-		updateServiceInstance(getSiName(), PLAN2_NAME);
-
-		//then a brokered service is updated
-		ServiceInstance brokeredServiceInstance = getServiceInstance(getSiName());
-		// then the brokered service instance once completes, is expected to be failed
-		assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("update");
-		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
-
-		//and backing service was indeed updated
-		String backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
-		//was indeed updated, and has still its last operation as failed
-		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("update");
-		assertThat(backingServiceInstance.getStatus()).isEqualTo("succeeded");
-		assertThat(backingServiceInstance.getPlan()).isEqualTo(PLAN2_NAME);
-
-		// when the service instance is deleted
-		deleteServiceInstance(getSiName());
-
-		// and the backing service instance is deleted
-		assertThat(listServiceInstances(BROKERED_SERVICE_NAME)).doesNotContain(backingServiceName);
+		//Same code, just using async backing service instead
+		super.brokeredServiceUpdates();
 	}
 
 }

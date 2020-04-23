@@ -20,7 +20,7 @@ import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedUpdateBackingSpaceInstanceInterceptor;
-import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulCreateDeleteBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
@@ -151,7 +151,7 @@ class OsbCmdbBrokerConfigurationTest {
 				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
 				assertThat(context)
 					.getBean(ServiceInstanceInterceptor.class)
-					.isInstanceOf(AsyncSuccessfulCreateDeleteBackingSpaceInstanceInterceptor.class);
+					.isInstanceOf(AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor.class);
 			});
 	}
 

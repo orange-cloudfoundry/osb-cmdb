@@ -10,15 +10,14 @@ import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInsta
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceResponse;
 
 /**
- * Simulates a successful synchronous backing service requested in backing space.
- *
- * Note: doesn't add behavior w.r.t. base class, only here to have explicit naming when used.
+ * Simulates a successful asynchronous backing service requested in backing space.
  */
-public class AsyncSuccessfulCreateDeleteBackingSpaceInstanceInterceptor extends BaseServiceInstanceBackingSpaceInstanceInterceptor {
+public class AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor extends BaseServiceInstanceBackingSpaceInstanceInterceptor {
 
-	private static final Logger LOG = Loggers.getLogger(AsyncSuccessfulCreateDeleteBackingSpaceInstanceInterceptor.class);
+	private static final Logger LOG = Loggers.getLogger(
+		AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor.class);
 
-	public AsyncSuccessfulCreateDeleteBackingSpaceInstanceInterceptor(String defaultSpaceName) {
+	public AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor(String defaultSpaceName) {
 		super(defaultSpaceName);
 	}
 
