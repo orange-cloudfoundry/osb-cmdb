@@ -281,23 +281,28 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return osbInterceptor.getLastOperation(request);
 		}
 
-		CmdbOperationState cmdbOperationState = fromJson(request.getOperation());
-		String cfServiceGuid = cmdbOperationState.backingCfServiceInstanceGuid;
+		String requestOperation = request.getOperation();
+		if (requestOperation == null) {
+			throw new ServiceBrokerInvalidParametersException("missing operation field");
+		}
+		CmdbOperationState cmdbOperationState = fromJson(requestOperation);
+		String backingServiceInstanceGuid = cmdbOperationState.backingCfServiceInstanceGuid;
 
 		GetServiceInstanceResponse serviceInstanceResponse;
 		Exception getServiceInstanceException = null;
 		try {
 			serviceInstanceResponse = client.serviceInstances()
-				.get(GetServiceInstanceRequest.builder().serviceInstanceId(cfServiceGuid).build())
+				.get(GetServiceInstanceRequest.builder().serviceInstanceId(backingServiceInstanceGuid).build())
 				.block();
 		}
 		catch (Exception e) {
-			LOG.info("No such instance with guid " + cfServiceGuid);
+			LOG.info("No such instance with guid " + backingServiceInstanceGuid);
 			getServiceInstanceException = e;
 			serviceInstanceResponse = null;
 		}
 
 		OperationState operationState;
+		String description= null;
 		if (serviceInstanceResponse == null) {
 			switch (cmdbOperationState.operationType) {
 				case UPDATE: // fall through
@@ -306,8 +311,9 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						getServiceInstanceException.toString() : "";
 					LOG.error("Unable to provide last operation for {} operation of guid={} Missing service instance " +
 							"with exception:{} ",
-						cmdbOperationState.operationType, cfServiceGuid, exceptionToString);
+						cmdbOperationState.operationType, backingServiceInstanceGuid, exceptionToString);
 					operationState = OperationState.FAILED;
+					description = "missing associated backing service with guid: " + backingServiceInstanceGuid;
 					break;
 				case DELETE:
 					operationState = OperationState.SUCCEEDED;
@@ -325,6 +331,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 
 		return Mono.just(GetLastServiceOperationResponse.builder()
+			.description(description)
 			.operationState(operationState)
 			.build());
 	}
