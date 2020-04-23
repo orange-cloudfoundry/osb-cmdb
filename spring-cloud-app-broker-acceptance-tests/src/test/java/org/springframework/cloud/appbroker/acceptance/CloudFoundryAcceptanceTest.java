@@ -215,11 +215,15 @@ abstract class CloudFoundryAcceptanceTest {
 
 	@AfterEach
 	public void tearDown(TestInfo testInfo) {
+		blockingSubscribe(cloudFoundryService.logAndVerifyRecentAppLogs(testBrokerAppName(), true)
+		);
+
 		blockingSubscribe(cloudFoundryService.getOrCreateDefaultOrganization()
 			.map(OrganizationSummary::getId)
 			.flatMap(orgId -> cloudFoundryService.getOrCreateDefaultSpace()
 				.map(SpaceSummary::getId)
 				.flatMap(spaceId -> cleanup(orgId, spaceId)))
+			.onErrorResume(e -> Mono.empty())
 			.doOnRequest(l -> LOG.debug("START cleaning up org and space"))
 			.doOnSuccess(l -> LOG.debug("FINISHED cleaning up org and space"))
 		);
@@ -257,9 +261,7 @@ abstract class CloudFoundryAcceptanceTest {
 
 	private Mono<Void> cleanup(String orgId, String spaceId) {
 		return
-			cloudFoundryService.logAndVerifyRecentAppLogs(testBrokerAppName(), true)
-				.onErrorResume(e -> Mono.empty())
-			.then(cloudFoundryService.deleteServiceBroker(serviceBrokerName()))
+			cloudFoundryService.deleteServiceBroker(serviceBrokerName())
 			.then(cloudFoundryService.deleteApp(testBrokerAppName()))
 			.then(cloudFoundryService.removeAppBrokerClientFromOrgAndSpace(brokerClientId(), orgId, spaceId))
 			.onErrorResume(e -> Mono.empty());
