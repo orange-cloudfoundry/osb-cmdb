@@ -179,7 +179,10 @@ public class CloudFoundryService {
 			.doOnNext(l  -> LOG.debug("{}", l))
 			.doOnComplete(()  -> LOG.debug("log stream completed"))
 			.doOnError(error -> LOG.debug("Error getting logs for app " + appName + " : " + error))
-			.onErrorResume(e -> Mono.empty())
+			.onErrorResume(e -> {
+				LOG.error("Unable to log and assert broker logs {}", e.toString());
+				return Mono.empty();
+			})
 			.filter(logString -> logString.contains(" ERROR "))
 			.collectList()
 			.doOnNext(errorLogs -> {
