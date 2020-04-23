@@ -243,7 +243,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		DeleteServiceInstanceResponse.DeleteServiceInstanceResponseBuilder responseBuilder = DeleteServiceInstanceResponse.builder();
 		if (deletedSi != null) {
-			if ("delete".equals(deletedSi.getLastOperation())) {
+			if (! "delete".equals(deletedSi.getLastOperation())) {
 				LOG.error("Unexpected si state after delete {} full si is {}", deletedSi.getLastOperation(), deletedSi);
 				throw new ServiceBrokerException("Internal CF protocol error");
 			}
