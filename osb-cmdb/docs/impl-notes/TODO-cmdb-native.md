@@ -1,13 +1,31 @@
-* [x] fix async backing service failure handling in DSI
-   * [x] Set up acceptance test
-      * [ ] Diagnose last test status: should we poll the backing service status ? Is this a race condition that can happen in other async tests and we need to restore/generalize polling inprogress status ? 
+* [ ] assert that cmdb and backing service traces don't contain ERROR level traces such as the following
+```
+-04-23 07:38:42.279 ERROR 7 --- [nio-8080-exec-6] c.o.o.o.s.OsbCmdbServiceInstance         : Unexpected si state after delete delete full si is ServiceInstance{applications=[], id=c9c8595e-1f39-4406-810f-5a8f5edb6a56, name=d94467fd-d8ac-4b36-9863-10c85578c695, plan=standard, service=app-service-delete-instance-with-async-backing-failure, type=managed_service_instance, dashboardUrl=null, description=A service that deploys a backing app, documentationUrl=null, lastOperation=delete, message=, startedAt=2020-04-23T07:38:41Z, status=in progress, tags=[], updatedAt=2020-04-23T07:38:41Z}, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587627522280180256}
+23-04-2020 07:38:44.996 ?[35m[cloudfoundry-client-epoll-4]?[0;39m ?[39mDEBUG?[0;39m o.s.c.a.a.f.cf.CloudFoundryService.lambda$logRecentAppLogs$13 - LogMessage{applicationId=cb6e02a2-6533-4ad4-a165-874e858f798f, message=2020
+```
+   * [ ] verify this works by injecting a fault
+   * [ ] remove the fault injection
 
 * [ ] handle isAsync accepted in create
+   * [x] add polling if necessary: not necessary test class uses CF Operations which does the polling
+   * [x] new interceptor
 * [ ] handle isAsync accepted in update
+   * [x] new interceptor
+   * [x] new test class
 * [ ] add timeout to reactor blocking calls ? 
    * Are cf-java-client timeouts sufficient ?
    * Check default values
    * [ ]  
+
+* [x] assert dashboard is properly returned
+   * [x] base interceptor returns a dashboard url
+   * [ ] fix code to make test pass
+* [ ] assert params are properly returned in AT
+   * [ ] implement GSI
+   * add asserts on create
+   * add asserts on update: copy plan update test into params update test
+* [ ] assert metadata is properly assigned in AT ?
+* [ ] Handle race conditions (including for K8S dups)      
 
 
 
@@ -22,13 +40,6 @@ but context failed to start:
  org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'cloudFoundryClient': Invocation of init method failed; nested exception is reactor.core.Exceptions$ErrorCallbackNotImplemented: java.net.UnknownHostException: api.example.local
 ```
 
-* [ ] assert dashboard is properly returned
-* [ ] assert params are properly returned in AT
-   * [ ] implement GSI
-   * add asserts on create
-   * add asserts on update: copy plan update test into params update test
-* [ ] assert metadata is properly assigned in AT ?
-* [ ] Handle race conditions (including for K8S dups)      
 
 * [ ] reduce pipeline feedback time by tuning gradle fork policy
 * [ ] automate triggering of smoke tests when concourse acceptance tests pass
@@ -312,3 +323,8 @@ Q: how to simulate and assert proper async service error support ?
             * make AbstractOsbCmdbService a collaborator, and directly test it without interacting with OsbCmdbServiceInstance 
                * Reuse `DynamicServiceAutoConfigurationAcceptanceTest`
                * Not: won't work for testing cmdb use-cases such as CSI since prereq brokers will be missing. 
+
+
+* [x] refine pipeline notifications to include the commit message
+   * [x] fix formatting
+   
