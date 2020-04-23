@@ -10,6 +10,7 @@ import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl
 import com.orange.oss.osbcmdb.metadata.MetaData;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
@@ -91,7 +92,6 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		if (osbInterceptor != null && osbInterceptor.accept(request)) {
 			return osbInterceptor.createServiceInstance(request);
 		}
-		LOG.error("Self fuzzing: errors in broker code should trigger assertion failure.");
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
 
@@ -145,6 +145,14 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					throw new ServiceBrokerException("Internal CF protocol error");
 			}
 			responseBuilder.async(asyncProvisioning);
+		} catch(ClientV2Exception e) {
+			LOG.info("Unable to provision service, caught:" + e, e);
+			//Observed errors
+			//CF-ServiceBrokerBadResponse(10001)
+			//See CF service broker client specs at
+			// https://github.com/cloudfoundry/cloud_controller_ng/blob/80176ff0068741088e19629516c0285b4cf57ef3/spec/unit/lib/services/service_brokers/v2/client_spec.rb
+			//wrap to avoid log polution from sc-osb catching unexpectidely unknown (cf-java-client's) exceptions
+			throw new ServiceBrokerException(e.toString());
 		}
 		finally {
 			if (backingServiceInstanceInstanceId != null) {
@@ -430,6 +438,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					throw new ServiceBrokerException("Internal CF protocol error");
 			}
 			responseBuilder.async(asyncProvisioning);
+		}
+		catch (ClientV2Exception e) {
+			LOG.info("Unable to update service, caught:" + e, e);
+			//wrap to avoid log polution from sc-osb catching unexpectidely unknown (cf-java-client's) exceptions
+			throw new ServiceBrokerException(e.toString());
 		}
 		finally {
 			//systematically try to update metadata (e.g. service instance rename) even if update failed
