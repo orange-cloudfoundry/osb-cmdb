@@ -88,8 +88,9 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 	void deployAppsAndCreateServiceKeysOnBindService() {
 		// given a brokered service instance is created
 		createServiceInstance(getSiName());
-		// then the brokered service instance is indeed created
+		// then the brokered service instance is indeed succesfully created
 		ServiceInstance brokeredServiceInstance = getServiceInstance(getSiName());
+		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
 
 		// and a backing service instance is created in the backing service with the id as service name
 		String backingServiceName = brokeredServiceInstance.getId();
@@ -97,7 +98,9 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		//and the backing service has the right type
 		assertThat(backingServiceInstance.getService()).isEqualTo(BROKERED_SERVICE_NAME);
 		//and the brokered service dashboard url, is the same as the backing service's one
-		assertThat(brokeredServiceInstance.getDashboardUrl()).isEqualTo(backingServiceInstance.getDashboardUrl());
+		assertThat(brokeredServiceInstance.getDashboardUrl())
+			.isNotEmpty()
+			.isEqualTo(backingServiceInstance.getDashboardUrl());
 
 		//when a service key is created with params
 		createServiceKey(getSkName(), getSiName());
