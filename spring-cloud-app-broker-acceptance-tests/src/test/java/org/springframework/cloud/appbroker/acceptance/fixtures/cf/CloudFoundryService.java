@@ -36,6 +36,9 @@ import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperRequest;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperResponse;
 import org.cloudfoundry.client.v2.spaces.RemoveSpaceDeveloperRequest;
+import org.cloudfoundry.client.v3.serviceInstances.ListServiceInstancesRequest;
+import org.cloudfoundry.client.v3.serviceInstances.ListServiceInstancesResponse;
+import org.cloudfoundry.client.v3.serviceInstances.ServiceInstanceResource;
 import org.cloudfoundry.doppler.LogMessage;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
@@ -396,6 +399,15 @@ public class CloudFoundryService {
 				.serviceInstanceId(serviceInstanceId)
 				.build())
 			.map(GetServiceInstanceResponse::getEntity);
+	}
+
+	public Flux<ServiceInstanceResource> listServiceInstanceMetadataByLabel(String labelSelector) {
+		return cloudFoundryClient.serviceInstancesV3()
+		.list(ListServiceInstancesRequest.builder()
+			.labelSelector(labelSelector)
+			.build())
+			.map(ListServiceInstancesResponse::getResources)
+			.flatMapMany(Flux::fromIterable);
 	}
 
 	private Mono<ServiceKey> getServiceKey(CloudFoundryOperations operations,
