@@ -20,12 +20,16 @@ import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import reactor.util.Logger;
+import reactor.util.Loggers;
 
 import static java.lang.System.currentTimeMillis;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
 class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
+
+	protected final Logger LOG = Loggers.getLogger(this.getClass());
 
 	private static final String SI_NAME = "si-delete-service-async-fail";
 
@@ -89,12 +93,13 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 
 		ServiceInstance brokeredServiceInstance;
 		int retry=0;
-		final int MAX_POLL_DURATION_MS = 60*1000;
+		final int MAX_POLL_DURATION_MS = 180*1000;
 		long pollStartTime = currentTimeMillis();
 		do {
 			brokeredServiceInstance = getServiceInstance(SI_NAME);
 			if (retry >0) {
 				//noinspection BusyWait
+				LOG.debug("Sleeping {}s in retry {}", 5, retry);
 				Thread.sleep(5*1000);
 			}
 			retry++;
