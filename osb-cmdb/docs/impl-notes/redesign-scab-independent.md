@@ -153,7 +153,22 @@ What SCAB features would be lost and how to accomodate ?
             ```
          * acceptance-tests: make CF API calls, run against real dependencies, **depends on boot jar to be produced**
 
-## Integation and acceptance tests
+## Test strategy
+
+* Acceptance test: 
+   * bulk of the tests. 
+   * Use real CF to make OSB API calls. 
+   * Cmdb uses real CF api to act on backing services
+   * assertion use CF API api (often high level api and sometimes low level api). 
+      * Easier to refactor when moving to CC API V3 
+* Component  test: 
+   * make OSB API calls
+   * CF API is served by wiremock
+   * Intended for stress client OSB tests outside of what CF API allows e.g.
+      * Deleting a service instance without first deleting service bindings
+      * Forging last operation state parameter 
+
+### Integation and acceptance tests
 
 * Q: should we keep SCAB-integration-tests and SCAB-acceptance-tests gradle modules, source code, packages ? Pros and cons ?
 * Benefits of keeping close ?

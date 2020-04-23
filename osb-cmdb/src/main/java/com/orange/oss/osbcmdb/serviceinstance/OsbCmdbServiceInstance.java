@@ -296,7 +296,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				.block();
 		}
 		catch (Exception e) {
-			LOG.info("No such instance with guid " + backingServiceInstanceGuid);
+			LOG.info("No such backing instance with guid {}, caught: {}" + backingServiceInstanceGuid, e.toString());
 			getServiceInstanceException = e;
 			serviceInstanceResponse = null;
 		}
@@ -323,7 +323,23 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					throw new ServiceBrokerInvalidParametersException("Invalid state operation value:" + cmdbOperationState.operationType);
 			}
 		}
-		else {
+		else { //backing service exists corresponding to `operation` parameter
+			// Check that backing guid passed in operation is indeed consistent with brokered service guid, and was
+			// not forged by an attacker
+			if ((serviceInstanceResponse.getEntity() == null) ||
+				(serviceInstanceResponse.getEntity().getName() == null) ||
+				(! request.getServiceInstanceId().equals(serviceInstanceResponse.getEntity().getName()))) {
+				//noinspection ConstantConditions
+				LOG.error("Unexpected operation parameter whose backing service guid ({}) whose name ({}) does not " +
+					"name the brokered service id ({})",
+					backingServiceInstanceGuid,
+					serviceInstanceResponse.getEntity().getName(),
+					request.getServiceInstanceId()
+					);
+				throw new ServiceBrokerInvalidParametersException("invalid operation field: content mismatch");
+			}
+
+			// convert CF state values to OSB values:
 			// in progress -> in progress
 			// errored -> errored
 			LastOperation lastOperation = serviceInstanceResponse.getEntity().getLastOperation();
