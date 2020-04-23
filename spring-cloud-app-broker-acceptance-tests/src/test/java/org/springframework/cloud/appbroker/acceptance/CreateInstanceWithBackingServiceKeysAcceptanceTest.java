@@ -85,7 +85,7 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
-	void deployAppsAndCreateServiceKeysOnBindService() {
+	void deployAppsAndCreateServiceKeysOnBindService() throws InterruptedException {
 		// given a brokered service instance is created
 		createServiceInstance(getSiName());
 		// then the brokered service instance is indeed successfully created
@@ -94,7 +94,8 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 
 		// and a backing service instance is created in the backing service with the id as service name
 		String backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
+		ServiceInstance backingServiceInstance = pollServiceInstanceIfMissing(backingServiceName,
+			BROKERED_SERVICE_NAME, 30*1000);
 		//and the backing service has the right type
 		assertThat(backingServiceInstance.getService()).isEqualTo(BROKERED_SERVICE_NAME);
 		//and the backing service has metadata associated
