@@ -21,6 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static java.lang.System.currentTimeMillis;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
@@ -75,7 +76,7 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
-	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
+	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() throws InterruptedException {
 		// given a brokered service instance is created
 		createServiceInstance(SI_NAME);
 
@@ -83,10 +84,28 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 		//when a brokered service deletion is requested
 		deleteServiceInstance(SI_NAME);
 
-		//then a brokered service deletion fails
-		ServiceInstance brokeredServiceInstance = getServiceInstance(SI_NAME);
+		//then a brokered service deletion eventually fails
+
+
+		ServiceInstance brokeredServiceInstance;
+		int retry=0;
+		final int MAX_POLL_DURATION_MS = 60*1000;
+		long pollStartTime = currentTimeMillis();
+		do {
+			brokeredServiceInstance = getServiceInstance(SI_NAME);
+			if (retry >0) {
+				//noinspection BusyWait
+				Thread.sleep(5*1000);
+			}
+			retry++;
+		} while (
+			brokeredServiceInstance.getStatus().equals("in progress") &&
+			timehasElapsedLessThan(MAX_POLL_DURATION_MS, pollStartTime)
+		);
 		assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("delete");
-		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("failed");
+		assertThat(brokeredServiceInstance.getStatus())
+			.withFailMessage("after retrying " + retry + " times and " + (currentTimeMillis() - pollStartTime)/1000 + " seconds")
+		.isEqualTo("failed");
 
 		//and backing service is also left as failed
 		backingServiceName = brokeredServiceInstance.getId();
@@ -95,6 +114,10 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("delete");
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
 
+	}
+
+	private boolean timehasElapsedLessThan(int MAX_POLL_DURATION_MS, long pollStartTime) {
+		return currentTimeMillis() - pollStartTime < MAX_POLL_DURATION_MS;
 	}
 
 	@AfterEach
