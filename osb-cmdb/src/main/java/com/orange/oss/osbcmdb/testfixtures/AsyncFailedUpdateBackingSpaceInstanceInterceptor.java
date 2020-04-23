@@ -40,6 +40,7 @@ public class AsyncFailedUpdateBackingSpaceInstanceInterceptor extends BaseServic
 		LOG.debug("Last operation failure returned");
 		return Mono.just(GetLastServiceOperationResponse.builder()
 			.operationState(OperationState.FAILED)
+			.description(this.getClass().getSimpleName())
 			.build());
 	}
 

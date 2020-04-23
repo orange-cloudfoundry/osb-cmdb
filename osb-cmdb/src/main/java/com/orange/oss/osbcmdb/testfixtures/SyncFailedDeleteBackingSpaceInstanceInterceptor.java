@@ -26,6 +26,6 @@ public class SyncFailedDeleteBackingSpaceInstanceInterceptor extends BaseService
 
 	@Override
 	public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
-		throw new ServiceBrokerException(this.getClass().getName());
+		throw new ServiceBrokerException(this.getClass().getSimpleName());
 	}
 }

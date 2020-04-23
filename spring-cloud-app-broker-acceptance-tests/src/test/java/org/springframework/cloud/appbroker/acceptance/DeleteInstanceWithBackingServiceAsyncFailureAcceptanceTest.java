@@ -89,28 +89,9 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 		deleteServiceInstance(SI_NAME);
 
 		//then a brokered service deletion eventually fails
-
-
-		ServiceInstance brokeredServiceInstance;
-		int retry=0;
-		final int MAX_POLL_DURATION_MS = 180*1000;
-		long pollStartTime = currentTimeMillis();
-		do {
-			brokeredServiceInstance = getServiceInstance(SI_NAME);
-			if (retry >0) {
-				//noinspection BusyWait
-				LOG.debug("Sleeping {}s in retry {}", 5, retry);
-				Thread.sleep(5*1000);
-			}
-			retry++;
-		} while (
-			brokeredServiceInstance.getStatus().equals("in progress") &&
-			timehasElapsedLessThan(MAX_POLL_DURATION_MS, pollStartTime)
-		);
+		ServiceInstance brokeredServiceInstance = pollServiceInstanceUntilNotInProgress(SI_NAME, 180*1000);
 		assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("delete");
-		assertThat(brokeredServiceInstance.getStatus())
-			.withFailMessage("after retrying " + retry + " times and " + (currentTimeMillis() - pollStartTime)/1000 + " seconds")
-		.isEqualTo("failed");
+		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("failed");
 
 		//and backing service is also left as failed
 		backingServiceName = brokeredServiceInstance.getId();
@@ -119,6 +100,29 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("delete");
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
 
+	}
+
+	private ServiceInstance pollServiceInstanceUntilNotInProgress(String serviceInstanceName, int MAX_POLL_DURATION_MS)
+		throws InterruptedException {
+		ServiceInstance brokeredServiceInstance;
+		int retry=0;
+		long pollStartTime = currentTimeMillis();
+		do {
+			brokeredServiceInstance = getServiceInstance(serviceInstanceName);
+			if (retry >0) {
+				LOG.debug("Sleeping {}s in retry {}", 5, retry);
+				//noinspection BusyWait
+				Thread.sleep(5*1000);
+			}
+			retry++;
+		} while (
+			brokeredServiceInstance.getStatus().equals("in progress") &&
+			timehasElapsedLessThan(MAX_POLL_DURATION_MS, pollStartTime)
+		);
+		assertThat(brokeredServiceInstance.getStatus())
+			.withFailMessage("still in progress after retrying " + retry + " times and " + (currentTimeMillis() - pollStartTime)/1000 + " seconds")
+			.isNotEqualTo("in progress");
+		return brokeredServiceInstance;
 	}
 
 	private boolean timehasElapsedLessThan(int MAX_POLL_DURATION_MS, long pollStartTime) {
