@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
-import static java.lang.System.currentTimeMillis;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
@@ -100,33 +99,6 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("delete");
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
 
-	}
-
-	private ServiceInstance pollServiceInstanceUntilNotInProgress(String serviceInstanceName, int MAX_POLL_DURATION_MS)
-		throws InterruptedException {
-		ServiceInstance brokeredServiceInstance;
-		int retry=0;
-		long pollStartTime = currentTimeMillis();
-		do {
-			brokeredServiceInstance = getServiceInstance(serviceInstanceName);
-			if (retry >0) {
-				LOG.debug("Sleeping {}s in retry {}", 5, retry);
-				//noinspection BusyWait
-				Thread.sleep(5*1000);
-			}
-			retry++;
-		} while (
-			brokeredServiceInstance.getStatus().equals("in progress") &&
-			timehasElapsedLessThan(MAX_POLL_DURATION_MS, pollStartTime)
-		);
-		assertThat(brokeredServiceInstance.getStatus())
-			.withFailMessage("still in progress after retrying " + retry + " times and " + (currentTimeMillis() - pollStartTime)/1000 + " seconds")
-			.isNotEqualTo("in progress");
-		return brokeredServiceInstance;
-	}
-
-	private boolean timehasElapsedLessThan(int MAX_POLL_DURATION_MS, long pollStartTime) {
-		return currentTimeMillis() - pollStartTime < MAX_POLL_DURATION_MS;
 	}
 
 	@AfterEach

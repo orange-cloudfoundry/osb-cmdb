@@ -78,6 +78,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import static java.lang.System.currentTimeMillis;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryClientConfiguration.APP_BROKER_CLIENT_AUTHORITIES;
 import static org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryClientConfiguration.APP_BROKER_CLIENT_SECRET;
@@ -137,6 +138,30 @@ abstract class CloudFoundryAcceptanceTest {
 
 	protected ServiceInstanceEntity getServiceInstanceEntity(String serviceInstanceId) {
 		return cloudFoundryService.getServiceInstanceEntity(serviceInstanceId).block();
+	}
+
+	protected ServiceInstance pollServiceInstanceUntilNotInProgress(String serviceInstanceName,
+		int MAX_POLL_DURATION_MS)
+		throws InterruptedException {
+		ServiceInstance brokeredServiceInstance;
+		int retry=0;
+		long pollStartTime = currentTimeMillis();
+		do {
+			brokeredServiceInstance = getServiceInstance(serviceInstanceName);
+			if (retry >0) {
+				LOG.debug("Sleeping {}s in retry {}", 5, retry);
+				//noinspection BusyWait
+				Thread.sleep(5*1000);
+			}
+			retry++;
+		} while (
+			brokeredServiceInstance.getStatus().equals("in progress") &&
+			timehasElapsedLessThan(MAX_POLL_DURATION_MS, pollStartTime)
+		);
+		assertThat(brokeredServiceInstance.getStatus())
+			.withFailMessage("still in progress after retrying " + retry + " times and " + (currentTimeMillis() - pollStartTime)/1000 + " seconds")
+			.isNotEqualTo("in progress");
+		return brokeredServiceInstance;
 	}
 
 	protected abstract String testSuffix();
@@ -266,6 +291,10 @@ abstract class CloudFoundryAcceptanceTest {
 			.doOnRequest(l -> LOG.debug("START creating default org/space/pushing broker app/create broker/enable " +
 					"broker access"))
 			.doOnSuccess(l -> LOG.debug("FINISHED default org/space/pushing broker app/create broker/enable broker access"));
+	}
+
+	private boolean timehasElapsedLessThan(int MAX_POLL_DURATION_MS, long pollStartTime) {
+		return currentTimeMillis() - pollStartTime < MAX_POLL_DURATION_MS;
 	}
 
 	private Mono<Void> updateBroker(List<String> appBrokerProperties) {
@@ -408,6 +437,40 @@ abstract class CloudFoundryAcceptanceTest {
 	protected ServiceInstance getServiceInstance(String serviceInstanceName, String space) {
 		return cloudFoundryService.getServiceInstance(serviceInstanceName, space).block();
 	}
+
+	protected ServiceInstance pollServiceInstanceIfMissing(String serviceInstanceName, String space,
+		int MAX_POLL_DURATION_MS)
+		throws InterruptedException {
+		ServiceInstance serviceInstance = null;
+		int retry = 0;
+		long pollStartTime = currentTimeMillis();
+		do {
+			try {
+				serviceInstance = getServiceInstance(serviceInstanceName, space);
+			}
+			catch (IllegalArgumentException e) {
+				LOG.debug("Unable to get {} caught {}", serviceInstanceName, e, e);
+				String message = e.getMessage();
+				if (message != null && message.contains("does not exist")) {
+					LOG.debug("Sleeping {}s in retry {}", 5, retry);
+					//noinspection BusyWait
+					Thread.sleep(5 * 1000);
+					retry++;
+				} else {
+					throw e;
+				}
+			}
+		} while (
+			serviceInstance == null &&
+				timehasElapsedLessThan(MAX_POLL_DURATION_MS, pollStartTime)
+		);
+		assertThat(serviceInstance)
+			.withFailMessage(
+				"still in missing after retrying " + retry + " times and " + (currentTimeMillis() - pollStartTime) / 1000 + " seconds")
+			.isNotNull();
+		return serviceInstance;
+	}
+
 
 	protected Flux<ServiceInstanceResource> listServiceInstanceMetadataByLabel(String labelSelector) {
 		return cloudFoundryService.listServiceInstanceMetadataByLabel(labelSelector);

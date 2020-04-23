@@ -7,7 +7,11 @@
             * brokered service returns last operation completion
       * hypothesis
          * Test createServiceInstance is not properly waiting for async status and returns early
-            * 
+            * Pb: a GSI confirms the stats "created" on brokered service
+         * **Race condition in CF which commits transactions after returning REST responses.**
+            * + some clock lag (2s) between Test client traces and broker traces
+            => **confirm hypothesis with only CC timestamp in response headers**
+      * workaround: poll backing service instance for 20s before failing on absence of backing service  
    * [x] new interceptor
 * [ ] handle isAsync accepted in update
    * [x] new interceptor
