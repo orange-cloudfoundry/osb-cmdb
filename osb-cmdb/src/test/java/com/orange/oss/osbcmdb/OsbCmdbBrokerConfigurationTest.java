@@ -144,7 +144,7 @@ class OsbCmdbBrokerConfigurationTest {
 	void asyncSuccessfulCreateInterceptorIsCreatedWithAssociatedProfile() {
 		this.contextRunner
 			.withPropertyValues(
-				"spring.profiles.active=acceptanceTests,AsyncSuccessfulCreateBackingSpaceInstanceInterceptor"
+				"spring.profiles.active=acceptanceTests,AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor"
 			)
 			.withPropertyValues(cloudFoundryDeploymentProperties())
 			.run((context) -> {
