@@ -215,8 +215,7 @@ abstract class CloudFoundryAcceptanceTest {
 
 	@AfterEach
 	public void tearDown(TestInfo testInfo) {
-		blockingSubscribe(cloudFoundryService.logAndVerifyRecentAppLogs(testBrokerAppName(), true)
-		);
+		cloudFoundryService.logAndVerifyRecentAppLogs(testBrokerAppName(), true).block();
 
 		blockingSubscribe(cloudFoundryService.getOrCreateDefaultOrganization()
 			.map(OrganizationSummary::getId)
