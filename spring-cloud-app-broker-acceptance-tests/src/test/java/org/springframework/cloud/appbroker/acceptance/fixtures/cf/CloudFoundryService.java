@@ -190,7 +190,7 @@ public class CloudFoundryService {
 					//Trying to fail on ERROR logs such as
 					//2020-04-23 07:38:42.279 ERROR 7 --- [nio-8080-exec-6] c.o.o.o.s.OsbCmdbServiceInstance         : Unexpected si state after delete delete full si is ServiceInstance{applications=[], id=c9c8595e-1f39-4406-810f-5a8f5edb6a56, name=d94467fd-d8ac-4b36-9863-10c85578c695, plan=standard, service=app-service-delete-instance-with-async-backing-failure, type=managed_service_instance, dashboardUrl=null, description=A service that deploys a backing app, documentationUrl=null, lastOperation=delete, message=, startedAt=2020-04-23T07:38:41Z, status=in progress, tags=[], updatedAt=2020-04-23T07:38:41Z}, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587627522280180256}
 					assertThat(errorLogs)
-						.withFailMessage("Expecting no ERROR log entry in broker recent logs")
+						.withFailMessage("Expecting no ERROR log entry in broker recent logs, but got:" + errorLogs)
 						.isEmpty();
 				}
 			})
