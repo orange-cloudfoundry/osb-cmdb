@@ -115,6 +115,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				.block();
 
 			//noinspection ConstantConditions
+			responseBuilder.dashboardUrl(createServiceInstanceResponse.getEntity().getDashboardUrl());
+
 			backingServiceInstanceInstanceId = createServiceInstanceResponse.getMetadata().getId();
 			LastOperation lastOperation = createServiceInstanceResponse.getEntity().getLastOperation();
 			if (lastOperation == null) {
