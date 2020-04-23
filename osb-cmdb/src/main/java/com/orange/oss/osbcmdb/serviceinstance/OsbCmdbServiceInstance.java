@@ -91,7 +91,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		if (osbInterceptor != null && osbInterceptor.accept(request)) {
 			return osbInterceptor.createServiceInstance(request);
 		}
-
+		LOG.error("Self fuzzing: errors in broker code should trigger assertion failure.");
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
 
