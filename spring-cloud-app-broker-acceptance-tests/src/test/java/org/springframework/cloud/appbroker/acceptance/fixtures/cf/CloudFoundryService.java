@@ -36,6 +36,7 @@ import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperRequest;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperResponse;
 import org.cloudfoundry.client.v2.spaces.RemoveSpaceDeveloperRequest;
+import org.cloudfoundry.doppler.LogMessage;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
@@ -80,6 +81,7 @@ import reactor.core.publisher.Mono;
 import org.springframework.stereotype.Service;
 
 import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Service
 public class CloudFoundryService {
@@ -168,20 +170,28 @@ public class CloudFoundryService {
 			.doOnError(error -> LOG.error("Error pushing broker app " + appName + ": " + error));
 	}
 
-	public Mono<Void> logRecentAppLogs(String appName) {
+	public Mono<Void> logAndVerifyRecentAppLogs(String appName, final boolean assertNoErrorLog) {
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("Dumping recent logs for broker {}", appName);
-			return
-				cloudFoundryOperations.applications().logs(LogsRequest.builder().name(appName).recent(true).build())
-				.doOnNext(l  -> LOG.debug("{}", l))
-				.doOnComplete(()  -> LOG.debug("log stream completed"))
-				.doOnError(error -> LOG.debug("Error getting logs for app " + appName + " : " + error))
-				.onErrorResume(e -> Mono.empty())
-				.then();
 		}
-		else {
-			return Mono.empty();
-		}
+		return cloudFoundryOperations.applications().logs(LogsRequest.builder().name(appName).recent(true).build())
+			.map(LogMessage::toString)
+			.doOnNext(l  -> LOG.debug("{}", l))
+			.doOnComplete(()  -> LOG.debug("log stream completed"))
+			.doOnError(error -> LOG.debug("Error getting logs for app " + appName + " : " + error))
+			.onErrorResume(e -> Mono.empty())
+			.filter(logString -> logString.contains(" ERROR "))
+			.collectList()
+			.doOnNext(errorLogs -> {
+				if (assertNoErrorLog) {
+					//Trying to fail on ERROR logs such as
+					//2020-04-23 07:38:42.279 ERROR 7 --- [nio-8080-exec-6] c.o.o.o.s.OsbCmdbServiceInstance         : Unexpected si state after delete delete full si is ServiceInstance{applications=[], id=c9c8595e-1f39-4406-810f-5a8f5edb6a56, name=d94467fd-d8ac-4b36-9863-10c85578c695, plan=standard, service=app-service-delete-instance-with-async-backing-failure, type=managed_service_instance, dashboardUrl=null, description=A service that deploys a backing app, documentationUrl=null, lastOperation=delete, message=, startedAt=2020-04-23T07:38:41Z, status=in progress, tags=[], updatedAt=2020-04-23T07:38:41Z}, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587627522280180256}
+					assertThat(errorLogs)
+						.withFailMessage("Expecting no ERROR log entry in broker recent logs")
+						.isEmpty();
+				}
+			})
+			.then();
 	}
 
 	public Mono<Void> updateBrokerApp(String appName, String brokerClientId, List<String> appBrokerProperties) {

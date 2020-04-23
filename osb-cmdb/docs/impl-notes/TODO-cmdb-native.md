@@ -1,17 +1,25 @@
-* [ ] fix sync backing service failure handling in DSI
-   * [x] Set up acceptance test: 
-      * [x] backing service delete fails
-      * [x] test cleans up brokered service using cf-java-client purge 
-      * [x] test cleans up backing service using cf-java-client purge 
-   * [ ] Fix OsbServiceInstanceService
-* [ ] fix async backing service failure handling in DSI
-   * [ ] Set up acceptance test
+* [x] fix async backing service failure handling in DSI
+   * [x] Set up acceptance test
+      * [ ] Diagnose last test status: should we poll the backing service status ? Is this a race condition that can happen in other async tests and we need to restore/generalize polling inprogress status ? 
 
 * [ ] handle isAsync accepted in create
 * [ ] handle isAsync accepted in update
 * [ ] add timeout to reactor blocking calls ? 
    * Are cf-java-client timeouts sufficient ?
-   * Check default values 
+   * Check default values
+   * [ ]  
+
+
+* [ ] Diagnose and fix suspected flaky test:  com.orange.oss.osbcmdb.CloudFoundryAppDeployerAutoConfigurationTest
+```
+java.lang.AssertionError: 
+Expecting:
+ <Unstarted application context org.springframework.boot.test.context.assertj.AssertableApplicationContext[startupFailure=org.springframework.beans.factory.BeanCreationException]>
+to have a single bean of type:
+ <com.orange.oss.osbcmdb.CloudFoundryTargetProperties>:
+but context failed to start:
+ org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'cloudFoundryClient': Invocation of init method failed; nested exception is reactor.core.Exceptions$ErrorCallbackNotImplemented: java.net.UnknownHostException: api.example.local
+```
 
 * [ ] assert dashboard is properly returned
 * [ ] assert params are properly returned in AT
@@ -22,10 +30,9 @@
 * [ ] Handle race conditions (including for K8S dups)      
 
 * [ ] reduce pipeline feedback time by tuning gradle fork policy
-* [ ] refine pipeline notifications to include the commit message
 * [ ] automate triggering of smoke tests when concourse acceptance tests pass
 
-
+* [ ] assert handling of forged last operation request in a component test
 
 * [ ] **Set up component test, mocking CF API** to get faster feedback than AT
    * [ ] set up SCAB component test infra and cmdb test cases
