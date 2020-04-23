@@ -8,6 +8,7 @@
 
 * [ ] handle isAsync accepted in create
    * [x] add polling if necessary: not necessary test class uses CF Operations which does the polling
+      * [ ] Pb: the test fails to find the backing service instance, whereas the brokered service instance has returned from async polling, and saw the backing service
    * [x] new interceptor
 * [ ] handle isAsync accepted in update
    * [x] new interceptor
