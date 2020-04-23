@@ -38,6 +38,7 @@ public class ASyncFailedCreateBackingSpaceInstanceInterceptor extends BaseServic
 	public Mono<GetLastServiceOperationResponse> getLastOperation(GetLastServiceOperationRequest request) {
 		return Mono.just(GetLastServiceOperationResponse.builder()
 			.operationState(OperationState.FAILED)
+			.description(this.getClass().getSimpleName())
 			.build());
 	}
 

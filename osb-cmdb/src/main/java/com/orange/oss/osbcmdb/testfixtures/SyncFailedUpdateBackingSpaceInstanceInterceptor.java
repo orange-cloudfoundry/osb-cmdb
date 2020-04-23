@@ -26,7 +26,7 @@ public class SyncFailedUpdateBackingSpaceInstanceInterceptor extends BaseService
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
-		throw new ServiceBrokerException(this.getClass().getName());
+		throw new ServiceBrokerException(this.getClass().getSimpleName());
 	}
 
 }
