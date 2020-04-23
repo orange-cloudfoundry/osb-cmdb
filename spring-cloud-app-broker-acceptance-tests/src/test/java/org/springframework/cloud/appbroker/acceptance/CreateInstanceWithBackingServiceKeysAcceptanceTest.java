@@ -97,6 +97,11 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
 		//and the backing service has the right type
 		assertThat(backingServiceInstance.getService()).isEqualTo(BROKERED_SERVICE_NAME);
+		//and the backing service has metadata associated
+		String backingServiceInstanceId = backingServiceInstance.getId();
+		assertServiceInstanceHasAttachedNonEmptyMetadata(backingServiceInstanceId);
+
+
 		//and the brokered service dashboard url, is the same as the backing service's one
 		assertThat(brokeredServiceInstance.getDashboardUrl())
 			.isNotEmpty()

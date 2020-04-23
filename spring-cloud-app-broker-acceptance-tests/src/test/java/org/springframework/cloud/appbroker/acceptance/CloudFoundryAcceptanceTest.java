@@ -43,6 +43,8 @@ import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
+import org.cloudfoundry.client.v3.Metadata;
+import org.cloudfoundry.client.v3.serviceInstances.ServiceInstanceResource;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationEnvironments;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
@@ -118,6 +120,20 @@ abstract class CloudFoundryAcceptanceTest {
 	private AcceptanceTestProperties acceptanceTestProperties;
 
 	private final WebClient webClient = getSslIgnoringWebClient();
+
+	protected void assertServiceInstanceHasAttachedNonEmptyMetadata(String backingServiceInstanceId) {
+		List<ServiceInstanceResource> matchingListedSIs = listServiceInstanceMetadataByLabel(
+			"backing_service_instance_guid=" + backingServiceInstanceId)
+			.filter(sir -> backingServiceInstanceId.equals(sir.getId()))
+			.collectList().block();
+		assertThat(matchingListedSIs)
+			.withFailMessage("expecting single matching backing service from labels" + matchingListedSIs)
+			.hasSize(1);
+		//noinspection ConstantConditions
+		Metadata metadata = matchingListedSIs.get(0).getMetadata();
+		assertThat(metadata.getLabels()).isNotEmpty();
+		assertThat(metadata.getAnnotations()).isNotEmpty();
+	}
 
 	protected ServiceInstanceEntity getServiceInstanceEntity(String serviceInstanceId) {
 		return cloudFoundryService.getServiceInstanceEntity(serviceInstanceId).block();
@@ -391,6 +407,10 @@ abstract class CloudFoundryAcceptanceTest {
 
 	protected ServiceInstance getServiceInstance(String serviceInstanceName, String space) {
 		return cloudFoundryService.getServiceInstance(serviceInstanceName, space).block();
+	}
+
+	protected Flux<ServiceInstanceResource> listServiceInstanceMetadataByLabel(String labelSelector) {
+		return cloudFoundryService.listServiceInstanceMetadataByLabel(labelSelector);
 	}
 
 	protected String getServiceInstanceGuid(String serviceInstanceName) {
