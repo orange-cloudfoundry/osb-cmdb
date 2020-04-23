@@ -77,9 +77,9 @@ class CreateAsyncInstanceWithBackingServiceKeysAcceptanceTest extends CreateInst
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
-	void deployAppsAndCreateServiceKeyssOnBindService() {
+	void deployAppsAndCreateServiceKeysOnBindService() {
 		//Same code, just different interceptor in annotation
-		super.deployAppsAndCreateServiceKeyssOnBindService();
+		super.deployAppsAndCreateServiceKeysOnBindService();
 	}
 
 }

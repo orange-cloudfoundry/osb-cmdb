@@ -26,6 +26,7 @@ public class AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor ex
 		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(CreateServiceInstanceResponse.builder()
 			.async(true)
+			.dashboardUrl(DASHBOARD_URL)
 			.build());
 	}
 

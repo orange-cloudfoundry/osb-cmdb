@@ -23,6 +23,8 @@ import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInsta
  */
 public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBackingSpaceInstanceInterceptor implements ServiceInstanceInterceptor {
 
+	public static final String DASHBOARD_URL = "https://my-dasboard-domain.org";
+
 	public BaseServiceInstanceBackingSpaceInstanceInterceptor(
 		String defaultSpaceName) {
 		super(defaultSpaceName);
@@ -53,6 +55,7 @@ public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBack
 		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(CreateServiceInstanceResponse.builder()
 			.async(false)
+			.dashboardUrl(DASHBOARD_URL)
 			.build());
 	}
 
