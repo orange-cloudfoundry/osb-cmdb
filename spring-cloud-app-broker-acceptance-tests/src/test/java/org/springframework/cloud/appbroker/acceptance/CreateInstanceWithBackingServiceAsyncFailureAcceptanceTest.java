@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
-class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
+class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
 	private static final String SI_NAME = "si-create-service-async-fail";
 
@@ -33,23 +33,13 @@ class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
-	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
-
-
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
 
 	@Override
-	protected String appServiceName() {
-		return BROKERED_SERVICE_NAME;
-	}
-
-	@Override
-	protected String backingServiceName() {
-		return BACKING_SERVICE_NAME;
-	}
+	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Test
 	@AppBrokerTestProperties({
@@ -75,7 +65,7 @@ class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
 		// given a brokered service instance is created
 		// and a backing service is asked to fail asynchronously
-		ServiceInstance brokeredServiceInstance = createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME,
+		ServiceInstance brokeredServiceInstance = createServiceInstanceWithoutAsserts(brokeredServiceName(), PLAN_NAME,
 			SI_NAME, Collections.emptyMap());
 
 		// then the brokered service instance once completes, is expected to be failed

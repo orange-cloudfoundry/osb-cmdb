@@ -26,15 +26,13 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
-class UpdateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
+class UpdateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
 	private static final String SI_NAME = "si-update-service-sync-fail";
 
 	private static final String SUFFIX = "update-instance-with-sync-backing-failure";
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
-
-	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
 
 
 	@Override
@@ -43,14 +41,7 @@ class UpdateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 	}
 
 	@Override
-	protected String appServiceName() {
-		return BROKERED_SERVICE_NAME;
-	}
-
-	@Override
-	protected String backingServiceName() {
-		return BACKING_SERVICE_NAME;
-	}
+	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Test
 	@AppBrokerTestProperties({
