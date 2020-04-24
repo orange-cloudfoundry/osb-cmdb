@@ -90,7 +90,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAccepta
 
 		//and backing service was indeed updated
 		String backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
+		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, appServiceName());
 		//was indeed updated, and has still its last operation as failed
 		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("update");
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("succeeded");
@@ -100,7 +100,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAccepta
 		deleteServiceInstance(getSiName());
 
 		// and the backing service instance is deleted
-		assertThat(listServiceInstances(BROKERED_SERVICE_NAME)).doesNotContain(backingServiceName);
+		assertThat(listServiceInstances(appServiceName())).doesNotContain(backingServiceName);
 	}
 
 }

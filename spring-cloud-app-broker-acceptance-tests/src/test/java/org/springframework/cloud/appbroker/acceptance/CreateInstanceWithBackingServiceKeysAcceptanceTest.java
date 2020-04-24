@@ -95,9 +95,9 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		// and a backing service instance is created in the backing service with the id as service name
 		String backingServiceName = brokeredServiceInstance.getId();
 		ServiceInstance backingServiceInstance = pollServiceInstanceIfMissing(backingServiceName,
-			BROKERED_SERVICE_NAME, 30*1000);
+			appServiceName(), 30*1000);
 		//and the backing service has the right type
-		assertThat(backingServiceInstance.getService()).isEqualTo(BROKERED_SERVICE_NAME);
+		assertThat(backingServiceInstance.getService()).isEqualTo(appServiceName());
 		//and the backing service has metadata associated
 		String backingServiceInstanceId = backingServiceInstance.getId();
 		assertServiceInstanceHasAttachedNonEmptyMetadata(backingServiceInstanceId);
@@ -114,8 +114,8 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 
 		//then a backing service key with params is created, whose name matches the brokered service binding id
 		String backingServiceKeyName = brokeredServiceKey.getId();
-		assertThat(listServiceKeys(backingServiceName, BROKERED_SERVICE_NAME)).containsOnly(backingServiceKeyName);
-		ServiceKey backingServiceKey = getServiceKey(backingServiceKeyName, backingServiceName, BROKERED_SERVICE_NAME);
+		assertThat(listServiceKeys(backingServiceName, appServiceName())).containsOnly(backingServiceKeyName);
+		ServiceKey backingServiceKey = getServiceKey(backingServiceKeyName, backingServiceName, appServiceName());
 		// and credentials from backing service key is returned in brokered service key
 		assertThat(backingServiceKey.getCredentials()).isEqualTo(STATIC_CREDENTIALS);
 
@@ -123,13 +123,13 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		deleteServiceKey(getSkName(), getSiName());
 
 		//then the backing service key is deleted
-		assertThat(listServiceKeys(backingServiceName, BROKERED_SERVICE_NAME)).isEmpty();
+		assertThat(listServiceKeys(backingServiceName, appServiceName())).isEmpty();
 
 		// when the service instance is deleted
 		deleteServiceInstance(getSiName());
 
 		// and the backing service instance is deleted
-		assertThat(listServiceInstances(BROKERED_SERVICE_NAME)).doesNotContain(backingServiceName);
+		assertThat(listServiceInstances(appServiceName())).doesNotContain(backingServiceName);
 	}
 
 }

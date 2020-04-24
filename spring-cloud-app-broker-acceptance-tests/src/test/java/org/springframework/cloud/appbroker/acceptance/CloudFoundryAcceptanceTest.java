@@ -141,7 +141,7 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	protected ServiceInstance pollServiceInstanceUntilNotInProgress(String serviceInstanceName,
-		int MAX_POLL_DURATION_MS)
+		int maxPollDurationMs)
 		throws InterruptedException {
 		ServiceInstance brokeredServiceInstance;
 		int retry=0;
@@ -156,7 +156,7 @@ abstract class CloudFoundryAcceptanceTest {
 			retry++;
 		} while (
 			brokeredServiceInstance.getStatus().equals("in progress") &&
-			timehasElapsedLessThan(MAX_POLL_DURATION_MS, pollStartTime)
+			timehasElapsedLessThan(maxPollDurationMs, pollStartTime)
 		);
 		assertThat(brokeredServiceInstance.getStatus())
 			.withFailMessage("still in progress after retrying " + retry + " times and " + (currentTimeMillis() - pollStartTime)/1000 + " seconds")
@@ -438,7 +438,7 @@ abstract class CloudFoundryAcceptanceTest {
 		return cloudFoundryService.getServiceInstance(serviceInstanceName, space).block();
 	}
 
-	protected ServiceInstance pollServiceInstanceIfMissing(String serviceInstanceName, String spaceName, int MAX_POLL_DURATION_MS)
+	protected ServiceInstance pollServiceInstanceIfMissing(String serviceInstanceName, String spaceName, int maxPollDurationMs)
 		throws InterruptedException {
 		ServiceInstance serviceInstance = null;
 		int retry = 0;
@@ -462,7 +462,7 @@ abstract class CloudFoundryAcceptanceTest {
 			}
 		} while (
 			serviceInstance == null &&
-				timehasElapsedLessThan(MAX_POLL_DURATION_MS, pollStartTime)
+				timehasElapsedLessThan(maxPollDurationMs, pollStartTime)
 		);
 		assertThat(serviceInstance)
 			.withFailMessage(
