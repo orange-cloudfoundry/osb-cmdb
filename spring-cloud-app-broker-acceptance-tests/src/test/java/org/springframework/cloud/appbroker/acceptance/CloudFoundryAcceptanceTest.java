@@ -438,24 +438,24 @@ abstract class CloudFoundryAcceptanceTest {
 		return cloudFoundryService.getServiceInstance(serviceInstanceName, space).block();
 	}
 
-	protected ServiceInstance pollServiceInstanceIfMissing(String serviceInstanceName, String space,
-		int MAX_POLL_DURATION_MS)
+	protected ServiceInstance pollServiceInstanceIfMissing(String serviceInstanceName, String spaceName, int MAX_POLL_DURATION_MS)
 		throws InterruptedException {
 		ServiceInstance serviceInstance = null;
 		int retry = 0;
 		long pollStartTime = currentTimeMillis();
 		do {
 			try {
-				serviceInstance = getServiceInstance(serviceInstanceName, space);
+				serviceInstance = getServiceInstance(serviceInstanceName, spaceName);
 			}
 			catch (IllegalArgumentException e) {
-				LOG.debug("Unable to get {} caught {}", serviceInstanceName, e, e);
+				LOG.debug("Unable to get si name=[{}] in space=[{}] caught {}", serviceInstanceName, spaceName, e, e);
 				String message = e.getMessage();
 				if (message != null && message.contains("does not exist")) {
-					LOG.debug("Sleeping {}s in retry {}", 5, retry);
-					//noinspection BusyWait
-					Thread.sleep(5 * 1000);
 					retry++;
+					int sleepTimeSecs = retry;
+					LOG.debug("Sleeping {}s in retry #{}", sleepTimeSecs, retry);
+					//noinspection BusyWait
+					Thread.sleep(sleepTimeSecs * 1000);
 				} else {
 					throw e;
 				}
