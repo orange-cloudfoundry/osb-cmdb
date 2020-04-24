@@ -1,6 +1,25 @@
 package org.springframework.cloud.appbroker.acceptance;
 
+import org.junit.jupiter.api.TestInfo;
+
+import org.springframework.cloud.appbroker.acceptance.fixtures.osb.OpenServiceBrokerApiClient;
+
 public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAcceptanceTest {
+
+	//TODO: encapsulate field with getter once we have finished copy/paste from component tests
+	protected OpenServiceBrokerApiClient brokerFixture;
+
+	@Override
+	void setUp(TestInfo testInfo, BrokerProperties brokerProperties) {
+		super.setUp(testInfo, brokerProperties);
+		initializeBrokerFixture();
+	}
+
+	protected void initializeBrokerFixture() {
+		String brokerName = serviceBrokerName();
+		String httpsBrokerUrl = cloudFoundryService.getApplicationRoute(brokerName).block();
+		brokerFixture = new OpenServiceBrokerApiClient(httpsBrokerUrl, PLAN_ID, SERVICE_ID);
+	}
 
 	protected String brokeredServiceInstanceName() {
 		return 	"si-" + testSuffix();

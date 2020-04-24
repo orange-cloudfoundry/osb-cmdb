@@ -24,6 +24,9 @@ import org.cloudfoundry.operations.services.ServiceKey;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.http.HttpStatus;
+
+import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
@@ -82,11 +85,13 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundr
 		String backingServiceInstanceId = backingServiceInstance.getId();
 		assertServiceInstanceHasAttachedNonEmptyMetadata(backingServiceInstanceId);
 
-
 		//and the brokered service dashboard url, is the same as the backing service's one
 		assertThat(brokeredServiceInstance.getDashboardUrl())
 			.isNotEmpty()
 			.isEqualTo(backingServiceInstance.getDashboardUrl());
+
+		//when concurrent requests as received, they are properly handled
+		assertDuplicateOsbRequestsHandling(brokeredServiceInstance);
 
 		//when a service key is created with params
 		createServiceKey(getSkName(), brokeredServiceInstanceName());
@@ -110,6 +115,17 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundr
 
 		// and the backing service instance is deleted
 		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
+	}
+
+	private void assertDuplicateOsbRequestsHandling(ServiceInstance brokeredServiceInstance) {
+		//When requesting a concurrent request to the same broker with the same instance id, service definition,
+		// plan and params
+		given(brokerFixture.serviceInstanceRequest())
+			.when()
+			.put(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
+			.then()
+			//Then the duplicate is ignored as expected
+			.statusCode(HttpStatus.OK.value());
 	}
 
 }

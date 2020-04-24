@@ -79,6 +79,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryClientConfiguration.APP_BROKER_CLIENT_AUTHORITIES;
 import static org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryClientConfiguration.APP_BROKER_CLIENT_SECRET;
@@ -99,10 +100,10 @@ abstract class CloudFoundryAcceptanceTest {
 
 	private static final String BACKING_SERVICE_PLAN_ID = UUID.randomUUID().toString();
 
-	private static final String SERVICE_ID = UUID.randomUUID().toString();
+	protected static final String SERVICE_ID = UUID.randomUUID().toString();
 
-	private static final String PLAN_ID = UUID.randomUUID().toString();
-	private static final String PLAN2_ID = UUID.randomUUID().toString();
+	protected static final String PLAN_ID = UUID.randomUUID().toString();
+	protected static final String PLAN2_ID = UUID.randomUUID().toString();
 
 	private static final String BACKING_SERVICE_ID = UUID.randomUUID().toString();
 
@@ -174,7 +175,7 @@ abstract class CloudFoundryAcceptanceTest {
 		return "test-broker-app-" + testSuffix();
 	}
 
-	private String serviceBrokerName() {
+	protected String serviceBrokerName() {
 		return "test-broker-" + testSuffix();
 	}
 
@@ -332,6 +333,10 @@ abstract class CloudFoundryAcceptanceTest {
 				return Mono.empty();
 			})
 			.block();
+	}
+
+	protected ServiceInstance createServiceInstanceWithoutAsserts(String serviceInstanceName) {
+		return createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME, serviceInstanceName, emptyMap());
 	}
 
 	protected ServiceInstance createServiceInstanceWithoutAsserts(String serviceName,

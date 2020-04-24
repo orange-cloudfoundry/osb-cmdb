@@ -18,6 +18,7 @@ package com.orange.oss.osbcmdb;
 
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.ASyncStalledCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor;
@@ -92,6 +93,21 @@ class OsbCmdbBrokerConfigurationTest {
 				assertThat(context)
 					.getBean(ServiceInstanceInterceptor.class)
 					.isInstanceOf(SyncFailedCreateBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void aSyncStalledCreateBackingSpaceInstanceInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,ASyncStalledCreateBackingSpaceInstanceInterceptor"
+			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(ASyncStalledCreateBackingSpaceInstanceInterceptor.class);
 			});
 	}
 

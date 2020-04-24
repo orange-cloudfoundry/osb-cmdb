@@ -1,39 +1,104 @@
+* [ ] Check smoke test status
+   * [ ] noop plan unpublished 
+      * [ ] relaunch coab broker post-deploy
+         * [ ] update config to point to paas-templates-private
+            * [ ] add support for http proxy in git
 
-* [ ] handle isAsync accepted in create
-   * [x] add polling if necessary: not necessary test class uses CF Operations which does the polling
-      * [ ] Pb: the test fails to find the backing service instance, whereas the brokered service instance has returned from async polling, and saw the backing service
-         * the CFJC traces show that brokered service is indeed returning async provision ack
-         * but client Test is making get requets on backing service 2s before 
-            * brokered service returns last operation completion
-      * hypothesis
-         * Test createServiceInstance is not properly waiting for async status and returns early
-            * Pb: a GSI confirms the stats "created" on brokered service
-         * Race condition in CF which commits transactions after returning REST responses.
-            * + some clock lag (2s) between Test client traces and broker traces
-            * => confirm hypothesis with only CC timestamp in response headers
-            * workaround: poll backing service instance for 20s before failing on absence of backing service
-      * [ ] error logic in test: was looking at the wrong space: Parent class was not looking up the service name in overriden method, but directly in constant  
-   * [x] new interceptor
-* [x] handle isAsync accepted in update
-   * [x] new interceptor
-   * [x] new test class
-      * [ ] Pb: the test fails to find the backing service instance, whereas the brokered service instance has returned from async polling, and saw the backing service
-      
+* [ ] Handle race conditions (including for K8S dups)      
+   * [X] Test create https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
+      * [x] New interceptor StalledAsyncCreate
+      * [x] Refine CSI sync success test  
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 200 Ok as backing service was completed
+            * [ ] 409 Conflict
+               * [ ] for different plans
+               * [ ] for different service definition id
+               * [ ] for different params
+      * [x] New Create test that does 
+         * [x] CSI  
+         * [x] OSB provision dupl same SI
+            * [x] Adapt an `OpenServiceBrokerApiFixture` in AT
+               * [x] Inject CC API host/port/skip ssl in class
+               * [x] use them in  serviceBrokerSpecification()
+            * [x] check same dupl receives right status  
+               * [x] 202 Accepted as backing service is still in progress
+         * [x] OSB provision dupl different SI: check different dupl receives right status
+            * [ ] 409 Conflict
+               * [x] for different plans
+               * [ ] for different service definition id
+               * [ ] for different params
+   * [ ] Implement fix
+      * [ ] new method handleException() that is given any received exception + request
+         * existingSi = getServiceInstance()
+         * [ ] compare existingSi params
+            * using GSIP CF API, prereq
+               * [ ] GSI support in associated brokers
+                  * [ ] COAB
+                  * [ ] CF-mysql
+         * [ ] compare plans + service definition to request
+         * throw appropriate ServiceBrokerException
+            * 202 ACCEPTED: ServiceBrokerCreateOperationInProgressException
+            * 409 CONFLICT: ServiceInstanceExistsException
+         * return existingSi to trigger 200 ok.
+   * Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
+      * [ ] New interceptor StalledAsyncUpdate
+      * [ ] Refine USI sync success test  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 200 Ok as backing service was completed
+      * [ ] New Create test that does 
+         * [ ] USI  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 202 Accepted as backing service is still in progress
+         * [ ] OSB provision dupl different SI: check different dupl receives right status
+            * [ ] 409 Conflict
+   * Test delete https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
+      * [ ] New interceptor StalledAsyncDelete
+      * [ ] Refine DSI sync success test  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 200 Ok as backing service was completed
+      * [ ] New Create test that does 
+         * [ ] USI  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 202 Accepted as backing service is still in progress
+         * [ ] OSB provision dupl different SI: check different dupl receives right status
+            * [ ] 409 Conflict
+   * Test bind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
+      * [ ] New interceptor StalledAsyncBind
+      * [ ] Refine CSI sync success test  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 200 Ok as backing service was completed
+      * [ ] New Create test that does 
+         * [ ] CSI  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 202 Accepted as backing service is still in progress
+         * [ ] OSB provision dupl different SI: check different dupl receives right status
+            * [ ] 409 Conflict
+   * [ ] Implement bind fix
+      * [ ] new method handleException() that is given any received exception + request
+         * existingSk = getServiceKey()
+         * [ ] compare existingSb params
+            * using GSBP CF API, prereq
+               * [ ] GSB support in associated brokers
+                  * [ ] COAB
+                  * [ ] CF-mysql
+         * [ ] compare plans + service definition to request
+         * throw appropriate ServiceBrokerException
+            * 202 ACCEPTED: ServiceBrokerCreateOperationInProgressException
+            * 409 CONFLICT: ServiceInstanceExistsException
+         * return existingSk to trigger 200 ok.
+   * Test unbind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
+      * [ ] New interceptor StalledAsyncUnbind
+      * [ ] Refine DSI sync success test  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 200 Ok as backing service was completed
+      * [ ] New Create test that does 
+         * [ ] USI  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 202 Accepted as backing service is still in progress
+         * [ ] OSB provision dupl different SI: check different dupl receives right status
+            * [ ] 409 Conflict
+            
 
-* [x] Refactor/clean AT
-   * [x] remove duplication in constants, and only keep suffix as defined per test
-      ```
-     	private static final String SI_NAME = "si-delete-service-async-fail";
-     	private static final String SUFFIX = "delete-instance-with-async-backing-failure";
-     	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
-      ```
-     * [x] encapsulate SI_NAME into brokeredServiceInstanceName() and use suffix as an impl
-        * [x] refine clean up script for si leaks: 
-           * backing services are purged with brokers,
-           * brokered services are deleted without prefix filters
-        * [x] add space clean up, which increases coverage
-
-* [ ] assert metadata is properly assigned in AT
    
    
 * [ ] add timeout to reactor blocking calls ? 
@@ -42,12 +107,40 @@
    * [ ] Add an interceptor blocking indefinitely on create 
    * [ ] Configure Test to not wait longer than 60s  
 
-* [ ] assert params are properly returned in AT
-   * [ ] implement GSI
-   * add asserts on create
-   * add asserts on update: copy plan update test into params update test
+* [ ] reduce pipeline feedback time by tuning gradle fork policy
+   * [ ] double avail procs had no visible changes: `maxParallelForks = (2* Runtime.runtime.availableProcessors()) - 1 ?: 1`
+* [ ] automate triggering of smoke tests when concourse acceptance tests pass
 
-* [ ] Handle race conditions (including for K8S dups)      
+* [ ] assert handling of forged last operation request in a component test
+
+
+* [ ] implement OSB GSI and GSB 
+
+* [ ] assert params are properly returned in AT
+   * Using an Interceptor which stores received SIP/SBP and returns them into service binding   
+   * Using GSIP and GSBP
+      * [x] investigate whether CC API V2 returns existing params
+         ```
+           cf curl /v2/service_instances/0db0c6f3-92fb-47b2-8ab1-527c08c22c9c/parameters
+           {
+              "description": "This service does not support fetching service instance parameters.",
+              "error_code": "CF-ServiceFetchInstanceParametersNotSupported",
+              "code": 120004
+           }
+         ```
+      * [ ] implement GSI
+         * [ ] implement GSI on interceptor
+         * [ ] implement GSI on CmdbServiceInstance
+            * [x] check javaclient support GSIP: org.cloudfoundry.client.v2.serviceinstances.ServiceInstances.getParameters() 
+         * add asserts on create: 
+            * [ ] call CF GSIP on backing si, and compare returned params to requested params
+         * add asserts on update: copy plan update test into params update test
+      * [ ] implement GSB
+         * [ ] implement GSB on interceptor
+         * [ ] implement GSB on CmdbServiceInstance
+            * [x] check javaclient support GSBP: org.cloudfoundry.client.v2.servicebindings.ServiceBindingsV2.getParameters()
+         * add asserts on bind: 
+            * [ ] call CF GSBP on backing si, and compare returned params to requested params
 
 
 
@@ -63,10 +156,6 @@ but context failed to start:
 ```
 
 
-* [ ] reduce pipeline feedback time by tuning gradle fork policy
-* [ ] automate triggering of smoke tests when concourse acceptance tests pass
-
-* [ ] assert handling of forged last operation request in a component test
 
 * [ ] **Set up component test, mocking CF API** to get faster feedback than AT
    * [ ] set up SCAB component test infra and cmdb test cases
