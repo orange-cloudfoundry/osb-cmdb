@@ -76,7 +76,7 @@ class UpdateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 
 		//and backing service was indeed updated
 		String backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
+		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
 		//was indeed updated, and has still its last operation as failed
 		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("update");
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
@@ -85,7 +85,7 @@ class UpdateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 		deleteServiceInstance(SI_NAME);
 
 		// and the backing service instance is deleted
-		assertThat(listServiceInstances(BROKERED_SERVICE_NAME)).doesNotContain(backingServiceName);
+		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
 	}
 
 }

@@ -85,7 +85,7 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 
 		//and backing service is also left as failed
 		backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
+		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
 		//was indeed updated, and has still its last operation as failed
 		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("delete");
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
@@ -96,7 +96,7 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 	void tearDown() {
 		purgeServiceInstance(SI_NAME);
 		if (backingServiceName != null) {
-			purgeServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
+			purgeServiceInstance(backingServiceName, brokeredServiceName());
 		}
 	}
 

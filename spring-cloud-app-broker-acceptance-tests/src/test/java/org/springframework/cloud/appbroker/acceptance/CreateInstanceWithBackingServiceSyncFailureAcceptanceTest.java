@@ -88,7 +88,7 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 		deleteServiceInstance(SI_NAME);
 
 		// and the backing service instance is still missing
-		assertThat(listServiceInstances(BROKERED_SERVICE_NAME)).isEmpty();
+		assertThat(listServiceInstances(brokeredServiceName())).isEmpty();
 	}
 
 }

@@ -81,9 +81,9 @@ class UpdateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 		}
 		// and the associated backing service instance
 		String backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, BROKERED_SERVICE_NAME);
+		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
 		//and the backing service has the right type
-		assertThat(backingServiceInstance.getService()).isEqualTo(BROKERED_SERVICE_NAME);
+		assertThat(backingServiceInstance.getService()).isEqualTo(brokeredServiceName());
 		//was indeed updated, and has still its last operation as failed
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
 
@@ -92,7 +92,7 @@ class UpdateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 		deleteServiceInstance(SI_NAME);
 
 		// and the backing service instance is deleted
-		assertThat(listServiceInstances(BROKERED_SERVICE_NAME)).doesNotContain(backingServiceName);
+		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
 	}
 
 }
