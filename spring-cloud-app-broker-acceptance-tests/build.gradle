@@ -40,6 +40,7 @@ dependencies {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
 	testImplementation("io.projectreactor:reactor-test")
+	testImplementation("io.rest-assured:rest-assured") //for osbapi client
 }
 
 // build the test broker from /src into a jar that the tests can deploy

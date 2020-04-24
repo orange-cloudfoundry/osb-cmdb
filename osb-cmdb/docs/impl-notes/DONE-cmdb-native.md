@@ -203,3 +203,44 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
 ```
    * [x] verify this works by injecting a fault
    * [x] remove the fault injection
+
+
+* [x] handle isAsync accepted in create
+   * [x] add polling if necessary: not necessary test class uses CF Operations which does the polling
+      * [x] Pb: the test fails to find the backing service instance, whereas the brokered service instance has returned from async polling, and saw the backing service
+         * the CFJC traces show that brokered service is indeed returning async provision ack
+         * but client Test is making get requets on backing service 2s before 
+            * brokered service returns last operation completion
+      * hypothesis
+         * Test createServiceInstance is not properly waiting for async status and returns early
+            * Pb: a GSI confirms the stats "created" on brokered service
+         * Race condition in CF which commits transactions after returning REST responses.
+            * + some clock lag (2s) between Test client traces and broker traces
+            * => confirm hypothesis with only CC timestamp in response headers
+            * workaround: poll backing service instance for 20s before failing on absence of backing service
+      * [x] **error logic in test: was looking at the wrong space: Parent class was not looking up the service name in overriden method, but directly in constant**  
+   * [x] new interceptor
+* [x] handle isAsync accepted in update
+   * [x] new interceptor
+   * [x] new test class
+      * [x] Pb: the test fails to find the backing service instance, whereas the brokered service instance has returned from async polling, and saw the backing service
+      
+
+* [x] Refactor/clean AT
+   * [x] remove duplication in constants, and only keep suffix as defined per test
+      ```
+     	private static final String SI_NAME = "si-delete-service-async-fail";
+     	private static final String SUFFIX = "delete-instance-with-async-backing-failure";
+     	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
+      ```
+     * [x] encapsulate SI_NAME into brokeredServiceInstanceName() and use suffix as an impl
+        * [x] refine clean up script for si leaks: 
+           * backing services are purged with brokers,
+           * brokered services are deleted without prefix filters
+        * [x] add space clean up, which increases coverage
+
+* [x] assert metadata is properly assigned in AT
+   * [ ] add asserts
+   * [ ] manual test
+
+

@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
-import java.util.Collections;
-
 import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -60,8 +58,7 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 		// given a brokered service instance is created
 		// and a backing service is asked to fail synchronously
 		try {
-			createServiceInstanceWithoutAsserts(brokeredServiceName(), PLAN_NAME,
-				brokeredServiceInstanceName(), Collections.emptyMap());
+			createServiceInstanceWithoutAsserts(brokeredServiceInstanceName());
 			Assertions.fail("Expected sync CSI failure");
 		}
 		catch (ClientV2Exception e) {
