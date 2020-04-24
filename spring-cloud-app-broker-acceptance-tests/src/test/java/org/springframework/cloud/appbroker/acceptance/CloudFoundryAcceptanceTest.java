@@ -171,7 +171,7 @@ abstract class CloudFoundryAcceptanceTest {
 
 	protected abstract String backingServiceName();
 
-	private String testBrokerAppName() {
+	protected String testBrokerAppName() {
 		return "test-broker-app-" + testSuffix();
 	}
 

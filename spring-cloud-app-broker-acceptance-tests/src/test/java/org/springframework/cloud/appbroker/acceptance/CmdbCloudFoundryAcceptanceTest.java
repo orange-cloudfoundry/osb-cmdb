@@ -24,7 +24,7 @@ public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAccepta
 
 	protected void initializeBrokerFixture() {
 		try {
-			String httpsBrokerUrl = cloudFoundryService.getApplicationRoute(appServiceName()).block();
+			String httpsBrokerUrl = cloudFoundryService.getApplicationRoute(testBrokerAppName()).block();
 			brokerFixture = new OpenServiceBrokerApiClient(httpsBrokerUrl, PLAN_ID, SERVICE_ID);
 		}
 		catch (Exception e) {
