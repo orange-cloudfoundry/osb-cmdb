@@ -26,7 +26,7 @@ import reactor.util.Loggers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
-class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
+class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
 	protected final Logger LOG = Loggers.getLogger(this.getClass());
 
@@ -36,17 +36,8 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CloudFo
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
-	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
-
 	@Override
-	protected String appServiceName() {
-		return BROKERED_SERVICE_NAME;
-	}
-
-	@Override
-	protected String backingServiceName() {
-		return BACKING_SERVICE_NAME;
-	}
+	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Override
 	protected String testSuffix() {

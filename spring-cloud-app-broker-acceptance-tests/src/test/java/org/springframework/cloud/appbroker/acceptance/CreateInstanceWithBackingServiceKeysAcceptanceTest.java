@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
-class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcceptanceTest {
+class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
 	private static final String SI_NAME = "si-create-service-keys";
 	private static final String SK_NAME = "sk-create-service-keys";
@@ -35,8 +35,6 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 	private static final String SUFFIX = "create-instance-with-service-keys";
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
-
-	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
 
 	public static final Map<String, Object> STATIC_CREDENTIALS = Collections.singletonMap("noop-binding-key", "noop" +
 		"-binding-value");
@@ -56,14 +54,10 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 	}
 
 	@Override
-	protected String appServiceName() {
+	String brokeredServiceName() {
 		return BROKERED_SERVICE_NAME;
 	}
 
-	@Override
-	protected String backingServiceName() {
-		return BACKING_SERVICE_NAME;
-	}
 
 	@Test
 	@AppBrokerTestProperties({
@@ -95,9 +89,9 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		// and a backing service instance is created in the backing service with the id as service name
 		String backingServiceName = brokeredServiceInstance.getId();
 		ServiceInstance backingServiceInstance = pollServiceInstanceIfMissing(backingServiceName,
-			appServiceName(), 30*1000);
+			brokeredServiceName(), 30*1000);
 		//and the backing service has the right type
-		assertThat(backingServiceInstance.getService()).isEqualTo(appServiceName());
+		assertThat(backingServiceInstance.getService()).isEqualTo(brokeredServiceName());
 		//and the backing service has metadata associated
 		String backingServiceInstanceId = backingServiceInstance.getId();
 		assertServiceInstanceHasAttachedNonEmptyMetadata(backingServiceInstanceId);
@@ -114,8 +108,8 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 
 		//then a backing service key with params is created, whose name matches the brokered service binding id
 		String backingServiceKeyName = brokeredServiceKey.getId();
-		assertThat(listServiceKeys(backingServiceName, appServiceName())).containsOnly(backingServiceKeyName);
-		ServiceKey backingServiceKey = getServiceKey(backingServiceKeyName, backingServiceName, appServiceName());
+		assertThat(listServiceKeys(backingServiceName, brokeredServiceName())).containsOnly(backingServiceKeyName);
+		ServiceKey backingServiceKey = getServiceKey(backingServiceKeyName, backingServiceName, brokeredServiceName());
 		// and credentials from backing service key is returned in brokered service key
 		assertThat(backingServiceKey.getCredentials()).isEqualTo(STATIC_CREDENTIALS);
 
@@ -123,13 +117,13 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CloudFoundryAcc
 		deleteServiceKey(getSkName(), getSiName());
 
 		//then the backing service key is deleted
-		assertThat(listServiceKeys(backingServiceName, appServiceName())).isEmpty();
+		assertThat(listServiceKeys(backingServiceName, brokeredServiceName())).isEmpty();
 
 		// when the service instance is deleted
 		deleteServiceInstance(getSiName());
 
 		// and the backing service instance is deleted
-		assertThat(listServiceInstances(appServiceName())).doesNotContain(backingServiceName);
+		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
 	}
 
 }

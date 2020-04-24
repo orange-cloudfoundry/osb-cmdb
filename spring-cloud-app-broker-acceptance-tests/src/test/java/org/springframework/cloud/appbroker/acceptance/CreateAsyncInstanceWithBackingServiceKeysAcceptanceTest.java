@@ -33,22 +33,14 @@ class CreateAsyncInstanceWithBackingServiceKeysAcceptanceTest extends CreateInst
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
-	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
-
-
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
 
 	@Override
-	protected String appServiceName() {
+	String brokeredServiceName() {
 		return BROKERED_SERVICE_NAME;
-	}
-
-	@Override
-	protected String backingServiceName() {
-		return BACKING_SERVICE_NAME;
 	}
 
 	@Override

@@ -19,7 +19,6 @@ package org.springframework.cloud.appbroker.acceptance;
 import java.util.Collections;
 
 import org.cloudfoundry.client.v2.ClientV2Exception;
-import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -27,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
-class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFoundryAcceptanceTest {
+class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
 	private static final String SI_NAME = "si-create-service-sync-fail";
 
@@ -35,23 +34,13 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
-	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
-
-
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
 
 	@Override
-	protected String appServiceName() {
-		return BROKERED_SERVICE_NAME;
-	}
-
-	@Override
-	protected String backingServiceName() {
-		return BACKING_SERVICE_NAME;
-	}
+	String brokeredServiceName() {return BROKERED_SERVICE_NAME; }
 
 	@Test
 	@AppBrokerTestProperties({
@@ -78,7 +67,7 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 		// given a brokered service instance is created
 		// and a backing service is asked to fail synchronously
 		try {
-			createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME,
+			createServiceInstanceWithoutAsserts(brokeredServiceName(), PLAN_NAME,
 				SI_NAME, Collections.emptyMap());
 			Assertions.fail("Expected sync CSI failure");
 		}
@@ -87,9 +76,8 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CloudFou
 		}
 
 		// and a sync backing service instance is not created
-		ServiceInstance brokeredServiceInstance = null;
 		try {
-			brokeredServiceInstance = getServiceInstance(SI_NAME);
+			getServiceInstance(SI_NAME);
 			Assertions.fail("Expected backing service to be missing due to sync failure");
 		}
 		catch (IllegalArgumentException e) {

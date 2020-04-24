@@ -23,15 +23,13 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
-class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAcceptanceTest {
+class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
 	private static final String SI_NAME = "si-update-service";
 
 	private static final String SUFFIX = "update-instance";
 
 	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
-
-	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
 
 	public String getSiName() {
 		return SI_NAME;
@@ -44,14 +42,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAccepta
 	}
 
 	@Override
-	protected String appServiceName() {
-		return BROKERED_SERVICE_NAME;
-	}
-
-	@Override
-	protected String backingServiceName() {
-		return BACKING_SERVICE_NAME;
-	}
+	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Test
 	@AppBrokerTestProperties({
@@ -90,7 +81,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAccepta
 
 		//and backing service was indeed updated
 		String backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, appServiceName());
+		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
 		//was indeed updated, and has still its last operation as failed
 		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("update");
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("succeeded");
@@ -100,7 +91,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CloudFoundryAccepta
 		deleteServiceInstance(getSiName());
 
 		// and the backing service instance is deleted
-		assertThat(listServiceInstances(appServiceName())).doesNotContain(backingServiceName);
+		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
 	}
 
 }
