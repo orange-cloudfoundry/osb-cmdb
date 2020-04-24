@@ -25,24 +25,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-update-service";
-
 	private static final String SUFFIX = "update-instance";
-
-	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
-
-	public String getSiName() {
-		return SI_NAME;
-	}
-
 
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
-
-	@Override
-	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Test
 	@AppBrokerTestProperties({
@@ -67,14 +55,14 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 	})
 	void brokeredServiceUpdates() {
 		// given a brokered service instance is created
-		createServiceInstance(getSiName());
+		createServiceInstance(brokeredServiceInstanceName());
 
 		//given a backend service is configured to accept any update
 		//when a brokered service update plan is requested
-		updateServiceInstance(getSiName(), PLAN2_NAME);
+		updateServiceInstance(brokeredServiceInstanceName(), PLAN2_NAME);
 
 		//then a brokered service is updated
-		ServiceInstance brokeredServiceInstance = getServiceInstance(getSiName());
+		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
 		// then the brokered service instance once completes, is expected to be failed
 		assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("update");
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
@@ -88,7 +76,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 		assertThat(backingServiceInstance.getPlan()).isEqualTo(PLAN2_NAME);
 
 		// when the service instance is deleted
-		deleteServiceInstance(getSiName());
+		deleteServiceInstance(brokeredServiceInstanceName());
 
 		// and the backing service instance is deleted
 		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);

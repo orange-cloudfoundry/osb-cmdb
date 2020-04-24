@@ -30,14 +30,7 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 
 	protected final Logger LOG = Loggers.getLogger(this.getClass());
 
-	private static final String SI_NAME = "si-delete-service-async-fail";
-
 	private static final String SUFFIX = "delete-instance-with-async-backing-failure";
-
-	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
-
-	@Override
-	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Override
 	protected String testSuffix() {
@@ -72,14 +65,14 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 	})
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() throws InterruptedException {
 		// given a brokered service instance is created
-		createServiceInstance(SI_NAME);
+		createServiceInstance(brokeredServiceInstanceName());
 
 		//given a backend service is configured to async reject any update
 		//when a brokered service deletion is requested
-		deleteServiceInstance(SI_NAME);
+		deleteServiceInstance(brokeredServiceInstanceName());
 
 		//then a brokered service deletion eventually fails
-		ServiceInstance brokeredServiceInstance = pollServiceInstanceUntilNotInProgress(SI_NAME, 180*1000);
+		ServiceInstance brokeredServiceInstance = pollServiceInstanceUntilNotInProgress(brokeredServiceInstanceName(), 180*1000);
 		assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("delete");
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("failed");
 
@@ -94,7 +87,7 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 
 	@AfterEach
 	void tearDown() {
-		purgeServiceInstance(SI_NAME);
+		purgeServiceInstance(brokeredServiceInstanceName());
 		if (backingServiceName != null) {
 			purgeServiceInstance(backingServiceName, brokeredServiceName());
 		}

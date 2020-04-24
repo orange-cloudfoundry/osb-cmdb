@@ -27,14 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class UpdateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-update-service-async-fail";
-
 	private static final String SUFFIX = "update-instance-with-async-backing-failure";
-
-	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
-
-	@Override
-	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Override
 	protected String testSuffix() {
@@ -64,11 +57,11 @@ class UpdateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 	})
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
 		// given a brokered service instance is created
-		createServiceInstance(SI_NAME);
+		createServiceInstance(brokeredServiceInstanceName());
 
 		//given a backend service is configured to async reject any update
 		//when a brokered service update is requested
-		ServiceInstance brokeredServiceInstance = updateServiceInstanceWithoutAsserts(SI_NAME, Collections.emptyMap());
+		ServiceInstance brokeredServiceInstance = updateServiceInstanceWithoutAsserts(brokeredServiceInstanceName(), Collections.emptyMap());
 
 		//then a brokered service is updated with failed status
 		assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("update");
@@ -82,7 +75,7 @@ class UpdateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
 
 		// when the service instance is deleted
-		deleteServiceInstance(SI_NAME);
+		deleteServiceInstance(brokeredServiceInstanceName());
 
 		// and the backing service instance is deleted
 		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);

@@ -28,20 +28,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class UpdateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-update-service-sync-fail";
-
 	private static final String SUFFIX = "update-instance-with-sync-backing-failure";
-
-	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
 
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
-
-	@Override
-	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Test
 	@AppBrokerTestProperties({
@@ -66,14 +59,14 @@ class UpdateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 	})
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
 		// given a brokered service instance is created
-		createServiceInstance(SI_NAME);
+		createServiceInstance(brokeredServiceInstanceName());
 		// then a brokered service instance is created
-		ServiceInstance brokeredServiceInstance = getServiceInstance(SI_NAME);
+		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
 
 		//given a backend service is configured to reject any update
 		//when a brokered service update is requested
 		try {
-			updateServiceInstance(SI_NAME, Collections.emptyMap());
+			updateServiceInstance(brokeredServiceInstanceName(), Collections.emptyMap());
 			Assertions.fail("Expected sync CSI failure");
 		}
 		catch (Exception e) {
@@ -89,7 +82,7 @@ class UpdateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 
 
 		// when the service instance is deleted
-		deleteServiceInstance(SI_NAME);
+		deleteServiceInstance(brokeredServiceInstanceName());
 
 		// and the backing service instance is deleted
 		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);

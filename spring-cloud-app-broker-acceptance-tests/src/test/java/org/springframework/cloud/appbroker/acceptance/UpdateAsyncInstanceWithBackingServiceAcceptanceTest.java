@@ -22,24 +22,12 @@ import org.junit.jupiter.api.Test;
 @Tag("cmdb")
 class UpdateAsyncInstanceWithBackingServiceAcceptanceTest extends UpdateInstanceWithBackingServiceAcceptanceTest {
 
-	private static final String SI_NAME = "si-async-update-service";
-
 	private static final String SUFFIX = "async-update-instance";
-
-	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
-
-	private static final String BACKING_SERVICE_NAME = "backing-service-" + SUFFIX;
-
-	@Override
-	public String getSiName() { return SI_NAME; } //avoid race condition with parent test
 
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
-
-	@Override
-	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Test
 	@AppBrokerTestProperties({

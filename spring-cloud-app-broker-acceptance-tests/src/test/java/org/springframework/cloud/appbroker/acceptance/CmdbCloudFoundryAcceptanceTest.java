@@ -2,8 +2,11 @@ package org.springframework.cloud.appbroker.acceptance;
 
 public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAcceptanceTest {
 
-	//subclasses must define the name per test to avoid race conditions among tests
-	abstract String brokeredServiceName();
+	protected String brokeredServiceInstanceName() {
+		return 	"si-" + testSuffix();
+	}
+
+	protected String brokeredServiceName() { return "bsn-" + testSuffix(); }
 
 	// preserve scab mandatory method name for now
 	@Override

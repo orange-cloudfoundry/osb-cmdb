@@ -29,19 +29,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-create-service-keys";
 	private static final String SK_NAME = "sk-create-service-keys";
 
 	private static final String SUFFIX = "create-instance-with-service-keys";
 
-	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
-
 	public static final Map<String, Object> STATIC_CREDENTIALS = Collections.singletonMap("noop-binding-key", "noop" +
 		"-binding-value");
-
-	public String getSiName() {
-		return SI_NAME;
-	}
 
 	public String getSkName() {
 		return SK_NAME;
@@ -52,12 +45,6 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundr
 	protected String testSuffix() {
 		return SUFFIX;
 	}
-
-	@Override
-	String brokeredServiceName() {
-		return BROKERED_SERVICE_NAME;
-	}
-
 
 	@Test
 	@AppBrokerTestProperties({
@@ -81,15 +68,14 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundr
 	})
 	void deployAppsAndCreateServiceKeysOnBindService() throws InterruptedException {
 		// given a brokered service instance is created
-		createServiceInstance(getSiName());
+		createServiceInstance(brokeredServiceInstanceName());
 		// then the brokered service instance is indeed successfully created
-		ServiceInstance brokeredServiceInstance = getServiceInstance(getSiName());
+		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
 
 		// and a backing service instance is created in the backing service with the id as service name
 		String backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = pollServiceInstanceIfMissing(backingServiceName,
-			brokeredServiceName(), 30*1000);
+		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
 		//and the backing service has the right type
 		assertThat(backingServiceInstance.getService()).isEqualTo(brokeredServiceName());
 		//and the backing service has metadata associated
@@ -103,8 +89,8 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundr
 			.isEqualTo(backingServiceInstance.getDashboardUrl());
 
 		//when a service key is created with params
-		createServiceKey(getSkName(), getSiName());
-		ServiceKey brokeredServiceKey = getServiceKey(getSkName(), getSiName());
+		createServiceKey(getSkName(), brokeredServiceInstanceName());
+		ServiceKey brokeredServiceKey = getServiceKey(getSkName(), brokeredServiceInstanceName());
 
 		//then a backing service key with params is created, whose name matches the brokered service binding id
 		String backingServiceKeyName = brokeredServiceKey.getId();
@@ -114,13 +100,13 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundr
 		assertThat(backingServiceKey.getCredentials()).isEqualTo(STATIC_CREDENTIALS);
 
 		//when a service key is deleted
-		deleteServiceKey(getSkName(), getSiName());
+		deleteServiceKey(getSkName(), brokeredServiceInstanceName());
 
 		//then the backing service key is deleted
 		assertThat(listServiceKeys(backingServiceName, brokeredServiceName())).isEmpty();
 
 		// when the service instance is deleted
-		deleteServiceInstance(getSiName());
+		deleteServiceInstance(brokeredServiceInstanceName());
 
 		// and the backing service instance is deleted
 		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);

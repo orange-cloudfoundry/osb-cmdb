@@ -28,19 +28,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-create-service-sync-fail";
-
 	private static final String SUFFIX = "create-instance-with-sync-backing-failure";
-
-	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
-
-	@Override
-	String brokeredServiceName() {return BROKERED_SERVICE_NAME; }
 
 	@Test
 	@AppBrokerTestProperties({
@@ -68,7 +61,7 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 		// and a backing service is asked to fail synchronously
 		try {
 			createServiceInstanceWithoutAsserts(brokeredServiceName(), PLAN_NAME,
-				SI_NAME, Collections.emptyMap());
+				brokeredServiceInstanceName(), Collections.emptyMap());
 			Assertions.fail("Expected sync CSI failure");
 		}
 		catch (ClientV2Exception e) {
@@ -77,7 +70,7 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 
 		// and a sync backing service instance is not created
 		try {
-			getServiceInstance(SI_NAME);
+			getServiceInstance(brokeredServiceInstanceName());
 			Assertions.fail("Expected backing service to be missing due to sync failure");
 		}
 		catch (IllegalArgumentException e) {
@@ -85,7 +78,7 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 		}
 
 		// when the service instance is deleted
-		deleteServiceInstance(SI_NAME);
+		deleteServiceInstance(brokeredServiceInstanceName());
 
 		// and the backing service instance is still missing
 		assertThat(listServiceInstances(brokeredServiceName())).isEmpty();
