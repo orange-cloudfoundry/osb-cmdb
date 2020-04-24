@@ -193,6 +193,7 @@ public class OpenServiceBrokerApiClient  {
 
 	public RequestSpecification serviceBrokerSpecification() {
 		return with()
+			.relaxedHTTPSValidation() // TODO: make this configureable
 			.baseUri(brokerUrl+ "/v2")
 			.accept(ContentType.JSON)
 			.contentType(ContentType.JSON);
