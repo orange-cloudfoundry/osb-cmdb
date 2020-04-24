@@ -2,6 +2,8 @@ package org.springframework.cloud.appbroker.acceptance;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.appbroker.acceptance.fixtures.osb.OpenServiceBrokerApiClient;
 
@@ -9,6 +11,9 @@ public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAccepta
 
 	//TODO: encapsulate field with getter once we have finished copy/paste from component tests
 	protected OpenServiceBrokerApiClient brokerFixture;
+
+	private static final Logger LOG = LoggerFactory.getLogger(CmdbCloudFoundryAcceptanceTest.class);
+
 
 	@BeforeEach
 	@Override
@@ -18,9 +23,14 @@ public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAccepta
 	}
 
 	protected void initializeBrokerFixture() {
-		String brokerName = serviceBrokerName();
-		String httpsBrokerUrl = cloudFoundryService.getApplicationRoute(brokerName).block();
-		brokerFixture = new OpenServiceBrokerApiClient(httpsBrokerUrl, PLAN_ID, SERVICE_ID);
+		try {
+			String brokerName = serviceBrokerName();
+			String httpsBrokerUrl = cloudFoundryService.getApplicationRoute(brokerName).block();
+			brokerFixture = new OpenServiceBrokerApiClient(httpsBrokerUrl, PLAN_ID, SERVICE_ID);
+		}
+		catch (Exception e) {
+			LOG.error("Failed to initialize osb broker client {}", e.toString(), e);
+		}
 	}
 
 	protected String brokeredServiceInstanceName() {
