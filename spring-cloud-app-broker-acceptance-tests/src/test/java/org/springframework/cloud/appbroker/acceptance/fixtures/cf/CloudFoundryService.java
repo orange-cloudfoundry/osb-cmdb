@@ -95,6 +95,10 @@ public class CloudFoundryService {
 
 	private static final int EXPECTED_PROPERTY_PARTS = 2;
 
+	public static final String BROKER_USERNAME = "user";
+
+	public static final String BROKER_PASSWORD = "password";
+
 	private final CloudFoundryClient cloudFoundryClient;
 
 	private final CloudFoundryOperations cloudFoundryOperations;
@@ -123,8 +127,8 @@ public class CloudFoundryService {
 			.flatMap(url -> cloudFoundryOperations.serviceAdmin()
 				.create(CreateServiceBrokerRequest.builder()
 					.name(brokerName)
-					.username("user")
-					.password("password")
+					.username(BROKER_USERNAME)
+					.password(BROKER_PASSWORD)
 					.url(url)
 					.build())
 				.doOnSuccess(item -> LOG.info("Created service broker " + brokerName))
@@ -136,8 +140,8 @@ public class CloudFoundryService {
 			.flatMap(url -> cloudFoundryOperations.serviceAdmin()
 				.update(UpdateServiceBrokerRequest.builder()
 					.name(brokerName)
-					.username("user")
-					.password("password")
+					.username(BROKER_USERNAME)
+					.password(BROKER_PASSWORD)
 					.url(url)
 					.build())
 				.doOnSuccess(item -> LOG.info("Updating service broker " + brokerName))
@@ -637,7 +641,7 @@ public class CloudFoundryService {
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "properties.memory", "1024M");
 		if (cloudFoundryProperties.getUsername() != null && cloudFoundryProperties.getPassword() != null) {
 			deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "username", cloudFoundryProperties.getUsername());
-			deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "password", cloudFoundryProperties.getPassword());
+			deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + BROKER_PASSWORD, cloudFoundryProperties.getPassword());
 		} else {
 			deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "client-id", brokerClientId);
 			deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "client-secret",

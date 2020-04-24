@@ -7,6 +7,9 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.appbroker.acceptance.fixtures.osb.OpenServiceBrokerApiClient;
 
+import static org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryService.BROKER_PASSWORD;
+import static org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryService.BROKER_USERNAME;
+
 public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAcceptanceTest {
 
 	//TODO: encapsulate field with getter once we have finished copy/paste from component tests
@@ -25,7 +28,7 @@ public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAccepta
 	protected void initializeBrokerFixture() {
 		try {
 			String httpsBrokerUrl = cloudFoundryService.getApplicationRoute(testBrokerAppName()).block();
-			brokerFixture = new OpenServiceBrokerApiClient(httpsBrokerUrl, PLAN_ID, SERVICE_ID);
+			brokerFixture = new OpenServiceBrokerApiClient(httpsBrokerUrl, PLAN_ID, SERVICE_ID, BROKER_USERNAME, BROKER_PASSWORD);
 		}
 		catch (Exception e) {
 			LOG.error("Failed to initialize osb broker client {}", e.toString(), e);

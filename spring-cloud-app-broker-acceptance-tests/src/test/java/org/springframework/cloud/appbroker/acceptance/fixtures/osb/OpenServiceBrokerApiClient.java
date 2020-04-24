@@ -45,11 +45,17 @@ public class OpenServiceBrokerApiClient  {
 
 	private String serviceDefinitionId;
 
+	private String brokerUsername;
+
+	private String brokerPassword;
+
 	public OpenServiceBrokerApiClient(String brokerUrl, String planId,
-		String serviceDefinitionId) {
+		String serviceDefinitionId, String brokerUsername, String brokerPassword) {
 		this.brokerUrl = brokerUrl;
 		this.planId = planId;
 		this.serviceDefinitionId = serviceDefinitionId;
+		this.brokerUsername = brokerUsername;
+		this.brokerPassword = brokerPassword;
 	}
 
 	public String createServiceInstanceUrl() {
@@ -194,6 +200,7 @@ public class OpenServiceBrokerApiClient  {
 	public RequestSpecification serviceBrokerSpecification() {
 		return with()
 			.relaxedHTTPSValidation() // TODO: make this configureable
+			.auth().basic(brokerUsername, brokerPassword)
 			.baseUri(brokerUrl+ "/v2")
 			.accept(ContentType.JSON)
 			.contentType(ContentType.JSON);
