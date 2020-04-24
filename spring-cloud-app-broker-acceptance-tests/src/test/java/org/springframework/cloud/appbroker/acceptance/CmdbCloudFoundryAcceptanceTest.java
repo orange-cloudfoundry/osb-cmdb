@@ -42,7 +42,7 @@ public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAccepta
 	// preserve scab mandatory method name for now
 	@Override
 	protected String backingServiceName() {
-		return "cmdb-dont-use-scab-backing-service";
+		return "cmdb-dont-use-scab-backing-service" + testSuffix();
 	}
 
 	// preserve scab mandatory method name for now, but don't use it in our tests as its name isn't relevant to cmdb
