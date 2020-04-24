@@ -7,6 +7,7 @@
 * [ ] fix AT regression in commit 11385b3dac25e40c1e06477de51d5abfd2f56d9c
    * looks like setup isn't called anymore
       * [ ] added missing Junit annotation
+      
 * [ ] Handle race conditions (including for K8S dups)      
    * [X] Test create https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
       * [x] New interceptor StalledAsyncCreate
