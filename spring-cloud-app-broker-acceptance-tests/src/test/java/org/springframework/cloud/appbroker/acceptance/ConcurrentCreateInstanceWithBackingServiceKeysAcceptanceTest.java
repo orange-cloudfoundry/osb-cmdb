@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
-	private static final String SUFFIX = "create-instance-with-service-keys";
+	private static final String SUFFIX = "concurrent-create-instance-with-service-keys";
 
 	@Override
 	protected String testSuffix() {
