@@ -77,7 +77,7 @@ class CreateAsyncInstanceWithBackingServiceKeysAcceptanceTest extends CreateInst
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
-	void deployAppsAndCreateServiceKeysOnBindService() {
+	void deployAppsAndCreateServiceKeysOnBindService() throws InterruptedException {
 		//Same code, just different interceptor in annotation
 		super.deployAppsAndCreateServiceKeysOnBindService();
 	}
