@@ -29,9 +29,11 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerCreateOperationInProgressException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
+import org.springframework.cloud.servicebroker.exception.ServiceInstanceExistsException;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse.CreateServiceInstanceResponseBuilder;
@@ -95,72 +97,127 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
 
-		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
-		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
-		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
-		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
-
-
-		CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
-		String backingServiceInstanceInstanceId = null;
 		try {
-			org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceResponse createServiceInstanceResponse;
-			createServiceInstanceResponse = client.serviceInstances()
-				.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
-					.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()))
-					.servicePlanId(backingServicePlanId)
-					.parameters(request.getParameters())
-					.spaceId(spaceId)
-					.build())
-				.block();
+			CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
+			//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
+			String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
+			String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
 
-			//noinspection ConstantConditions
-			responseBuilder.dashboardUrl(createServiceInstanceResponse.getEntity().getDashboardUrl());
 
-			backingServiceInstanceInstanceId = createServiceInstanceResponse.getMetadata().getId();
-			LastOperation lastOperation = createServiceInstanceResponse.getEntity().getLastOperation();
-			if (lastOperation == null) {
-				LOG.error("Unexpected missing last operation from CSI. Full response was {}",
-					createServiceInstanceResponse);
-				throw new ServiceBrokerException("Internal CF protocol error");
-			}
-			boolean asyncProvisioning;
-			switch (lastOperation.getState()) {
-				case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
-					asyncProvisioning= true;
-					//make get last operation faster by tracking the underlying CF instance
-					// GUID
-					responseBuilder.operation(toJson(new CmdbOperationState(createServiceInstanceResponse.getMetadata().getId(),
-						OsbOperation.CREATE)));
-					break;
-				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
-					asyncProvisioning = false;
-					break;
-				case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
-					LOG.info("Backing service failed to provision with {}, flowing up the error to the osb client",
-						lastOperation);
-					throw new ServiceBrokerException(lastOperation.getDescription());
-				default:
-					LOG.error("Unexpected last operation state:" + lastOperation.getState());
+			CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
+			String backingServiceInstanceInstanceId = null;
+			try {
+				org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceResponse createServiceInstanceResponse;
+				createServiceInstanceResponse = client.serviceInstances()
+					.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
+						.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()))
+						.servicePlanId(backingServicePlanId)
+						.parameters(request.getParameters())
+						.spaceId(spaceId)
+						.build())
+					.block();
+
+				//noinspection ConstantConditions
+				responseBuilder.dashboardUrl(createServiceInstanceResponse.getEntity().getDashboardUrl());
+
+				backingServiceInstanceInstanceId = createServiceInstanceResponse.getMetadata().getId();
+				LastOperation lastOperation = createServiceInstanceResponse.getEntity().getLastOperation();
+				if (lastOperation == null) {
+					LOG.error("Unexpected missing last operation from CSI. Full response was {}",
+						createServiceInstanceResponse);
 					throw new ServiceBrokerException("Internal CF protocol error");
+				}
+				boolean asyncProvisioning;
+				switch (lastOperation.getState()) {
+					case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
+						asyncProvisioning= true;
+						//make get last operation faster by tracking the underlying CF instance
+						// GUID
+						responseBuilder.operation(toJson(new CmdbOperationState(createServiceInstanceResponse.getMetadata().getId(),
+							OsbOperation.CREATE)));
+						break;
+					case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
+						asyncProvisioning = false;
+						break;
+					case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
+						LOG.info("Backing service failed to provision with {}, flowing up the error to the osb client",
+							lastOperation);
+						throw new ServiceBrokerException(lastOperation.getDescription());
+					default:
+						LOG.error("Unexpected last operation state:" + lastOperation.getState());
+						throw new ServiceBrokerException("Internal CF protocol error");
+				}
+				responseBuilder.async(asyncProvisioning);
+			} catch(ClientV2Exception e) {
+				LOG.info("Unable to provision service, caught:" + e, e);
+				//Observed errors
+				//CF-ServiceBrokerBadResponse(10001)
+				//See CF service broker client specs at
+				// https://github.com/cloudfoundry/cloud_controller_ng/blob/80176ff0068741088e19629516c0285b4cf57ef3/spec/unit/lib/services/service_brokers/v2/client_spec.rb
+				//wrap to avoid log polution from sc-osb catching unexpectidely unknown (cf-java-client's) exceptions
+				throw new ServiceBrokerException(e.toString());
 			}
-			responseBuilder.async(asyncProvisioning);
-		} catch(ClientV2Exception e) {
-			LOG.info("Unable to provision service, caught:" + e, e);
-			//Observed errors
-			//CF-ServiceBrokerBadResponse(10001)
-			//See CF service broker client specs at
-			// https://github.com/cloudfoundry/cloud_controller_ng/blob/80176ff0068741088e19629516c0285b4cf57ef3/spec/unit/lib/services/service_brokers/v2/client_spec.rb
-			//wrap to avoid log polution from sc-osb catching unexpectidely unknown (cf-java-client's) exceptions
-			throw new ServiceBrokerException(e.toString());
-		}
-		finally {
-			if (backingServiceInstanceInstanceId != null) {
-				updateServiceInstanceMetadata(request, backingServiceInstanceInstanceId);
+			finally {
+				if (backingServiceInstanceInstanceId != null) {
+					updateServiceInstanceMetadata(request, backingServiceInstanceInstanceId);
+				}
 			}
-		}
 
-		return Mono.just(responseBuilder.build());
+			return Mono.just(responseBuilder.build());
+		}
+		catch (Exception e) {
+			return handleException(e, backingServiceName, request);
+		}
+	}
+
+	private Mono<CreateServiceInstanceResponse> handleException(Exception originalException, String backingServiceName,
+		CreateServiceInstanceRequest request) {
+		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ", originalException, request);
+
+		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
+		//TODO: optimize nb of calls using low level api
+		ServiceInstance existingServiceInstance = null;
+		try {
+			existingServiceInstance = spacedTargetedOperations.services()
+				.getInstance(org.cloudfoundry.operations.services.GetServiceInstanceRequest.builder()
+					.name(request.getServiceInstanceId())
+					.build()).block();
+		}
+		catch (Exception exception) {
+			LOG.error("Unable to lookup existing service with id={} caught {}", request.getServiceInstanceId(),
+				exception.toString() );
+		}
+		if (existingServiceInstance != null) {
+			String incompatibilityWithExistingInstance = getRequestIncompatibilityWithExistingInstance(request,
+				existingServiceInstance);
+			if (incompatibilityWithExistingInstance == null) {
+				if ("succeeded".equals(existingServiceInstance.getStatus())) {
+					//200 OK
+					return Mono.just(CreateServiceInstanceResponse.builder()
+						.dashboardUrl(existingServiceInstance.getDashboardUrl())
+						.build());
+				} else {
+					throw new ServiceBrokerCreateOperationInProgressException(); //202
+				}
+			} else {
+				throw new ServiceInstanceExistsException(incompatibilityWithExistingInstance,
+					request.getServiceInstanceId(), request.getServiceDefinitionId()); //409
+			}
+		}
+		LOG.info("No existing instance in the inventory, the exception is likely not related to concurrent or " +
+			"conflicting duplicate, rethrowing it");
+		throw new ServiceBrokerException(originalException);
+	}
+
+	private String getRequestIncompatibilityWithExistingInstance(CreateServiceInstanceRequest request,
+		ServiceInstance existingServiceInstance) {
+		if (! existingServiceInstance.getService().equals(request.getServiceDefinition().getName())) {
+			return "service definition mismatch with:" + existingServiceInstance.getService();
+		}
+		if (! existingServiceInstance.getPlan().equals(request.getPlan().getName())) {
+			return "service plan mismatch with:" + existingServiceInstance.getPlan();
+		}
+		return null; //no incompatibility
 	}
 
 	private String getSpacedIdFromTargettedOperationsInternals(CloudFoundryOperations spacedTargetedOperations) {

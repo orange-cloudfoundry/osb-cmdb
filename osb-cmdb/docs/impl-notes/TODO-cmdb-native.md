@@ -7,7 +7,7 @@
 * [ ] Handle race conditions (including for K8S dups)      
    * [X] Test create https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
       * [x] New interceptor StalledAsyncCreate
-      * [x] Refine CSI sync success test  
+      * [x] Refine CSI sync success test (i.e. existing instance)
          * [x] OSB provision dupl same SI: check same dupl receives right status  
             * [x] 200 Ok as backing service was completed
             * [ ] 409 Conflict
@@ -23,11 +23,13 @@
             * [x] check same dupl receives right status  
                * [x] 202 Accepted as backing service is still in progress
          * [x] OSB provision dupl different SI: check different dupl receives right status
-            * [ ] 409 Conflict
+            * [x] 409 Conflict
                * [x] for different plans
-               * [ ] for different service definition id
-               * [ ] for different params
+               * [x] for different service definition id
+               * [x] for different params
    * [ ] Implement fix
+      * [ ] extract concurrent exception handler in its collaborator object to unit test it
+      * [ ] see if other previously wrapped exception can be simplified
       * [ ] new method handleException() that is given any received exception + request
          * existingSi = getServiceInstance()
          * [ ] compare existingSi params
@@ -35,11 +37,15 @@
                * [ ] GSI support in associated brokers
                   * [ ] COAB
                   * [ ] CF-mysql
-         * [ ] compare plans + service definition to request
+         * [x] compare plans + service definition to request
          * throw appropriate ServiceBrokerException
             * 202 ACCEPTED: ServiceBrokerCreateOperationInProgressException
             * 409 CONFLICT: ServiceInstanceExistsException
          * return existingSi to trigger 200 ok.
+      * [ ] ~~alternative: systematically lookup for an existing service instance by name in target space~~
+         * cons:
+            * add extra load on normal CF client for seld K8S dupl client 
+            * would still require to handle CF concurrent exceptions, like create space or create service instance 
    * Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
       * [ ] New interceptor StalledAsyncUpdate
       * [ ] Refine USI sync success test  
