@@ -26,12 +26,9 @@ import org.junit.jupiter.api.Test;
 @Tag("cmdb")
 class CreateAsyncInstanceWithBackingServiceKeysAcceptanceTest extends CreateInstanceWithBackingServiceKeysAcceptanceTest {
 
-	private static final String SI_NAME = "si-async-create-service-keys";
 	private static final String SK_NAME = "sk-async-create-service-keys";
 
 	private static final String SUFFIX = "create-async-instance-with-service-keys";
-
-	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
 	@Override
 	protected String testSuffix() {
@@ -39,15 +36,7 @@ class CreateAsyncInstanceWithBackingServiceKeysAcceptanceTest extends CreateInst
 	}
 
 	@Override
-	String brokeredServiceName() {
-		return BROKERED_SERVICE_NAME;
-	}
-
-	@Override
-	public String getSiName() { return SI_NAME; } // avoid race conditions among concurrent tests
-
-	@Override
-	public String getSkName() { return SK_NAME; } // avoid race conditions among concurrent tests
+	public String getSkName() { return SK_NAME; } // avoid race conditions among concurrent subclasses tests
 
 	@Test
 	@AppBrokerTestProperties({

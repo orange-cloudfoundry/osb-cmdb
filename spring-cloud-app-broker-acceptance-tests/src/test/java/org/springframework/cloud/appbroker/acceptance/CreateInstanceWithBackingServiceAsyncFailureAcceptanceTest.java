@@ -27,19 +27,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("cmdb")
 class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
-	private static final String SI_NAME = "si-create-service-async-fail";
-
 	private static final String SUFFIX = "create-instance-with-async-backing-failure";
-
-	private static final String BROKERED_SERVICE_NAME = "app-service-" + SUFFIX;
 
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
-
-	@Override
-	String brokeredServiceName() { return BROKERED_SERVICE_NAME; }
 
 	@Test
 	@AppBrokerTestProperties({
@@ -66,7 +59,7 @@ class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 		// given a brokered service instance is created
 		// and a backing service is asked to fail asynchronously
 		ServiceInstance brokeredServiceInstance = createServiceInstanceWithoutAsserts(brokeredServiceName(), PLAN_NAME,
-			SI_NAME, Collections.emptyMap());
+			brokeredServiceInstanceName(), Collections.emptyMap());
 
 		// then the brokered service instance once completes, is expected to be failed
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("failed");
@@ -80,7 +73,7 @@ class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 
 
 		// when the service instance is deleted
-		deleteServiceInstance(SI_NAME);
+		deleteServiceInstance(brokeredServiceInstanceName());
 
 		// and the backing service instance is deleted
 		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);

@@ -435,7 +435,13 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	protected ServiceInstance getServiceInstance(String serviceInstanceName, String space) {
-		return cloudFoundryService.getServiceInstance(serviceInstanceName, space).block();
+		try {
+			return cloudFoundryService.getServiceInstance(serviceInstanceName, space).block();
+		}
+		catch (IllegalArgumentException e) {
+			LOG.debug("Unable to get si name=[{}] in space=[{}] caught {}", serviceInstanceName, space, e, e);
+			throw e;
+		}
 	}
 
 	protected ServiceInstance pollServiceInstanceIfMissing(String serviceInstanceName, String spaceName, int maxPollDurationMs)
