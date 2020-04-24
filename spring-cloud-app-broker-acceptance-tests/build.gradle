@@ -54,7 +54,10 @@ bootJar {
 }
 
 test {
-	maxParallelForks = Runtime.runtime.availableProcessors() - 1 ?: 1
+	// Our acceptance tests are not bound by cpu or RAM, but server-side response time for sequential operations (e.g. push).
+	// Since CF accepts parallel workload, we increase number of parallel fork beyond number of client processors to improve
+	// feedback time.
+	maxParallelForks = (2* Runtime.runtime.availableProcessors()) - 1 ?: 1
 
 	// Only run the tests if acceptanceTests is specified
 	onlyIf {
