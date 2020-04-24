@@ -240,7 +240,13 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
         * [x] add space clean up, which increases coverage
 
 * [x] assert metadata is properly assigned in AT
-   * [ ] add asserts
-   * [ ] manual test
+   * [x] add asserts
+   * [x] manual test
 
+* [x] fix AT regression in commit 11385b3dac25e40c1e06477de51d5abfd2f56d9c
+   * looks like setup isn't called anymore
+      * [x] added missing Junit annotation
+   * backing service/app name collision, implies weird race condition errors in CC
+      * CF DB error/unstabilities
+      
 

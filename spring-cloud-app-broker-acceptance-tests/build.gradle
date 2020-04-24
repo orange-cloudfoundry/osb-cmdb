@@ -58,7 +58,9 @@ test {
 	// Our acceptance tests are not bound by cpu or RAM, but server-side response time for sequential operations (e.g. push).
 	// Since CF accepts parallel workload, we increase number of parallel fork beyond number of client processors to improve
 	// feedback time.
-	maxParallelForks = (2* Runtime.runtime.availableProcessors()) - 1 ?: 1
+//	maxParallelForks = (Runtime.runtime.availableProcessors()) - 1 ?: 1
+	// transient experiment to see if feedback cycle will improve
+	maxParallelForks = 6
 
 	// Only run the tests if acceptanceTests is specified
 	onlyIf {
@@ -72,9 +74,9 @@ test {
 
 
 	String itag = project.hasProperty("includeTag") ?
-			project.property("includeTag") : null;
+			project.property("includeTag") : null
 	String etag = project.hasProperty("excludeTag") ?
-			project.property("excludeTag") : null;
+			project.property("excludeTag") : null
 
 	useJUnitPlatform{
 		if (itag !=null) {
