@@ -30,6 +30,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
+@Tag("k8s") //supports K8S
 class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
 	private static final String SUFFIX = "concurrent-create-instance-with-service-keys";
