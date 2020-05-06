@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.cloudfoundry.operations.services.ServiceInstance;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -69,13 +70,14 @@ class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbC
 
 		// then the brokered service instance is returned and remains stalled "in progress"
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("in progress");
+
 		//When requesting a concurrent request to the same broker with the same instance id, service definition,
 		// plan and params
+		//Then the duplicate is ignored as expected
 		given(brokerFixture.serviceInstanceRequest())
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()
-			//Then the duplicate is ignored as expected
 			.statusCode(HttpStatus.ACCEPTED.value());
 
 		//When requesting a concurrent request to the same broker with the different plan
@@ -111,6 +113,7 @@ class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbC
 			.statusCode(HttpStatus.CONFLICT.value());
 	}
 
+	@AfterEach
 	@Override
 	public void tearDown(TestInfo testInfo) {
 		//Avoid stalled service instance from failing service broker deletion

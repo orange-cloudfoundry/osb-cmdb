@@ -10,7 +10,9 @@
       org.cloudfoundry.util.DelayTimeoutException
       	at org.cloudfoundry.util.DelayUtils.lambda$getDelay$8(DelayUtils.java:103) 
       ```
+   * [x] don't fail on CJC timeout waiting for end of inprogress to StalledCreate interceptor
    * [ ]Diagnose and fix 500 status error in sync create
+      * [x] fix missing tearDown() method execution, preventing recentLogs from being dumped
       * [ ] Add trace to understand if exception flows up
       * [ ] Optimize concurrency error recovery calls: pass in CFOperations if available
         ```      
