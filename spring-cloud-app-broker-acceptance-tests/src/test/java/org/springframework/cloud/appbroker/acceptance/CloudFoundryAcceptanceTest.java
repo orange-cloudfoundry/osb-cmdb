@@ -54,6 +54,7 @@ import org.cloudfoundry.operations.services.ServiceInstanceSummary;
 import org.cloudfoundry.operations.services.ServiceKey;
 import org.cloudfoundry.operations.spaces.SpaceSummary;
 import org.cloudfoundry.uaa.clients.GetClientResponse;
+import org.cloudfoundry.util.DelayTimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -343,10 +344,16 @@ abstract class CloudFoundryAcceptanceTest {
 		String planName,
 		String serviceInstanceName,
 		Map<String, Object> parameters, int completionTimeoutSeconds) {
-		return cloudFoundryService.createServiceInstance(planName, serviceName, serviceInstanceName, parameters,
-			completionTimeoutSeconds)
-			.then(getServiceInstanceMono(serviceInstanceName))
-			.block();
+		try {
+			return cloudFoundryService.createServiceInstance(planName, serviceName, serviceInstanceName, parameters,
+				completionTimeoutSeconds)
+				.then(getServiceInstanceMono(serviceInstanceName))
+				.block();
+		}
+		catch (DelayTimeoutException e) {
+			LOG.info("createServiceInstance() completed with {}", e.toString());
+			return cloudFoundryService.getServiceInstance(serviceInstanceName).block();
+		}
 	}
 
 	protected void createServiceKey(String serviceKeyName, String serviceInstanceName) {
