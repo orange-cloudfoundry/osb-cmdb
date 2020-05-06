@@ -336,14 +336,15 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	protected ServiceInstance createServiceInstanceWithoutAsserts(String serviceInstanceName) {
-		return createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME, serviceInstanceName, emptyMap());
+		return createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME, serviceInstanceName, emptyMap(), 30);
 	}
 
 	protected ServiceInstance createServiceInstanceWithoutAsserts(String serviceName,
 		String planName,
 		String serviceInstanceName,
-		Map<String, Object> parameters) {
-		return cloudFoundryService.createServiceInstance(planName, serviceName, serviceInstanceName, parameters)
+		Map<String, Object> parameters, int completionTimeoutSeconds) {
+		return cloudFoundryService.createServiceInstance(planName, serviceName, serviceInstanceName, parameters,
+			completionTimeoutSeconds)
 			.then(getServiceInstanceMono(serviceInstanceName))
 			.block();
 	}

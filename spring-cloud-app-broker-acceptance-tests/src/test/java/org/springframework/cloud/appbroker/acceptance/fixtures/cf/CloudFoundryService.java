@@ -17,6 +17,7 @@
 package org.springframework.cloud.appbroker.acceptance.fixtures.cf;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -298,12 +299,18 @@ public class CloudFoundryService {
 		String serviceName,
 		String serviceInstanceName,
 		Map<String, Object> parameters) {
+		return createServiceInstance(planName, serviceName, serviceInstanceName, parameters, 30);
+	}
+
+	public Mono<Void> createServiceInstance(String planName, String serviceName, String serviceInstanceName,
+		Map<String, Object> parameters, int completionTimeoutSeconds) {
 		return cloudFoundryOperations.services()
 			.createInstance(CreateServiceInstanceRequest.builder()
 				.planName(planName)
 				.serviceName(serviceName)
 				.serviceInstanceName(serviceInstanceName)
 				.parameters(parameters)
+				.completionTimeout(Duration.ofSeconds(completionTimeoutSeconds))
 				.build())
 			.doOnSuccess(item -> LOG.info("Created service instance " + serviceInstanceName))
 			.doOnError(error -> LOG.error("Error creating service instance " + serviceInstanceName + ": " + error));

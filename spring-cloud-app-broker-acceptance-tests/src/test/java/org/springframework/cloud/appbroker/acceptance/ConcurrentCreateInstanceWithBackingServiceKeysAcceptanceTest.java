@@ -27,6 +27,7 @@ import org.junit.jupiter.api.TestInfo;
 import org.springframework.http.HttpStatus;
 
 import static io.restassured.RestAssured.given;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
@@ -63,7 +64,8 @@ class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbC
 	void deployAppsAndCreateServiceKeysOnBindService() {
 		// given an async backing service is configured to stall on OSB provision request
 		// given a brokered service instance is requested
-		ServiceInstance brokeredServiceInstance = createServiceInstanceWithoutAsserts(brokeredServiceInstanceName());
+		ServiceInstance brokeredServiceInstance = createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME,
+			brokeredServiceInstanceName(), emptyMap(), 45);
 
 		// then the brokered service instance is returned and remains stalled "in progress"
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("in progress");
