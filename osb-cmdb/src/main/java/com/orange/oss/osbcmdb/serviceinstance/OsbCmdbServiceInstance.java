@@ -101,9 +101,10 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
+		CloudFoundryOperations spacedTargetedOperations = null;
 
 		try {
-			CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
+			spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
 			//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 			String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 			String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
@@ -171,15 +172,18 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return Mono.just(responseBuilder.build());
 		}
 		catch (Exception e) {
-			return handleException(e, backingServiceName, backingServicePlanName, request);
+			return handleException(e, backingServiceName, spacedTargetedOperations, request);
 		}
 	}
 
 	private Mono<CreateServiceInstanceResponse> handleException(Exception originalException, String backingServiceName,
-		String backingServicePlanName, CreateServiceInstanceRequest request) {
+		CloudFoundryOperations spacedTargetedOperations,
+		CreateServiceInstanceRequest request) {
 		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ", originalException, request);
 
-		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
+		if (spacedTargetedOperations == null) {
+			spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
+		}
 
 		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
