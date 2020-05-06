@@ -14,10 +14,6 @@ import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
-import org.cloudfoundry.client.v2.serviceinstances.ListServiceInstancesRequest;
-import org.cloudfoundry.client.v2.serviceinstances.ListServiceInstancesResponse;
-import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
-import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceResource;
 import org.cloudfoundry.client.v2.serviceplans.ListServicePlansRequest;
 import org.cloudfoundry.client.v2.spaces.ListSpaceServicesRequest;
 import org.cloudfoundry.client.v3.Metadata;
@@ -29,7 +25,6 @@ import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.util.ExceptionUtils;
 import org.cloudfoundry.util.PaginationUtils;
 import org.cloudfoundry.util.ResourceUtils;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
@@ -188,30 +183,26 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 
-		ServiceInstanceResource existingServiceInstance = null;
+		ServiceInstance existingServiceInstance = null;
 		try {
-			existingServiceInstance = client.serviceInstances()
-				.list(ListServiceInstancesRequest.builder()
-					.spaceId(spaceId)
+			existingServiceInstance = spacedTargetedOperations.services()
+				.getInstance(org.cloudfoundry.operations.services.GetServiceInstanceRequest.builder()
 					.name(request.getServiceInstanceId())
 					.build())
-				.map(ListServiceInstancesResponse::getResources)
-				.flatMapMany(Flux::fromIterable)
-			.blockFirst();
+			.block();
 		}
 		catch (Exception exception) {
 			LOG.error("Unable to lookup existing service with id={} caught {}", request.getServiceInstanceId(),
 				exception.toString() );
 		}
 		if (existingServiceInstance != null) {
-			ServiceInstanceEntity entity = existingServiceInstance.getEntity();
 			String incompatibilityWithExistingInstance = getRequestIncompatibilityWithExistingInstance(request,
-				entity);
+				existingServiceInstance);
 			if (incompatibilityWithExistingInstance == null) {
-				if ("succeeded".equals(entity.getLastOperation().getState())) {
+				if ("succeeded".equals(existingServiceInstance.getStatus())) {
 					//200 OK
 					return Mono.just(CreateServiceInstanceResponse.builder()
-						.dashboardUrl(entity.getDashboardUrl())
+						.dashboardUrl(existingServiceInstance.getDashboardUrl())
 						.build());
 				} else {
 					throw new ServiceBrokerCreateOperationInProgressException(); //202
@@ -229,12 +220,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	}
 
 	private String getRequestIncompatibilityWithExistingInstance(CreateServiceInstanceRequest request,
-		ServiceInstanceEntity existingServiceInstance) {
-		if (! existingServiceInstance.getServiceId().equals(request.getServiceDefinitionId())) {
-			return "service definition mismatch with:" + existingServiceInstance.getServiceId();
+		ServiceInstance existingServiceInstance) {
+		if (! existingServiceInstance.getService().equals(request.getServiceDefinition().getName())) {
+			return "service definition mismatch with:" + existingServiceInstance.getService();
 		}
-		if (! existingServiceInstance.getServicePlanId().equals(request.getPlan().getName())) {
-			return "service plan mismatch with:" + existingServiceInstance.getServicePlanId();
+		if (! existingServiceInstance.getPlan().equals(request.getPlan().getName())) {
+			return "service plan mismatch with:" + existingServiceInstance.getPlan();
 		}
 		return null; //no incompatibility
 	}
