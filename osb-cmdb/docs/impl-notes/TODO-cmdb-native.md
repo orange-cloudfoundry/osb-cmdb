@@ -20,15 +20,18 @@
       * Missing such trace in build 102.
          * recent log truncated ?
          * [x] check build clean up properly purges stalled service instances
-      * [ ] run test in debugger
-         * [ ] configure :bootJar gradle task before executing test
-         * [ ] update and execute `cleanUpAfterTestFailure.bash`
-         * [ ] manually run `cf logs  test-broker-app-concurrent-create-instance-with-service-keys | tee traces.txt &` to ease trace display
+      * [x] run test in debugger
+         * [x] configure :bootJar gradle task before executing test
+         * [x] update and execute `cleanUpAfterTestFailure.bash`
+         * [x] manually run `cf logs  test-broker-app-concurrent-create-instance-with-service-keys | tee traces.txt &` to ease trace display
       * [x] fix invalid space id used to lookup instance
       * [x] fix invalid status 409 instead of 200: comparing brokered and backing service id, and service plan ids, instead of names 
          ```
         service definition mismatch with:f793e2cc-4fd9-4732-86a1-cdd4ae2aa8d6 
          ``` 
+         * [x] check same error is not present in primary success branch: get_last_operation only checks backing service instance name equals brokered service instance id
+            * currently does not enforce consistency in service definition and service plan.
+               * could there be a forged injection there ? hard to imagine, and anyhow we don't use these unvalidated input data, so we're safe 
         
       * [ ] Add trace to understand if exception flows up
       * [x] Optimize concurrency error recovery calls: pass in CFOperations if available
@@ -64,7 +67,7 @@
          * [x] OSB provision dupl same SI: check same dupl receives right status  
             * [x] 200 Ok as backing service was completed
             * [ ] 409 Conflict
-               * [ ] for different plans
+               * [x] for different plans
                * [ ] for different service definition id
                * [ ] for different params
       * [x] New Create test that does 
@@ -78,7 +81,19 @@
          * [x] OSB provision dupl different SI: check different dupl receives right status
             * [x] 409 Conflict
                * [x] for different plans
-               * [x] for different service definition id
+               * [x] for different params. Test implemented but ignored for now as not yet implemented (waiting for GSIP prioritized support)
+               * [ ] for different service definition id.
+                  * We need a 2nd brokered service definition handled by osb-cmdb
+                  * When passing the SCAB backing app service id
+                     * interceptor ignores the request (as a side effect of missing OSB context our osb client fixture)
+                     * a backing space and backing service instance is created and accepted => returns 202 instead of 409
+                        * in other words, we don't detect recycling SI guid by osb clients. 
+                           * CSI would allow multiple backing service for the same brokered SI guid
+                           * DSI only deletes the backing service matching the specified service definition id in DSIReq  
+                        * would be able to detect it by looking up an existing backing service matching brokered service instance guid in all spaces, using metadata query
+                           * in the CSI before creating the instance
+                        
+                     
                * [x] for different params
    * [ ] Implement fix
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
