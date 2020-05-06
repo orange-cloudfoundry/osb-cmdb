@@ -24,7 +24,12 @@
          * [ ] configure :bootJar gradle task before executing test
          * [ ] update and execute `cleanUpAfterTestFailure.bash`
          * [ ] manually run `cf logs  test-broker-app-concurrent-create-instance-with-service-keys | tee traces.txt &` to ease trace display
-      * [ ] fix invalid space id used to lookup instance 
+      * [x] fix invalid space id used to lookup instance
+      * [x] fix invalid status 409 instead of 200: comparing brokered and backing service id, and service plan ids, instead of names 
+         ```
+        service definition mismatch with:f793e2cc-4fd9-4732-86a1-cdd4ae2aa8d6 
+         ``` 
+        
       * [ ] Add trace to understand if exception flows up
       * [x] Optimize concurrency error recovery calls: pass in CFOperations if available
         ```      
