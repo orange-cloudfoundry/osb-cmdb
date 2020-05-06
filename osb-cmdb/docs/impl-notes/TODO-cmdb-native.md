@@ -13,6 +13,17 @@
    * [x] don't fail on CJC timeout waiting for end of inprogress to StalledCreate interceptor
    * [ ]Diagnose and fix 500 status error in sync create
       * [x] fix missing tearDown() method execution, preventing recentLogs from being dumped
+      * Observed once
+         ```
+        No existing instance in the inventory, the exception is likely not related to concurrent or conflicting duplicate, rethrowing it 
+         ```
+      * Missing such trace in build 102.
+         * recent log truncated ?
+         * [x] check build clean up properly purges stalled service instances
+      * [ ] run test in debugger
+         * [ ] configure :bootJar gradle task before executing test
+         * [ ] update and execute `cleanUpAfterTestFailure.bash`
+         * [ ] manually run `cf logs  test-broker-app-concurrent-create-instance-with-service-keys | tee traces.txt &` to ease trace display 
       * [ ] Add trace to understand if exception flows up
       * [ ] Optimize concurrency error recovery calls: pass in CFOperations if available
         ```      
