@@ -100,7 +100,8 @@ public class OpenServiceBrokerApiClient  {
 				"}\n");
 	}
 
-	public RequestSpecification serviceInstanceRequest(String planId, Map<String, Object> params) {
+	public RequestSpecification serviceInstanceRequest(String serviceDefinitionId, String planId,
+		Map<String, Object> params) {
 		String stringParams = new JSONObject(params).toString();
 		return serviceBrokerSpecification()
 			.body("{" +

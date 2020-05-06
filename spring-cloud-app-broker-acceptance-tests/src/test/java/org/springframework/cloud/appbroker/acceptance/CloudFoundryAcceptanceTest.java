@@ -99,14 +99,14 @@ abstract class CloudFoundryAcceptanceTest {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CloudFoundryAcceptanceTest.class);
 
-	private static final String BACKING_SERVICE_PLAN_ID = UUID.randomUUID().toString();
+	protected static final String BACKING_SERVICE_PLAN_ID = UUID.randomUUID().toString();
 
 	protected static final String SERVICE_ID = UUID.randomUUID().toString();
 
 	protected static final String PLAN_ID = UUID.randomUUID().toString();
 	protected static final String PLAN2_ID = UUID.randomUUID().toString();
 
-	private static final String BACKING_SERVICE_ID = UUID.randomUUID().toString();
+	protected static final String BACKING_SERVICE_ID = UUID.randomUUID().toString();
 
 	protected static final String PLAN_NAME = "standard";
 	protected static final String PLAN2_NAME = "standard2";
