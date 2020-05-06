@@ -183,13 +183,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
-		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
 
 		ServiceInstanceResource existingServiceInstance = null;
 		try {
 			existingServiceInstance = client.serviceInstances()
 				.list(ListServiceInstancesRequest.builder()
-					.spaceId(backingServicePlanId)
+					.spaceId(spaceId)
 					.name(request.getServiceInstanceId())
 					.build())
 				.map(ListServiceInstancesResponse::getResources)
@@ -218,8 +217,10 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					request.getServiceInstanceId(), request.getServiceDefinitionId()); //409
 			}
 		}
-		LOG.info("No existing instance in the inventory, the exception is likely not related to concurrent or " +
-			"conflicting duplicate, rethrowing it");
+		LOG.info("No existing instance in the inventory with id={} in space with id={}, the exception is likely not " +
+			"related to " +
+			"concurrent or " +
+			"conflicting duplicate, rethrowing it", request.getServiceInstanceId(), spaceId);
 		throw new ServiceBrokerException(originalException);
 	}
 
