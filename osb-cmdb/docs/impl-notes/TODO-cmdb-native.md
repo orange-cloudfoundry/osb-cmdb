@@ -4,22 +4,8 @@
          * [ ] update config to point to paas-templates-private
             * [ ] add support for http proxy in git
 
-* [ ] set up shorter feedback loop than current full CI (15 min per commit)
-   * [x] add new tag (eg "k8s") on tests being worked on
-   * [ ] filter on `cmdb & k8s`: stashed 
-      * [ ] prototype filtering on AND or multiple tags
-         * [ ] junit supports & syntax https://junit.org/junit5/docs/current/user-guide/#running-tests `smoke & feature-a`
-         * [ ] modify SCAB build to accept multiple tags
-            * [ ] adapt pipeline to renamed property
-            * [ ] support quotes and & in pipeline arg ?
-   * [x] filter only on `k8s`
-      * [x] run single test locally
-   * [ ] transiently only run a subset of tests being worked on
-   * [ ] increase build concurrency: apparently 3 in parallel now
-      * [ ] attempted hardcoded 6
-      
 * [ ] fix race condition tests
-   * [ ] configure small timeout wait to StalledCreate (currently 5 mins)     
+   * [ ] configure small timeout wait to StalledCreate interceptor in the ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest (currently 5 mins by default in cf-java-client)     
       ```
       org.cloudfoundry.util.DelayTimeoutException
       	at org.cloudfoundry.util.DelayUtils.lambda$getDelay$8(DelayUtils.java:103) 
@@ -153,6 +139,20 @@
             * [ ] 409 Conflict
             
 
+* [x] set up shorter feedback loop than current full CI (15 min per commit)
+   * [x] add new tag (eg "k8s") on tests being worked on
+   * [ ] filter on `cmdb & k8s`: stashed 
+      * [ ] prototype filtering on AND or multiple tags
+         * [ ] junit supports & syntax https://junit.org/junit5/docs/current/user-guide/#running-tests `smoke & feature-a`
+         * [ ] modify SCAB build to accept multiple tags
+            * [ ] adapt pipeline to renamed property
+            * [ ] support quotes and & in pipeline arg ?
+   * [x] filter only on `k8s`
+      * [x] run single test locally
+   * [x] transiently only run a subset of tests being worked on
+   * [ ] increase build concurrency: apparently 3 in parallel now
+      * [ ] attempted hardcoded 6
+      
    
    
 * [ ] add timeout to reactor blocking calls ? 
