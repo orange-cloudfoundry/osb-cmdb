@@ -4,14 +4,14 @@
          * [ ] update config to point to paas-templates-private
             * [ ] add support for http proxy in git
 
-* [ ] fix race condition tests
+* [x] fix race condition tests
    * [x] configure small timeout wait to StalledCreate interceptor in the ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest (currently 5 mins by default in cf-java-client)     
       ```
       org.cloudfoundry.util.DelayTimeoutException
       	at org.cloudfoundry.util.DelayUtils.lambda$getDelay$8(DelayUtils.java:103) 
       ```
    * [x] don't fail on CJC timeout waiting for end of inprogress to StalledCreate interceptor
-   * [ ]Diagnose and fix 500 status error in sync create
+   * [x]Diagnose and fix 500 status error in sync create
       * [x] fix missing tearDown() method execution, preventing recentLogs from being dumped
       * Observed once
          ```
@@ -33,7 +33,6 @@
             * currently does not enforce consistency in service definition and service plan.
                * could there be a forged injection there ? hard to imagine, and anyhow we don't use these unvalidated input data, so we're safe 
         
-      * [ ] Add trace to understand if exception flows up
       * [x] Optimize concurrency error recovery calls: pass in CFOperations if available
         ```      
         c.o.o.o.s.OsbCmdbServiceInstance         : Inspecting exception caught org.springframework.cloud.servicebroker.exception.ServiceBrokerException: org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceInstanceNameTaken(60002): The service instance name is taken: 793fef2e-66ac-4315-89f9-915899f50f47 for possible concurrent dupl while handling request ServiceBrokerRequest{platformInstanceId='null', apiInfoLocation='null', originatingIdentity=null', requestIdentity=null}AsyncServiceBrokerRequest{asyncAccepted=false}AsyncParameterizedServiceInstanceRequest{parameters={}, context=null}CreateServiceInstanceRequest{serviceDefinitionId='7f8ae079-064f-4a65-9a1c-4aa05db46422', planId='c5c4170f-3449-4891-9d28-93f9979bcf25', organizationGuid='org-id', spaceGuid='space-id', serviceInstanceId='793fef2e-66ac-4315-89f9-915899f50f47'} , messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958668059287}
@@ -66,10 +65,10 @@
       * [x] Refine CSI sync success test (i.e. existing instance)
          * [x] OSB provision dupl same SI: check same dupl receives right status  
             * [x] 200 Ok as backing service was completed
-            * [ ] 409 Conflict
+            * [x] 409 Conflict
                * [x] for different plans
-               * [ ] for different service definition id
-               * [ ] for different params
+               * [x] for different service definition id
+               * [ ] for different params: on hold until GSIP
       * [x] New Create test that does 
          * [x] CSI  
          * [x] OSB provision dupl same SI
@@ -137,7 +136,7 @@
         	reactor.core.publisher.Mono.flatMap(Mono.java:2734)
          ```
            * missing clean up
-              * [ ] check missing clean up in test ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest 
+              * [x] check missing clean up in test ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest 
               * [ ] check systematic clean up upon successfull test: 
               ```
              	private Mono<Void> cleanup(String orgId, String spaceId) {
