@@ -37,7 +37,6 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
-import org.springframework.cloud.servicebroker.exception.ServiceBrokerCreateOperationInProgressException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
@@ -285,7 +284,14 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				} else {
 					LOG.info("Concurrent request is not incompatible and is still in progress" +
 						" success");
-					throw new ServiceBrokerCreateOperationInProgressException(); //202
+					String operation = toJson(new CmdbOperationState(existingServiceInstance.getId(), OsbOperation.CREATE));
+					//202 Accepted
+					return Mono.just(CreateServiceInstanceResponse.builder()
+						.dashboardUrl(existingServiceInstance.getDashboardUrl())
+						.operation(operation)
+						.async(true)
+						.instanceExisted(false)
+						.build());
 				}
 			} else {
 				LOG.info("Concurrent request is incompatible, returning conflicts with msg {}", incompatibilityWithExistingInstance);
