@@ -138,7 +138,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				if (lastOperation == null) {
 					LOG.error("Unexpected missing last operation from CSI. Full response was {}",
 						createServiceInstanceResponse);
-					throw new ServiceBrokerException("Internal CF protocol error");
+					throw new OsbCmdbInternalErrorException("Internal CF protocol error");
 				}
 				boolean asyncProvisioning;
 				switch (lastOperation.getState()) {
@@ -155,19 +155,19 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
 						LOG.info("Backing service failed to provision with {}, flowing up the error to the osb client",
 							lastOperation);
-						throw new ServiceBrokerException(lastOperation.getDescription());
+						throw new OsbCmdbInternalErrorException(lastOperation.getDescription());
 					default:
 						LOG.error("Unexpected last operation state:" + lastOperation.getState());
-						throw new ServiceBrokerException("Internal CF protocol error");
+						throw new OsbCmdbInternalErrorException("Internal CF protocol error");
 				}
 				responseBuilder.async(asyncProvisioning);
 			} catch(ClientV2Exception e) {
 				LOG.info("Unable to provision service, caught:" + e, e);
-				//Observed errors
+				//CF API errors can be multiple
 				//CF-ServiceBrokerBadResponse(10001)
 				//See CF service broker client specs at
 				// https://github.com/cloudfoundry/cloud_controller_ng/blob/80176ff0068741088e19629516c0285b4cf57ef3/spec/unit/lib/services/service_brokers/v2/client_spec.rb
-				//wrap to avoid log polution from sc-osb catching unexpectidely unknown (cf-java-client's) exceptions
+				// To avoid relying on exceptions thrown, we try to diagnose and recover the exception globally
 				throw new ServiceBrokerException(e.toString());
 			}
 			finally {
@@ -199,7 +199,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		catch (Exception e) {
 			LOG.error("Unable to lookup potential duplicates with label {}, caught {}", labelSelector, e);
-			throw new ServiceBrokerException("Internal CF protocol error");
+			throw new OsbCmdbInternalErrorException("Internal CF protocol error");
 		}
 		assert existingBackingServicesWithSameInstanceGuid != null;
 		if (!existingBackingServicesWithSameInstanceGuid.isEmpty()) {
