@@ -4,184 +4,13 @@
          * [ ] update config to point to paas-templates-private
             * [ ] add support for http proxy in git
 
-* [x] fix race condition tests
-   * [x] configure small timeout wait to StalledCreate interceptor in the ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest (currently 5 mins by default in cf-java-client)     
-      ```
-      org.cloudfoundry.util.DelayTimeoutException
-      	at org.cloudfoundry.util.DelayUtils.lambda$getDelay$8(DelayUtils.java:103) 
-      ```
-   * [x] don't fail on CJC timeout waiting for end of inprogress to StalledCreate interceptor
-   * [x]Diagnose and fix 500 status error in sync create
-      * [x] fix missing tearDown() method execution, preventing recentLogs from being dumped
-      * Observed once
-         ```
-        No existing instance in the inventory, the exception is likely not related to concurrent or conflicting duplicate, rethrowing it 
-         ```
-      * Missing such trace in build 102.
-         * recent log truncated ?
-         * [x] check build clean up properly purges stalled service instances
-      * [x] run test in debugger
-         * [x] configure :bootJar gradle task before executing test
-         * [x] update and execute `cleanUpAfterTestFailure.bash`
-         * [x] manually run `cf logs  test-broker-app-concurrent-create-instance-with-service-keys | tee traces.txt &` to ease trace display
-      * [x] fix invalid space id used to lookup instance
-      * [x] fix invalid status 409 instead of 200: comparing brokered and backing service id, and service plan ids, instead of names 
-         ```
-        service definition mismatch with:f793e2cc-4fd9-4732-86a1-cdd4ae2aa8d6 
-         ``` 
-         * [x] check same error is not present in primary success branch: get_last_operation only checks backing service instance name equals brokered service instance id
-            * currently does not enforce consistency in service definition and service plan.
-               * could there be a forged injection there ? hard to imagine, and anyhow we don't use these unvalidated input data, so we're safe 
-        
-      * [x] Optimize concurrency error recovery calls: pass in CFOperations if available
-        ```      
-        c.o.o.o.s.OsbCmdbServiceInstance         : Inspecting exception caught org.springframework.cloud.servicebroker.exception.ServiceBrokerException: org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceInstanceNameTaken(60002): The service instance name is taken: 793fef2e-66ac-4315-89f9-915899f50f47 for possible concurrent dupl while handling request ServiceBrokerRequest{platformInstanceId='null', apiInfoLocation='null', originatingIdentity=null', requestIdentity=null}AsyncServiceBrokerRequest{asyncAccepted=false}AsyncParameterizedServiceInstanceRequest{parameters={}, context=null}CreateServiceInstanceRequest{serviceDefinitionId='7f8ae079-064f-4a65-9a1c-4aa05db46422', planId='c5c4170f-3449-4891-9d28-93f9979bcf25', organizationGuid='org-id', spaceGuid='space-id', serviceInstanceId='793fef2e-66ac-4315-89f9-915899f50f47'} , messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958668059287}
-        cloudfoundry-client.operations           : START  Get Organization, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958668062224}
-        cloudfoundry-client.request              : GET    /v2/organizations?q=name:osb-cmdb-services-acceptance-tests&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958695536076}
-        cloudfoundry-client.response             : 200    /v2/organizations?q=name:osb-cmdb-services-acceptance-tests&page=1 (32 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958727573470}
-        cloudfoundry-client.request              : GET    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/private_domains?page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958791966580}
-        cloudfoundry-client.request              : GET    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/spaces?page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958793299790}
-        cloudfoundry-client.request              : GET    /v2/shared_domains?page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958794157444}
-        cloudfoundry-client.request              : GET    /v2/quota_definitions/66f4ff66-02e3-4541-a571-2b1c1a078715, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958795060875}
-        cloudfoundry-client.request              : GET    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/space_quota_definitions?page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958796002405}
-        cloudfoundry-client.response             : 200    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/private_domains?page=1 (35 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958827191455}
-        cloudfoundry-client.response             : 200    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/space_quota_definitions?page=1 (55 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958850783197}
-        cloudfoundry-client.response             : 200    /v2/quota_definitions/66f4ff66-02e3-4541-a571-2b1c1a078715 (57 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958853013743}
-        cloudfoundry-client.response             : 200    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/spaces?page=1 (71 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958864581577}
-        cloudfoundry-client.response             : 200    /v2/shared_domains?page=1 (96 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958891053003}
-        cloudfoundry-client.operations           : FINISH Get Organization (onComplete/228 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958894653488}
-        cloudfoundry-client.request              : GET    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/spaces?q=name:bsn-create-instance-with-service-keys&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958908748662}
-        cloudfoundry-client.response             : 200    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/spaces?q=name:bsn-create-instance-with-service-keys&page=1 (21 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958929925120}
-        cloudfoundry-client.request              : GET    /v2/organizations?q=name:osb-cmdb-services-acceptance-tests&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958952589382}
-        cloudfoundry-client.response             : 200    /v2/organizations?q=name:osb-cmdb-services-acceptance-tests&page=1 (24 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958977223882}
-        cloudfoundry-client.request              : GET    /v2/spaces?q=name:bsn-create-instance-with-service-keys&q=organization_guid:14af188e-b07f-4041-9488-d97bacfcb49c&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958996441573}
-        cloudfoundry-client.response             : 200    /v2/spaces?q=name:bsn-create-instance-with-service-keys&q=organization_guid:14af188e-b07f-4041-9488-d97bacfcb49c&page=1 (21 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766959017675688}
-        cloudfoundry-client.request              : GET    /v2/spaces/0dbabfa1-3ed9-46c6-8fbb-e0c0c62605a7/services?q=label:bsn-create-instance-with-service-keys&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766959037185146}
+
         ```
         
 * [ ] Handle race conditions (including for K8S dups)      
-   * [X] Test create https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
-      * [x] New interceptor StalledAsyncCreate
-      * [x] Refine CSI sync success test (i.e. existing instance)
-         * [x] OSB provision dupl same SI: check same dupl receives right status  
-            * [x] 200 Ok as backing service was completed
-            * [x] 409 Conflict
-               * [x] for different plans
-               * [x] for different service definition id
-               * [ ] for different params: on hold until GSIP
-      * [x] New Create test that does 
-         * [x] CSI  
-         * [x] OSB provision dupl same SI
-            * [x] Adapt an `OpenServiceBrokerApiFixture` in AT
-               * [x] Inject CC API host/port/skip ssl in class
-               * [x] use them in  serviceBrokerSpecification()
-            * [x] check same dupl receives right status  
-               * [x] 202 Accepted as backing service is still in progress
-         * [x] OSB provision dupl different SI: check different dupl receives right status
-            * [x] 409 Conflict
-               * [x] for different plans
-               * [x] for different params. Test implemented but ignored for now as not yet implemented (waiting for GSIP prioritized support)
-               * [x] for different service definition id.
-                  * We need a 2nd brokered service definition handled by osb-cmdb
-                  * When passing the SCAB backing app service id
-                     * interceptor ignores the request (as a side effect of missing OSB context our osb client fixture)
-                     * a backing space and backing service instance is created and accepted => returns 202 instead of 409
-                        * in other words, we don't detect recycling SI guid by osb clients. 
-                           * CSI would allow multiple backing service for the same brokered SI guid
-                           * DSI only deletes the backing service matching the specified service definition id in DSIReq  
-                  * would be able to detect recycled SI guids by looking up an existing backing service matching brokered service instance guid in all spaces, using metadata query
-                     * in the CSI before creating the instance
-                        * without special care, this would override concurrent instance error handling:
-                           * throws a new exception (similar to CF that could have thrown it)
-                           * then error handling looks up a backing service instance to further qualify the conflict
-                              * however it does not find a backing service instance in the conflicting space
-                        * we therefore need to 
-                           * [x] lookup the associated space 
-                           * [x] compare its name to the expected service definition name
-                           * [x] compare its parent org to the current org, to avoid incorrectly rejecting dupl ids among tenants
-                           * [x] verify 409 asserted in the test
-         * [x] Rework exceptions handling
-            * [x] Use a specific exception class for exceptions that are thrown by our code and does not need further inspection: OsbCmdbInternalErrorException
-            * [ ] Rename handleException() into better naming ?
-                * inspectInspectionIntoOsbResponse() 
-         * [ ] Diagnose and handle test failure
-         ```
-        Service broker parameters are invalid: missing operation field
-        
-        GET "/v2/service_instances/43bcb7d0-2515-4d24-9e5c-4ee4c928f7f4/last_operation?plan_id=3a56d4f6-8775-4b0d-86c0-c4ec74d770de&service_id=78f94c53-5516-4f98-ab3c-b29fef7de5a7", parameters={masked}, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1588842614618603232}
-
-        Accept: isServiceGuidPreviousProvisionnedByUs=false for serviceInstanceId=43bcb7d0-2515-4d24-9e5c-4ee4c928f7f4 and request=ServiceBrokerRequest{platformInstanceId='null', apiInfoLocation='api.redacted-domain.org/v2/info', originatingIdentity=null', requestIdentity=f3bb2924-8bf5-4468-ac91-124202c942b3}GetLastServiceOperationRequest{serviceInstanceId='43bcb7d0-2515-4d24-9e5c-4ee4c928f7f4', serviceDefinitionId='78f94c53-5516-4f98-ab3c-b29fef7de5a7', planId='3a56d4f6-8775-4b0d-86c0-c4ec74d770de', operation='null'}, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1588842614663803509}
-        
-         ```
-           * [x] Check OSBClientFixture not passing state: not the case       
-           * [x] CC API receives empty last operation from concurrent call, and passes it around. Confirmed 
-              * Pb: not using CC API for simulating concurrent calls in ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest, but OSB API fixture
-              * Potentially with cleanup not being properly done and some instances remain.
-                 * No explicit clean up between early AT test phase and full phase.         
-              * [x] Fix it: pass state also in handleError()
-                 * [x] check ServiceBrokerCreateOperationInProgressException(operation) is indeed for OSB operation. Reported https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/284
-           * [x] Check missing last operation in some CC API facing CSI calls       
-         * [ ] Diagnose and handle test failure
-         ```
-        org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceBrokerRequestRejected(10001): Service broker error: Service definition does not exist: id=78f94c53-5516-4f98-ab3c-b29fef7de5a7
-        07-05-2020 09:10:21.894 ?[35m[cloudfoundry-client-epoll-2]?[0;39m ?[39mDEBUG?[0;39m cloudfoundry-client.operations.lambda$log$2 - FINISH Create Service Instance (onError/845 ms)
-        07-05-2020 09:10:21.907 ?[35m[Test worker]?[0;39m ?[39mDEBUG?[0;39m cloudfoundry-client.operations.lambda$log$1 - START  Get Service Instance 
-        
-        
-         o.s.c.a.a.CloudFoundryAcceptanceTest.lambda$blockingSubscribe$16 - error subscribing to publisher
-        org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceBrokerNameTaken(270002): The service broker name is taken
-        	at org.cloudfoundry.reactor.util.ErrorPayloadMappers.lambda$null$0(ErrorPayloadMappers.java:47)
-        	Suppressed: reactor.core.publisher.FluxOnAssembly$OnAssemblyException: 
-        Assembly trace from producer [reactor.core.publisher.MonoFlatMap] :
-        	reactor.core.publisher.Mono.flatMap(Mono.java:2734)
-         ```
-           * missing clean up
-              * [x] check missing clean up in test ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest 
-              * [ ] check systematic clean up upon successfull test: 
-              ```
-             	private Mono<Void> cleanup(String orgId, String spaceId) {
-             		return
-             			cloudFoundryService.deleteServiceBroker(serviceBrokerName())
-             			.then(cloudFoundryService.deleteApp(testBrokerAppName()))
-             			.then(cloudFoundryService.removeAppBrokerClientFromOrgAndSpace(brokerClientId(), orgId, spaceId))
-             			.onErrorResume(e -> Mono.empty());
-             	}
-              ```
-                * [ ] Lookup all service plans associated to service brokers
-                * [ ] Lookup all service instance associated to service brokers
-                
-                
-   * [ ] Implement fix
+   * [ ] Refactor race condition support
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
-      * [ ] see if other previously wrapped exception can be simplified
-      * [ ] new method handleException() that is given any received exception + request
-         * existingSi = getServiceInstance()
-         * [ ] compare existingSi params
-            * using GSIP CF API, prereq
-               * [ ] GSI support in associated brokers
-                  * [ ] COAB
-                  * [ ] CF-mysql
-         * [x] compare plans + service definition to request
-         * throw appropriate ServiceBrokerException
-            * 202 ACCEPTED: ServiceBrokerCreateOperationInProgressException
-            * 409 CONFLICT: ServiceInstanceExistsException
-         * return existingSi to trigger 200 ok.
-      * [ ] ~~alternative: systematically lookup for an existing service instance by name in target space~~
-         * cons:
-            * add extra load on normal CF client for seld K8S dupl client 
-            * would still require to handle CF concurrent exceptions, like create space or create service instance 
-   * Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
-      * [ ] New interceptor StalledAsyncUpdate
-      * [ ] Refine USI sync success test  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 200 Ok as backing service was completed
-      * [ ] New Create test that does 
-         * [ ] USI  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 202 Accepted as backing service is still in progress
-         * [ ] OSB provision dupl different SI: check different dupl receives right status
-            * [ ] 409 Conflict
-   * Test delete https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
+   * [ ] Test delete https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
       * [ ] New interceptor StalledAsyncDelete
       * [ ] Refine DSI sync success test  
          * [ ] OSB provision dupl same SI: check same dupl receives right status  
@@ -192,7 +21,18 @@
             * [ ] 202 Accepted as backing service is still in progress
          * [ ] OSB provision dupl different SI: check different dupl receives right status
             * [ ] 409 Conflict
-   * Test bind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
+   * [ ] Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
+      * [ ] New interceptor StalledAsyncUpdate
+      * [ ] Refine USI sync success test  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 200 Ok as backing service was completed
+      * [ ] New Create test that does 
+         * [ ] USI  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 202 Accepted as backing service is still in progress
+         * [ ] OSB provision dupl different SI: check different dupl receives right status
+            * [ ] 409 Conflict
+   * [ ] Test bind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
       * [ ] New interceptor StalledAsyncBind
       * [ ] Refine CSI sync success test  
          * [ ] OSB provision dupl same SI: check same dupl receives right status  
@@ -216,7 +56,7 @@
             * 202 ACCEPTED: ServiceBrokerCreateOperationInProgressException
             * 409 CONFLICT: ServiceInstanceExistsException
          * return existingSk to trigger 200 ok.
-   * Test unbind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
+   * [ ] Test unbind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
       * [ ] New interceptor StalledAsyncUnbind
       * [ ] Refine DSI sync success test  
          * [ ] OSB provision dupl same SI: check same dupl receives right status  

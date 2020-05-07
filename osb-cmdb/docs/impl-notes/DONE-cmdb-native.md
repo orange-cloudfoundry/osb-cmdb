@@ -249,8 +249,80 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
    * backing service/app name collision, implies weird race condition errors in CC
       * CF DB error/unstabilities
       
+* [x] fix race condition tests
+   * [x] configure small timeout wait to StalledCreate interceptor in the ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest (currently 5 mins by default in cf-java-client)     
+      ```
+      org.cloudfoundry.util.DelayTimeoutException
+      	at org.cloudfoundry.util.DelayUtils.lambda$getDelay$8(DelayUtils.java:103) 
+      ```
+   * [x] don't fail on CJC timeout waiting for end of inprogress to StalledCreate interceptor
+   * [x]Diagnose and fix 500 status error in sync create
+      * [x] fix missing tearDown() method execution, preventing recentLogs from being dumped
+      * Observed once
+         ```
+        No existing instance in the inventory, the exception is likely not related to concurrent or conflicting duplicate, rethrowing it 
+         ```
+      * Missing such trace in build 102.
+         * recent log truncated ?
+         * [x] check build clean up properly purges stalled service instances
+      * [x] run test in debugger
+         * [x] configure :bootJar gradle task before executing test
+         * [x] update and execute `cleanUpAfterTestFailure.bash`
+         * [x] manually run `cf logs  test-broker-app-concurrent-create-instance-with-service-keys | tee traces.txt &` to ease trace display
+      * [x] fix invalid space id used to lookup instance
+      * [x] fix invalid status 409 instead of 200: comparing brokered and backing service id, and service plan ids, instead of names 
+         ```
+        service definition mismatch with:f793e2cc-4fd9-4732-86a1-cdd4ae2aa8d6 
+         ``` 
+         * [x] check same error is not present in primary success branch: get_last_operation only checks backing service instance name equals brokered service instance id
+            * currently does not enforce consistency in service definition and service plan.
+               * could there be a forged injection there ? hard to imagine, and anyhow we don't use these unvalidated input data, so we're safe 
+        
+      * [x] Optimize concurrency error recovery calls: pass in CFOperations if available
+        ```      
+        c.o.o.o.s.OsbCmdbServiceInstance         : Inspecting exception caught org.springframework.cloud.servicebroker.exception.ServiceBrokerException: org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceInstanceNameTaken(60002): The service instance name is taken: 793fef2e-66ac-4315-89f9-915899f50f47 for possible concurrent dupl while handling request ServiceBrokerRequest{platformInstanceId='null', apiInfoLocation='null', originatingIdentity=null', requestIdentity=null}AsyncServiceBrokerRequest{asyncAccepted=false}AsyncParameterizedServiceInstanceRequest{parameters={}, context=null}CreateServiceInstanceRequest{serviceDefinitionId='7f8ae079-064f-4a65-9a1c-4aa05db46422', planId='c5c4170f-3449-4891-9d28-93f9979bcf25', organizationGuid='org-id', spaceGuid='space-id', serviceInstanceId='793fef2e-66ac-4315-89f9-915899f50f47'} , messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958668059287}
+        cloudfoundry-client.operations           : START  Get Organization, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958668062224}
+        cloudfoundry-client.request              : GET    /v2/organizations?q=name:osb-cmdb-services-acceptance-tests&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958695536076}
+        cloudfoundry-client.response             : 200    /v2/organizations?q=name:osb-cmdb-services-acceptance-tests&page=1 (32 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958727573470}
+        cloudfoundry-client.request              : GET    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/private_domains?page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958791966580}
+        cloudfoundry-client.request              : GET    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/spaces?page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958793299790}
+        cloudfoundry-client.request              : GET    /v2/shared_domains?page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958794157444}
+        cloudfoundry-client.request              : GET    /v2/quota_definitions/66f4ff66-02e3-4541-a571-2b1c1a078715, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958795060875}
+        cloudfoundry-client.request              : GET    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/space_quota_definitions?page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958796002405}
+        cloudfoundry-client.response             : 200    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/private_domains?page=1 (35 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958827191455}
+        cloudfoundry-client.response             : 200    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/space_quota_definitions?page=1 (55 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958850783197}
+        cloudfoundry-client.response             : 200    /v2/quota_definitions/66f4ff66-02e3-4541-a571-2b1c1a078715 (57 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958853013743}
+        cloudfoundry-client.response             : 200    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/spaces?page=1 (71 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958864581577}
+        cloudfoundry-client.response             : 200    /v2/shared_domains?page=1 (96 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958891053003}
+        cloudfoundry-client.operations           : FINISH Get Organization (onComplete/228 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958894653488}
+        cloudfoundry-client.request              : GET    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/spaces?q=name:bsn-create-instance-with-service-keys&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958908748662}
+        cloudfoundry-client.response             : 200    /v2/organizations/14af188e-b07f-4041-9488-d97bacfcb49c/spaces?q=name:bsn-create-instance-with-service-keys&page=1 (21 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958929925120}
+        cloudfoundry-client.request              : GET    /v2/organizations?q=name:osb-cmdb-services-acceptance-tests&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958952589382}
+        cloudfoundry-client.response             : 200    /v2/organizations?q=name:osb-cmdb-services-acceptance-tests&page=1 (24 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958977223882}
+        cloudfoundry-client.request              : GET    /v2/spaces?q=name:bsn-create-instance-with-service-keys&q=organization_guid:14af188e-b07f-4041-9488-d97bacfcb49c&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766958996441573}
+        cloudfoundry-client.response             : 200    /v2/spaces?q=name:bsn-create-instance-with-service-keys&q=organization_guid:14af188e-b07f-4041-9488-d97bacfcb49c&page=1 (21 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766959017675688}
+        cloudfoundry-client.request              : GET    /v2/spaces/0dbabfa1-3ed9-46c6-8fbb-e0c0c62605a7/services?q=label:bsn-create-instance-with-service-keys&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766959037185146}
+
 
 * [ ] Handle race conditions (including for K8S dups)      
+   * [x] Implement race/conflict handling in create
+      * [x] new method handleException() that is given any received exception + request
+         * existingSi = getServiceInstance()
+         * [ ] compare existingSi params
+            * using GSIP CF API, prereq
+               * [ ] GSI support in associated brokers
+                  * [ ] COAB
+                  * [ ] CF-mysql
+         * [x] compare plans + service definition to request
+         * throw appropriate ServiceBrokerException
+            * 202 ACCEPTED: ServiceBrokerCreateOperationInProgressException
+            * 409 CONFLICT: ServiceInstanceExistsException
+         * return existingSi to trigger 201 accepted or 200
+      * [ ] ~~alternative: systematically lookup for an existing service instance by name in target space~~
+         * cons:
+            * add extra load on normal CF client for seld K8S dupl client 
+            * would still require to handle CF concurrent exceptions, like create space or create service instance 
+
    * [X] Test create https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
       * [x] New interceptor StalledAsyncCreate
       * [x] Refine CSI sync success test (i.e. existing instance)
