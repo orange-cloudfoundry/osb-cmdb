@@ -91,7 +91,7 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundr
 			.isEqualTo(backingServiceInstance.getDashboardUrl());
 
 		//when concurrent requests as received, they are properly handled
-		assertDuplicateOsbRequestsHandling(brokeredServiceInstance);
+		assertDuplicateCreateServiceInstanceOsbRequestsHandling(brokeredServiceInstance);
 
 		//when a service key is created with params
 		createServiceKey(getSkName(), brokeredServiceInstanceName());
@@ -115,9 +115,13 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundr
 
 		// and the backing service instance is deleted
 		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
+
+		//when concurrent deprovision requests as received, they are properly handled
+		assertDuplicateDeleteServiceInstanceOsbRequestsHandling(brokeredServiceInstance);
+
 	}
 
-	private void assertDuplicateOsbRequestsHandling(ServiceInstance brokeredServiceInstance) {
+	private void assertDuplicateCreateServiceInstanceOsbRequestsHandling(ServiceInstance brokeredServiceInstance) {
 		//When requesting a concurrent request to the same broker with the same instance id, service definition,
 		// plan and params
 		given(brokerFixture.serviceInstanceRequest())
@@ -126,6 +130,18 @@ class CreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundr
 			.then()
 			//Then the duplicate is ignored as expected
 			.statusCode(HttpStatus.OK.value());
+	}
+
+	private void assertDuplicateDeleteServiceInstanceOsbRequestsHandling(ServiceInstance brokeredServiceInstance) {
+		//When requesting a concurrent deprovision request to the same broker with the same instance id, service
+		// definition,
+		// plan and params
+		// when the service instance is deleted
+		given(brokerFixture.serviceInstanceRequest())
+			.when()
+			.delete(brokerFixture.deleteServiceInstanceUrl(),brokeredServiceInstance.getId())
+			.then()
+			.statusCode(HttpStatus.GONE.value());
 	}
 
 }
