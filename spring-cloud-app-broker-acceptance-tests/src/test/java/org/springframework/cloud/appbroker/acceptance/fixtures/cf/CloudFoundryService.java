@@ -271,9 +271,9 @@ public class CloudFoundryService {
 					.purge(true)
 					.build())
 				.then()
-				.doOnSuccess(item -> LOG.info("Deleted service instance " + serviceInstanceName))
+				.doOnSuccess(item -> LOG.info("Purging service instance " + serviceInstanceName))
 				.doOnError(
-					error -> LOG.error("Error deleting service instance " + serviceInstanceName + ": " + error))
+					error -> LOG.error("Error Purging service instance " + serviceInstanceName + ": " + error))
 				.onErrorResume(e -> Mono.empty()))
 			.doOnError(error -> LOG.warn("Error getting service instance " + serviceInstanceName + ": " + error))
 			.onErrorResume(e -> Mono.empty());

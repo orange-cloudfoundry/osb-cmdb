@@ -122,6 +122,34 @@
               * [x] Fix it: pass state also in handleError()
                  * [x] check ServiceBrokerCreateOperationInProgressException(operation) is indeed for OSB operation. Reported https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/284
            * [x] Check missing last operation in some CC API facing CSI calls       
+         * [ ] Diagnose and handle test failure
+         ```
+        org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceBrokerRequestRejected(10001): Service broker error: Service definition does not exist: id=78f94c53-5516-4f98-ab3c-b29fef7de5a7
+        07-05-2020 09:10:21.894 ?[35m[cloudfoundry-client-epoll-2]?[0;39m ?[39mDEBUG?[0;39m cloudfoundry-client.operations.lambda$log$2 - FINISH Create Service Instance (onError/845 ms)
+        07-05-2020 09:10:21.907 ?[35m[Test worker]?[0;39m ?[39mDEBUG?[0;39m cloudfoundry-client.operations.lambda$log$1 - START  Get Service Instance 
+        
+        
+         o.s.c.a.a.CloudFoundryAcceptanceTest.lambda$blockingSubscribe$16 - error subscribing to publisher
+        org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceBrokerNameTaken(270002): The service broker name is taken
+        	at org.cloudfoundry.reactor.util.ErrorPayloadMappers.lambda$null$0(ErrorPayloadMappers.java:47)
+        	Suppressed: reactor.core.publisher.FluxOnAssembly$OnAssemblyException: 
+        Assembly trace from producer [reactor.core.publisher.MonoFlatMap] :
+        	reactor.core.publisher.Mono.flatMap(Mono.java:2734)
+         ```
+           * missing clean up
+              * [ ] check missing clean up in test ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest 
+              * [ ] check systematic clean up upon successfull test: 
+              ```
+             	private Mono<Void> cleanup(String orgId, String spaceId) {
+             		return
+             			cloudFoundryService.deleteServiceBroker(serviceBrokerName())
+             			.then(cloudFoundryService.deleteApp(testBrokerAppName()))
+             			.then(cloudFoundryService.removeAppBrokerClientFromOrgAndSpace(brokerClientId(), orgId, spaceId))
+             			.onErrorResume(e -> Mono.empty());
+             	}
+              ```
+                * [ ] Lookup all service plans associated to service brokers
+                * [ ] Lookup all service instance associated to service brokers
                 
                 
    * [ ] Implement fix
