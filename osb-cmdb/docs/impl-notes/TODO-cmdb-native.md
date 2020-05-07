@@ -101,8 +101,8 @@
                            * [x] compare its name to the expected service definition name
                            * [x] compare its parent org to the current org, to avoid incorrectly rejecting dupl ids among tenants
                            * [x] verify 409 asserted in the test
-         * [ ] Rework exceptions handling
-            * [ ] Use a specific exception class for exceptions that are thrown by our code and does not need further inspection
+         * [x] Rework exceptions handling
+            * [x] Use a specific exception class for exceptions that are thrown by our code and does not need further inspection: OsbCmdbInternalErrorException
             * [ ] Rename handleException() into better naming ?
                 * inspectInspectionIntoOsbResponse() 
    * [ ] Implement fix
