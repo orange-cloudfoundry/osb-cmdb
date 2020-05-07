@@ -97,8 +97,7 @@ class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbC
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()
-			//.statusCode(HttpStatus.CONFLICT.value());
-			.statusCode(HttpStatus.ACCEPTED.value()); //Not yet implemented, waiting for SI guid conflict detection impl
+			.statusCode(HttpStatus.CONFLICT.value());
 
 		// given a set of parameters
 		Map<String, Object> params = new HashMap<>();

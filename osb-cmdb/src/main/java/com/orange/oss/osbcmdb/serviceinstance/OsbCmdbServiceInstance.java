@@ -1,6 +1,7 @@
 package com.orange.oss.osbcmdb.serviceinstance;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,8 +16,14 @@ import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
 import org.cloudfoundry.client.v2.serviceplans.ListServicePlansRequest;
+import org.cloudfoundry.client.v2.spaces.GetSpaceRequest;
+import org.cloudfoundry.client.v2.spaces.GetSpaceResponse;
 import org.cloudfoundry.client.v2.spaces.ListSpaceServicesRequest;
+import org.cloudfoundry.client.v2.spaces.SpaceEntity;
 import org.cloudfoundry.client.v3.Metadata;
+import org.cloudfoundry.client.v3.serviceInstances.ListServiceInstancesRequest;
+import org.cloudfoundry.client.v3.serviceInstances.ListServiceInstancesResponse;
+import org.cloudfoundry.client.v3.serviceInstances.ServiceInstanceResource;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
@@ -25,6 +32,7 @@ import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.util.ExceptionUtils;
 import org.cloudfoundry.util.PaginationUtils;
 import org.cloudfoundry.util.ResourceUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
@@ -46,6 +54,8 @@ import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInsta
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse.UpdateServiceInstanceResponseBuilder;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
+
+import static com.orange.oss.osbcmdb.metadata.BaseMetadataFormatter.BROKERED_SERVICE_INSTANCE_GUID;
 
 @SuppressWarnings("BlockingMethodInNonBlockingContext")
 public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements ServiceInstanceService {
@@ -108,6 +118,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
 			String backingServiceInstanceInstanceId = null;
 			try {
+				rejectDuplicateServiceInstanceGuid(request, spacedTargetedOperations);
+
 				org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceResponse createServiceInstanceResponse;
 				createServiceInstanceResponse = client.serviceInstances()
 					.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
@@ -171,10 +183,75 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 	}
 
+	private void rejectDuplicateServiceInstanceGuid(CreateServiceInstanceRequest request,
+		CloudFoundryOperations spacedTargetedOperations) {
+		List<ServiceInstanceResource> existingBackingServicesWithSameInstanceGuid;
+		String labelSelector = BROKERED_SERVICE_INSTANCE_GUID + "=" + request.getServiceInstanceId();
+		try {
+			existingBackingServicesWithSameInstanceGuid = client.serviceInstancesV3()
+				.list(ListServiceInstancesRequest.builder()
+					.labelSelector(labelSelector)
+					.build())
+				.map(ListServiceInstancesResponse::getResources)
+				.flatMapMany(Flux::fromIterable)
+				.collectList()
+				.block();
+		}
+		catch (Exception e) {
+			LOG.error("Unable to lookup potential duplicates with label {}, caught {}", labelSelector, e);
+			throw new ServiceBrokerException("Internal CF protocol error");
+		}
+		assert existingBackingServicesWithSameInstanceGuid != null;
+		if (!existingBackingServicesWithSameInstanceGuid.isEmpty()) {
+			LOG.info("Service instance guid {} already exists and is backed by services: {}",
+				request.getServiceInstanceId(), existingBackingServicesWithSameInstanceGuid);
+		}
+
+		for (ServiceInstanceResource serviceInstanceResource : existingBackingServicesWithSameInstanceGuid) {
+			String backingSpaceId = serviceInstanceResource.getRelationships().getSpace().getData().getId();
+			SpaceEntity backingSpace = client.spaces().get(GetSpaceRequest.builder()
+				.spaceId(backingSpaceId)
+				.build())
+				.map(GetSpaceResponse::getEntity)
+				.block();
+			assert backingSpace != null;
+			String backingOrganizationId = backingSpace.getOrganizationId();
+			String currentTenantOrgId = getOrgIdFromTargettedOperationsInternals(spacedTargetedOperations);
+			if (!backingOrganizationId.equals(currentTenantOrgId)) {
+				LOG.warn("Suspicious service instance id={} reused across tenants. Requested in current tenant " +
+						"with orgId {} while SI id exists in other tenant with orgId {}. Still accepting the request," +
+						" but statistically unlikely",
+					request.getServiceInstanceId(), currentTenantOrgId, backingOrganizationId);
+				continue;
+			}
+			String backingSpaceName = backingSpace.getName();
+			LOG.info("Corresponding backing org id={} space name={}", backingOrganizationId, backingSpaceName);
+			if (!request.getServiceDefinition().getName().equals(backingSpaceName)) {
+				String msg = "Existing conflicting service in same backing org with different service "
+					+ "definition name: backingSpaceName=" +backingSpaceName
+					+ " additional metadata: " + serviceInstanceResource.getMetadata();
+				LOG.info(msg);
+				throw new ServiceInstanceExistsException(msg,
+					request.getServiceInstanceId(), request.getServiceDefinitionId()); //409
+			}
+		}
+	}
+
+	/**
+	 * Handle exceptions by checking current backing service instance in order to return the appropriate response
+	 * as expected in the OSB specifications.
+	 * @param originalException The exception occuring during processing. Note that Subclasses of
+	 * ServiceBrokerException are considered already qualified, and returned as-is
+	 */
 	private Mono<CreateServiceInstanceResponse> handleException(Exception originalException, String backingServiceName,
 		CloudFoundryOperations spacedTargetedOperations,
 		CreateServiceInstanceRequest request) {
 		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ", originalException, request);
+
+		if (originalException instanceof  ServiceBrokerException && ! originalException.getClass().equals(ServiceBrokerException.class)) {
+			LOG.info("Exception was thrown by ourselves, and already qualified, rethrowing it unmodified");
+			throw (ServiceBrokerException) originalException;
+		}
 
 		if (spacedTargetedOperations == null) {
 			spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
@@ -200,14 +277,18 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				existingServiceInstance);
 			if (incompatibilityWithExistingInstance == null) {
 				if ("succeeded".equals(existingServiceInstance.getStatus())) {
+					LOG.info("Concurrent request is not incompatible and was completed");
 					//200 OK
 					return Mono.just(CreateServiceInstanceResponse.builder()
 						.dashboardUrl(existingServiceInstance.getDashboardUrl())
 						.build());
 				} else {
+					LOG.info("Concurrent request is not incompatible and is still in progress" +
+						" success");
 					throw new ServiceBrokerCreateOperationInProgressException(); //202
 				}
 			} else {
+				LOG.info("Concurrent request is incompatible, returning conflicts with msg {}", incompatibilityWithExistingInstance);
 				throw new ServiceInstanceExistsException(incompatibilityWithExistingInstance,
 					request.getServiceInstanceId(), request.getServiceDefinitionId()); //409
 			}
@@ -238,6 +319,16 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			throw new ServiceBrokerException("Internal CF client error");
 		}
 		return spaceId;
+	}
+
+	private String getOrgIdFromTargettedOperationsInternals(CloudFoundryOperations spacedTargetedOperations) {
+		DefaultCloudFoundryOperations spacedTargetedOperationsInternals = (DefaultCloudFoundryOperations) spacedTargetedOperations;
+		String orgId = spacedTargetedOperationsInternals.getOrganizationId().block();
+		if(orgId == null) {
+			LOG.error("Unexpected null orgId in DefaultCloudFoundryOperations {}", spacedTargetedOperationsInternals);
+			throw new ServiceBrokerException("Internal CF client error");
+		}
+		return orgId;
 	}
 
 	private String fetchBackingServicePlanId(String backingServiceName, String backingServicePlanName, String spaceId) {
@@ -276,6 +367,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return OBJECT_MAPPER.writeValueAsString(cmdbOperationState);
 		}
 		catch (JsonProcessingException e) {
+			LOG.error("Unable to json serialize {} caught {}", cmdbOperationState, e.toString());
 			throw new RuntimeException(e);
 		}
 	}
