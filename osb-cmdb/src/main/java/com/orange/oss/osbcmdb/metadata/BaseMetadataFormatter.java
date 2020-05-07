@@ -1,15 +1,14 @@
 package com.orange.oss.osbcmdb.metadata;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.servicebroker.model.Context;
 import org.springframework.cloud.servicebroker.model.ServiceBrokerRequest;
 
 public abstract class BaseMetadataFormatter {
+
+	public static final String BROKERED_SERVICE_INSTANCE_GUID = "brokered_service_instance_guid";
 
 	protected abstract void setLabelsAndAnnotations(Map<String, Object> properties, Map<String, String> annotations,
 			Map<String, String> labels, String prefix);
@@ -38,7 +37,7 @@ public abstract class BaseMetadataFormatter {
 	}
 
 	private void setBrokeredServiceGuidLabel(String serviceInstanceId, Map<String, String> labels) {
-		labels.put("brokered_service_instance_guid", serviceInstanceId);
+		labels.put(BROKERED_SERVICE_INSTANCE_GUID, serviceInstanceId);
 	}
 
 	private void setContextMetadata(Context context, Map<String, String> annotations, Map<String, String> labels) {

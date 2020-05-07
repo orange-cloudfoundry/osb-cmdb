@@ -82,7 +82,7 @@
             * [x] 409 Conflict
                * [x] for different plans
                * [x] for different params. Test implemented but ignored for now as not yet implemented (waiting for GSIP prioritized support)
-               * [ ] for different service definition id.
+               * [x] for different service definition id.
                   * We need a 2nd brokered service definition handled by osb-cmdb
                   * When passing the SCAB backing app service id
                      * interceptor ignores the request (as a side effect of missing OSB context our osb client fixture)
@@ -90,11 +90,21 @@
                         * in other words, we don't detect recycling SI guid by osb clients. 
                            * CSI would allow multiple backing service for the same brokered SI guid
                            * DSI only deletes the backing service matching the specified service definition id in DSIReq  
-                        * would be able to detect it by looking up an existing backing service matching brokered service instance guid in all spaces, using metadata query
-                           * in the CSI before creating the instance
-                        
-                     
-               * [x] for different params
+                  * would be able to detect recycled SI guids by looking up an existing backing service matching brokered service instance guid in all spaces, using metadata query
+                     * in the CSI before creating the instance
+                        * without special care, this would override concurrent instance error handling:
+                           * throws a new exception (similar to CF that could have thrown it)
+                           * then error handling looks up a backing service instance to further qualify the conflict
+                              * however it does not find a backing service instance in the conflicting space
+                        * we therefore need to 
+                           * [x] lookup the associated space 
+                           * [x] compare its name to the expected service definition name
+                           * [x] compare its parent org to the current org, to avoid incorrectly rejecting dupl ids among tenants
+                           * [x] verify 409 asserted in the test
+         * [ ] Rework exceptions handling
+            * [ ] Use a specific exception class for exceptions that are thrown by our code and does not need further inspection
+            * [ ] Rename handleException() into better naming ?
+                * inspectInspectionIntoOsbResponse() 
    * [ ] Implement fix
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
       * [ ] see if other previously wrapped exception can be simplified
