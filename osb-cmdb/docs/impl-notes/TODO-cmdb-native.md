@@ -105,6 +105,25 @@
             * [x] Use a specific exception class for exceptions that are thrown by our code and does not need further inspection: OsbCmdbInternalErrorException
             * [ ] Rename handleException() into better naming ?
                 * inspectInspectionIntoOsbResponse() 
+         * [ ] Diagnose and handle test failure
+         ```
+        Service broker parameters are invalid: missing operation field
+        
+        GET "/v2/service_instances/43bcb7d0-2515-4d24-9e5c-4ee4c928f7f4/last_operation?plan_id=3a56d4f6-8775-4b0d-86c0-c4ec74d770de&service_id=78f94c53-5516-4f98-ab3c-b29fef7de5a7", parameters={masked}, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1588842614618603232}
+
+        Accept: isServiceGuidPreviousProvisionnedByUs=false for serviceInstanceId=43bcb7d0-2515-4d24-9e5c-4ee4c928f7f4 and request=ServiceBrokerRequest{platformInstanceId='null', apiInfoLocation='api.redacted-domain.org/v2/info', originatingIdentity=null', requestIdentity=f3bb2924-8bf5-4468-ac91-124202c942b3}GetLastServiceOperationRequest{serviceInstanceId='43bcb7d0-2515-4d24-9e5c-4ee4c928f7f4', serviceDefinitionId='78f94c53-5516-4f98-ab3c-b29fef7de5a7', planId='3a56d4f6-8775-4b0d-86c0-c4ec74d770de', operation='null'}, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1588842614663803509}
+        
+         ```
+           * [x] Check OSBClientFixture not passing state: not the case       
+           * [x] CC API receives empty last operation from concurrent call, and passes it around. Confirmed 
+              * Pb: not using CC API for simulating concurrent calls in ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest, but OSB API fixture
+              * Potentially with cleanup not being properly done and some instances remain.
+                 * No explicit clean up between early AT test phase and full phase.         
+              * [x] Fix it: pass state also in handleError()
+                 * [x] check ServiceBrokerCreateOperationInProgressException(operation) is indeed for OSB operation. Reported https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/284
+           * [x] Check missing last operation in some CC API facing CSI calls       
+                
+                
    * [ ] Implement fix
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
       * [ ] see if other previously wrapped exception can be simplified
