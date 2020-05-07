@@ -277,15 +277,19 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			if (incompatibilityWithExistingInstance == null) {
 				if ("succeeded".equals(existingServiceInstance.getStatus())) {
 					LOG.info("Concurrent request is not incompatible and was completed");
-					//200 OK
+					//201 Created
+					//SC-OSB poorly documents how to get 201, see https://github.com/spring-cloud/spring-cloud-open-service-broker/blob/a8fa63fdfcbf0f2f6e103ae1f9082ff3c59e7a90/spring-cloud-open-service-broker-core/src/test/java/org/springframework/cloud/servicebroker/controller/ServiceInstanceControllerResponseCodeTest.java#L80-L86
 					return Mono.just(CreateServiceInstanceResponse.builder()
 						.dashboardUrl(existingServiceInstance.getDashboardUrl())
+						.async(false)
+						.instanceExisted(false)
 						.build());
 				} else {
 					LOG.info("Concurrent request is not incompatible and is still in progress" +
 						" success");
 					String operation = toJson(new CmdbOperationState(existingServiceInstance.getId(), OsbOperation.CREATE));
-					//202 Accepted
+					//202 Accepted (can't yet throw ServiceInstanceExistsException, see https://github
+					// .com/spring-cloud/spring-cloud-open-service-broker/issues/284)
 					return Mono.just(CreateServiceInstanceResponse.builder()
 						.dashboardUrl(existingServiceInstance.getDashboardUrl())
 						.operation(operation)
