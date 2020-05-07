@@ -11,16 +11,17 @@
    * [ ] Refactor race condition support
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
    * [ ] Test delete https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
-      * [ ] New interceptor StalledAsyncDelete
-      * [ ] Refine DSI sync success test  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 200 Ok as backing service was completed
-      * [ ] New Create test that does 
-         * [ ] USI  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 202 Accepted as backing service is still in progress
-         * [ ] OSB provision dupl different SI: check different dupl receives right status
-            * [ ] 409 Conflict
+      * [x] Refine DSI sync success test  
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 410 GONE
+      * [x] New interceptor StalledAsyncDelete
+      * [ ] New successful Async Delete test 
+         * [ ] async DSI which gets accepted: check same dupl receives right status  
+            * [ ] 202 Accepted as backing service deprovision is still in progress
+      * [ ] New Concurrent Async Delete test that does 
+         * [ ] async DSI which gets stalled  
+         * [ ] OSB unprovision dupl same SI: check same dupl receives right status  
+            * [ ] 202 Accepted as backing service deprovision is still in progress
    * [ ] Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
       * [ ] New interceptor StalledAsyncUpdate
       * [ ] Refine USI sync success test  
