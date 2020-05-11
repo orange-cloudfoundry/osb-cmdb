@@ -9,6 +9,7 @@ import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledDeleteBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.ASyncStalledUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor;
@@ -109,6 +110,13 @@ public class OsbCmdbBrokerConfiguration {
 	public ServiceInstanceInterceptor acceptanceTestASyncStalledDeleteBackingSpaceInstanceInterceptor(
 		CloudFoundryTargetProperties targetProperties) {
 		return new ASyncStalledDeleteBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & ASyncStalledUpdateBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestASyncStalledUpdateBackingSpaceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new ASyncStalledUpdateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean

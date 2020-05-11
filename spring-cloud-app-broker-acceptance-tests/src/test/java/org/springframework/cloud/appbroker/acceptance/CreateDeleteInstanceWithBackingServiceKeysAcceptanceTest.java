@@ -119,6 +119,26 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		//when concurrent deprovision requests as received, they are properly handled
 		assertDuplicateDeleteServiceInstanceOsbRequestsHandling(brokeredServiceInstance);
 
+		//when invalid service id or service plan is passed, they are rejected
+		assertInvalidServiceProvisionningRequestsAreRejected();
+	}
+
+	private void assertInvalidServiceProvisionningRequestsAreRejected() {
+		//When requesting an invalid create request with invalid plan id
+		//then it returns a 400 Bad request
+		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, "invalid-plan-id"))
+			.when()
+			.put(brokerFixture.createServiceInstanceUrl(), "a-fake_id")
+			.then()
+			.statusCode(HttpStatus.BAD_REQUEST.value());
+
+		//When requesting an invalid create request with invalid service definition id
+		//then it returns a 400 Bad request
+		given(brokerFixture.serviceInstanceRequest("invalid-service-id", PLAN_ID))
+			.when()
+			.put(brokerFixture.createServiceInstanceUrl(), "a-fake_id")
+			.then()
+			.statusCode(HttpStatus.BAD_REQUEST.value());
 	}
 
 	private void assertDuplicateCreateServiceInstanceOsbRequestsHandling(ServiceInstance brokeredServiceInstance) {
