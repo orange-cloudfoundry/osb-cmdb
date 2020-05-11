@@ -272,7 +272,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			.block();
 		}
 		catch (Exception exception) {
-			LOG.error("Unable to lookup existing service with id={} caught {}", request.getServiceInstanceId(),
+			LOG.info("Unable to lookup existing service with id={} caught {}", request.getServiceInstanceId(),
 				exception.toString() );
 		}
 		if (existingServiceInstance != null) {
