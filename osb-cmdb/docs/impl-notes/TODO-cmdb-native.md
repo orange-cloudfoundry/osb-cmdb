@@ -26,10 +26,16 @@
    * [ ] Refactor race condition support
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
    * [ ] Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
-      * [ ] Implement update error recovery
-      * [ ] Refine USI sync success test  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 200 Ok as backing service was completed
+      * [x] Implement update error recovery
+         * Check si, if an update operation is in progress, then return 202 accepted, 
+         * otherwise 500 bad request if update request was previously accepted
+         * otherwise 400 bad request otherwise
+         * OSB api v2.16 will be supporting error details such as "usable", see https://github.com/openservicebrokerapi/servicebroker/pull/661
+            * But not yet implemented in CF API v3 http://v3-apidocs.cloudfoundry.org/version/3.83.0/index.html#create-a-service-instance
+            * Nor in SC-OSB
+      * [x] Refine USI sync success test: sync update will trigger a new backing update and not enter error recovery branch, just perform the update twise   
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 200 Ok as backing service was completed
       * [ ] Check UpdateAsyncInstanceWithBackingServiceAcceptanceTest does 
          * [ ] USI  
          * [ ] OSB provision dupl same SI: check same dupl receives right status  
