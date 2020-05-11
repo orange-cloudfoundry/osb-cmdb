@@ -41,7 +41,7 @@ class UpdateAsyncInstanceWithBackingServiceAcceptanceTest extends UpdateInstance
 		"spring.profiles.active=acceptanceTests,AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
-		"logging.level.cloudfoundry-client.wire=trace",
+//		"logging.level.cloudfoundry-client.wire=trace",
 		"logging.level.cloudfoundry-client.operations=debug",
 		"logging.level.cloudfoundry-client.request=debug",
 		"logging.level.cloudfoundry-client.response=debug",

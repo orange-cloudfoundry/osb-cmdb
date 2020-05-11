@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
+import java.time.Duration;
+
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
@@ -23,14 +25,17 @@ import org.junit.jupiter.api.Test;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.http.HttpStatus;
+
+import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
-class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
+class ConcurrentAsyncDeleteInstanceWithBackingServiceTest extends CmdbCloudFoundryAcceptanceTest {
 
 	protected final Logger LOG = Loggers.getLogger(this.getClass());
 
-	private static final String SUFFIX = "delete-instance-with-async-backing-failure";
+	private static final String SUFFIX = "delete-instance-with-async-stalled";
 
 	@Override
 	protected String testSuffix() {
@@ -50,8 +55,8 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 		"spring.security.user.password=password",
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
-		// control backing service response: have it fail async
-		"spring.profiles.active=acceptanceTests,AsyncFailedDeleteBackingSpaceInstanceInterceptor",
+		// control backing service response: have it stall async on delete
+		"spring.profiles.active=acceptanceTests,ASyncStalledDeleteBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 //		"logging.level.cloudfoundry-client.wire=trace",
@@ -63,25 +68,32 @@ class DeleteInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
-	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() throws InterruptedException {
+	void aConcurrentDeprovisionService_is_reported_with_right_status() {
 		// given a brokered service instance is created
 		createServiceInstance(brokeredServiceInstanceName());
+		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
 
-		//given a backend service is configured to async reject any update
+		//given a backend service is configured to async stall
 		//when a brokered service deletion is requested
-		deleteServiceInstance(brokeredServiceInstanceName());
+		deleteServiceInstanceWithoutAsserts(brokeredServiceInstanceName(), Duration.ofSeconds(5));
 
-		//then a brokered service deletion eventually fails
-		ServiceInstance brokeredServiceInstance = pollServiceInstanceUntilNotInProgress(brokeredServiceInstanceName(), 180*1000);
-		assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("delete");
-		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("failed");
-
-		//and backing service is also left as failed
+		//then a backing service is also left as pending deletion
 		backingServiceName = brokeredServiceInstance.getId();
 		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
 		//was indeed updated, and has still its last operation as failed
 		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("delete");
-		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
+		assertThat(backingServiceInstance.getStatus()).isEqualTo("in progress");
+
+		//When requesting a concurrent deprovision request to the same broker with the same instance id, service
+		// definition,
+		// plan and params
+		//then it returns a 202 accepted status
+		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN_ID))
+			.when()
+			.delete(brokerFixture.deleteServiceInstanceUrl(SERVICE_ID, PLAN_ID), brokeredServiceInstance.getId())
+			.then()
+			.statusCode(HttpStatus.ACCEPTED.value());
+
 
 	}
 

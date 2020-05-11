@@ -41,6 +41,8 @@ import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceExistsException;
+import org.springframework.cloud.servicebroker.model.catalog.Plan;
+import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse.CreateServiceInstanceResponseBuilder;
@@ -178,7 +180,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return Mono.just(responseBuilder.build());
 		}
 		catch (Exception e) {
-			return handleException(e, backingServiceName, spacedTargetedOperations, request);
+			return handleCreateException(e, backingServiceName, spacedTargetedOperations, request);
 		}
 	}
 
@@ -242,7 +244,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	 * @param originalException The exception occuring during processing. Note that Subclasses of
 	 * ServiceBrokerException are considered already qualified, and returned as-is
 	 */
-	private Mono<CreateServiceInstanceResponse> handleException(Exception originalException, String backingServiceName,
+	private Mono<CreateServiceInstanceResponse> handleCreateException(Exception originalException, String backingServiceName,
 		CloudFoundryOperations spacedTargetedOperations,
 		CreateServiceInstanceRequest request) {
 		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ", originalException, request);
@@ -272,8 +274,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				exception.toString() );
 		}
 		if (existingServiceInstance != null) {
-			String incompatibilityWithExistingInstance = getRequestIncompatibilityWithExistingInstance(request,
-				existingServiceInstance);
+			String incompatibilityWithExistingInstance = getRequestIncompatibilityWithExistingInstance(
+				existingServiceInstance, request.getServiceDefinition(), request.getPlan());
 			if (incompatibilityWithExistingInstance == null) {
 				if ("succeeded".equals(existingServiceInstance.getStatus())) {
 					LOG.info("Concurrent request is not incompatible and was completed previously: 200");
@@ -308,12 +310,64 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		throw new ServiceBrokerException(originalException);
 	}
 
-	private String getRequestIncompatibilityWithExistingInstance(CreateServiceInstanceRequest request,
-		ServiceInstance existingServiceInstance) {
-		if (! existingServiceInstance.getService().equals(request.getServiceDefinition().getName())) {
+	/**
+	 * Handle exceptions by checking current backing service instance in order to return the appropriate response
+	 * as expected in the OSB specifications.
+	 * @param originalException The exception occuring during processing. Note that Subclasses of
+	 * ServiceBrokerException are considered already qualified, and returned as-is
+	 */
+	private Mono<DeleteServiceInstanceResponse> handleDeleteException(Exception originalException,
+		String backingServiceInstanceName,
+		CloudFoundryOperations spacedTargetedOperations,
+		DeleteServiceInstanceRequest request) {
+		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ", originalException, request);
+
+		if (originalException instanceof  ServiceBrokerException && ! originalException.getClass().equals(ServiceBrokerException.class)) {
+			LOG.info("Exception was thrown by ourselves, and already qualified, rethrowing it unmodified");
+			throw (ServiceBrokerException) originalException;
+		}
+
+		//Can't reuse code from delete, because we should return 410 when missing
+		ServiceInstance deletedSi = getCfServiceInstance(spacedTargetedOperations, backingServiceInstanceName);
+
+		if (deletedSi != null) {
+			switch (deletedSi.getStatus()) {
+				case "in progress":
+					LOG.info("Concurrent deprovisionning request is still in progress. " +
+						"Returning accepted: 202");
+					String operation = toJson(new CmdbOperationState(deletedSi.getId(),
+						OsbOperation.DELETE));
+					//202 Accepted
+					return Mono.just(DeleteServiceInstanceResponse.builder()
+						.operation(operation)
+						.async(true)
+						.build());
+
+				case "failed":
+					LOG.info("Backing service failed to delete with {}, flowing up the error to the osb " +
+							"client",
+						deletedSi.getMessage());
+					//500 error
+					throw new ServiceBrokerException(deletedSi.getMessage());
+
+				default:
+					LOG.error("Unexpected last operation state:" + deletedSi.getStatus());
+					throw new ServiceBrokerException("Internal CF protocol error");
+			}
+		}
+		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
+		LOG.info("No existing instance in the inventory with id={} in space with id={}, assuming race condition " +
+			"among concurrent deprovisionning request. Returning 410", request.getServiceInstanceId(), spaceId);
+		//410 Gone
+		throw new ServiceInstanceDoesNotExistException(request.getServiceInstanceId());
+	}
+
+	private String getRequestIncompatibilityWithExistingInstance(ServiceInstance existingServiceInstance,
+		ServiceDefinition serviceDefinition, Plan plan) {
+		if (! existingServiceInstance.getService().equals(serviceDefinition.getName())) {
 			return "service definition mismatch with:" + existingServiceInstance.getService();
 		}
-		if (! existingServiceInstance.getPlan().equals(request.getPlan().getName())) {
+		if (! existingServiceInstance.getPlan().equals(plan.getName())) {
 			return "service plan mismatch with:" + existingServiceInstance.getPlan();
 		}
 		return null; //no incompatibility
@@ -396,60 +450,66 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			throw new ServiceInstanceDoesNotExistException(request.getServiceInstanceId());
 		}
 
-		// Don't not ask to purge the service instance, as this would create leaks in backing service instance
-		// broker. Rather, list and delete service keys first Delete service keys if any.
-		// TODO: Ignore race condition
-		spacedTargetedOperations.services().listServiceKeys(ListServiceKeysRequest.builder()
-			.serviceInstanceName(backingServiceInstanceName).build())
-			.flatMap(sk -> spacedTargetedOperations.services().deleteServiceKey(DeleteServiceKeyRequest.builder()
-				.serviceInstanceName(backingServiceInstanceName)
-				.serviceKeyName(sk.getName())
-				.build()))
-			.blockLast();
 
-		client.serviceInstances()
-			.delete(org.cloudfoundry.client.v2.serviceinstances.DeleteServiceInstanceRequest.builder()
-				.serviceInstanceId(existingSi.getId())
-				.acceptsIncomplete(request.isAsyncAccepted())
-				.build())
-			.block();
-		//Even if DELETE /v2/service_instances/guid is observed to return service instance entity during async delete
-		//Cf-java-client does not parse it
-		//We have no other choice than refetching it
-		ServiceInstance deletedSi = getCfServiceInstance(spacedTargetedOperations, backingServiceInstanceName);
+		try {
+			// Don't not ask to purge the service instance, as this would create leaks in backing service instance
+			// broker. Rather, list and delete service keys first Delete service keys if any.
+			spacedTargetedOperations.services().listServiceKeys(ListServiceKeysRequest.builder()
+				.serviceInstanceName(backingServiceInstanceName).build())
+				.flatMap(sk -> spacedTargetedOperations.services().deleteServiceKey(DeleteServiceKeyRequest.builder()
+					.serviceInstanceName(backingServiceInstanceName)
+					.serviceKeyName(sk.getName())
+					.build()))
+				.blockLast();
 
-		DeleteServiceInstanceResponse.DeleteServiceInstanceResponseBuilder responseBuilder = DeleteServiceInstanceResponse.builder();
-		if (deletedSi != null) {
-			if (! "delete".equals(deletedSi.getLastOperation())) {
-				LOG.error("Unexpected si state after delete {} full si is {}", deletedSi.getLastOperation(), deletedSi);
-				throw new ServiceBrokerException("Internal CF protocol error");
-			}
-			boolean asyncProvisioning;
-			switch (deletedSi.getStatus()) {
-				case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
-					asyncProvisioning = true;
-					//make get last operation faster by tracking the underlying CF instance
-					// GUID
-					responseBuilder
-						.operation(toJson(new CmdbOperationState(deletedSi.getId(),
-							OsbOperation.DELETE)));
-					break;
-				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED: //unlikely, deletedSi would be null instead
-					asyncProvisioning = false;
-					break;
-				case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
-					LOG.info("Backing service failed to delete with {}, flowing up the error to the osb " +
-							"client",
-						deletedSi.getMessage());
-					throw new ServiceBrokerException(deletedSi.getMessage());
-				default:
-					LOG.error("Unexpected last operation state:" + deletedSi.getStatus());
+			client.serviceInstances()
+				.delete(org.cloudfoundry.client.v2.serviceinstances.DeleteServiceInstanceRequest.builder()
+					.serviceInstanceId(existingSi.getId())
+					.acceptsIncomplete(request.isAsyncAccepted())
+					.build())
+				.block();
+			//Even if DELETE /v2/service_instances/guid is observed to return service instance entity during async delete
+			//Cf-java-client does not parse it
+			//We have no other choice than refetching it
+			ServiceInstance deletedSi = getCfServiceInstance(spacedTargetedOperations, backingServiceInstanceName);
+
+			DeleteServiceInstanceResponse.DeleteServiceInstanceResponseBuilder responseBuilder = DeleteServiceInstanceResponse.builder();
+			if (deletedSi != null) {
+				if (! "delete".equals(deletedSi.getLastOperation())) {
+					LOG.error("Unexpected si state after delete {} full si is {}", deletedSi.getLastOperation(), deletedSi);
 					throw new ServiceBrokerException("Internal CF protocol error");
-			}
-			responseBuilder.async(asyncProvisioning);
+				}
+				boolean asyncProvisioning;
+				switch (deletedSi.getStatus()) {
+					case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
+						asyncProvisioning = true;
+						//make get last operation faster by tracking the underlying CF instance
+						// GUID
+						responseBuilder
+							.operation(toJson(new CmdbOperationState(deletedSi.getId(),
+								OsbOperation.DELETE)));
+						break;
+					case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED: //unlikely, deletedSi would be null instead
+						asyncProvisioning = false;
+						break;
+					case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
+						LOG.info("Backing service failed to delete with {}, flowing up the error to the osb " +
+								"client",
+							deletedSi.getMessage());
+						throw new ServiceBrokerException(deletedSi.getMessage());
+					default:
+						LOG.error("Unexpected last operation state:" + deletedSi.getStatus());
+						throw new ServiceBrokerException("Internal CF protocol error");
+				}
+				responseBuilder.async(asyncProvisioning);
 
+			}
+			//200 OK
+			return Mono.just(responseBuilder.build());
 		}
-		return Mono.just(responseBuilder.build());
+		catch (Exception e) {
+			return handleDeleteException(e, backingServiceInstanceName, spacedTargetedOperations, request);
+		}
 	}
 
 	@Override
@@ -526,6 +586,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		return Mono.just(GetLastServiceOperationResponse.builder()
 			.description(description)
 			.operationState(operationState)
+			.deleteOperation(OsbOperation.DELETE.equals(cmdbOperationState.operationType))
 			.build());
 	}
 

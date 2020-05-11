@@ -44,7 +44,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 		"spring.profiles.active=acceptanceTests,SyncSuccessfulBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
-		"logging.level.cloudfoundry-client.wire=trace",
+//		"logging.level.cloudfoundry-client.wire=trace",
 		"logging.level.cloudfoundry-client.operations=debug",
 		"logging.level.cloudfoundry-client.request=debug",
 		"logging.level.cloudfoundry-client.response=debug",

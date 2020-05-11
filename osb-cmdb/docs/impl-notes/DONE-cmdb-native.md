@@ -413,3 +413,13 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
                 * [ ] Lookup all service plans associated to service brokers
                 * [ ] Lookup all service instance associated to service brokers
                 
+
+* [x] Diagnose test failures: suspecting CF instability or concourse worker overload
+   * [x] high concourse load some 15 mins ago (28 and 48 on 2 workers)
+      * [x] retrigger test: successfull within 10 mins
+
+``` 
+java.util.concurrent.TimeoutException: Did not observe any item or terminal signal within 30000ms in 'source(MonoCreate)' (and no fallback has been configured)
+	at reactor.core.publisher.FluxTimeout$TimeoutMainSubscriber.handleTimeout(FluxTimeout.java:289)
+```
+
