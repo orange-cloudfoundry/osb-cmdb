@@ -67,6 +67,12 @@ public class OpenServiceBrokerApiClient  {
 	}
 
 	public String deleteServiceInstanceUrl() {
+		String serviceDefinitionId = this.serviceDefinitionId;
+		String planId = this.planId;
+		return deleteServiceInstanceUrl(serviceDefinitionId, planId);
+	}
+
+	public String deleteServiceInstanceUrl(String serviceDefinitionId, String planId) {
 		return "/service_instances/{instance_id}" +
 			"?service_id=" + serviceDefinitionId +
 			"&plan_id=" + planId;

@@ -19,6 +19,7 @@ package org.springframework.cloud.appbroker.acceptance;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -337,22 +338,33 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	protected ServiceInstance createServiceInstanceWithoutAsserts(String serviceInstanceName) {
-		return createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME, serviceInstanceName, emptyMap(), 30);
+		return createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME, serviceInstanceName, emptyMap(),
+			Duration.ofSeconds(30));
 	}
 
 	protected ServiceInstance createServiceInstanceWithoutAsserts(String serviceName,
 		String planName,
 		String serviceInstanceName,
-		Map<String, Object> parameters, int completionTimeoutSeconds) {
+		Map<String, Object> parameters, Duration completionTimeout) {
 		try {
 			return cloudFoundryService.createServiceInstance(planName, serviceName, serviceInstanceName, parameters,
-				completionTimeoutSeconds)
+				completionTimeout)
 				.then(getServiceInstanceMono(serviceInstanceName))
 				.block();
 		}
 		catch (DelayTimeoutException e) {
 			LOG.info("createServiceInstance() completed with {}", e.toString());
 			return cloudFoundryService.getServiceInstance(serviceInstanceName).block();
+		}
+	}
+
+	protected void deleteServiceInstanceWithoutAsserts(String serviceInstanceName, Duration completionTimeout) {
+		try {
+			cloudFoundryService.deleteServiceInstance(serviceInstanceName, completionTimeout)
+				.block();
+		}
+		catch (DelayTimeoutException e) {
+			LOG.info("deleteServiceInstance() completed with {}", e.toString());
 		}
 	}
 

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,7 +67,7 @@ class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbC
 		// given an async backing service is configured to stall on OSB provision request
 		// given a brokered service instance is requested
 		ServiceInstance brokeredServiceInstance = createServiceInstanceWithoutAsserts(appServiceName(), PLAN_NAME,
-			brokeredServiceInstanceName(), emptyMap(), 45);
+			brokeredServiceInstanceName(), emptyMap(), Duration.ofSeconds(45));
 
 		// then the brokered service instance is returned and remains stalled "in progress"
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("in progress");

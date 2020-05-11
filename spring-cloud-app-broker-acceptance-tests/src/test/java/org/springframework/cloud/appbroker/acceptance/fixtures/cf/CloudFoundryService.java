@@ -250,10 +250,15 @@ public class CloudFoundryService {
 	}
 
 	public Mono<Void> deleteServiceInstance(String serviceInstanceName) {
+		return deleteServiceInstance(serviceInstanceName, Duration.ofSeconds(5*60));
+	}
+
+	public Mono<Void> deleteServiceInstance(String serviceInstanceName, Duration completionTimeout) {
 		return getServiceInstance(serviceInstanceName)
 			.flatMap(si -> cloudFoundryOperations.services()
 				.deleteInstance(DeleteServiceInstanceRequest.builder()
 					.name(si.getName())
+					.completionTimeout(completionTimeout)
 					.build())
 				.doOnSuccess(item -> LOG.info("Deleted service instance " + serviceInstanceName))
 				.doOnError(
@@ -299,18 +304,18 @@ public class CloudFoundryService {
 		String serviceName,
 		String serviceInstanceName,
 		Map<String, Object> parameters) {
-		return createServiceInstance(planName, serviceName, serviceInstanceName, parameters, 30);
+		return createServiceInstance(planName, serviceName, serviceInstanceName, parameters, Duration.ofSeconds(30));
 	}
 
 	public Mono<Void> createServiceInstance(String planName, String serviceName, String serviceInstanceName,
-		Map<String, Object> parameters, int completionTimeoutSeconds) {
+		Map<String, Object> parameters, Duration completionTimeout) {
 		return cloudFoundryOperations.services()
 			.createInstance(CreateServiceInstanceRequest.builder()
 				.planName(planName)
 				.serviceName(serviceName)
 				.serviceInstanceName(serviceInstanceName)
 				.parameters(parameters)
-				.completionTimeout(Duration.ofSeconds(completionTimeoutSeconds))
+				.completionTimeout(completionTimeout)
 				.build())
 			.doOnSuccess(item -> LOG.info("Created service instance " + serviceInstanceName))
 			.doOnError(error -> LOG.error("Error creating service instance " + serviceInstanceName + ": " + error));

@@ -39,6 +39,7 @@ public class ASyncStalledDeleteBackingSpaceInstanceInterceptor extends BaseServi
 	public Mono<GetLastServiceOperationResponse> getLastOperation(GetLastServiceOperationRequest request) {
 		return Mono.just(GetLastServiceOperationResponse.builder()
 			.operationState(OperationState.IN_PROGRESS)
+			.deleteOperation(true)
 			.description(this.getClass().getSimpleName())
 			.build());
 	}

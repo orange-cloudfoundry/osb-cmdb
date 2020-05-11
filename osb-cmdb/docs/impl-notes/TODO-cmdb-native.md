@@ -4,12 +4,26 @@
          * [ ] update config to point to paas-templates-private
             * [ ] add support for http proxy in git
 
+* [ ] Harden acceptance tests
+   * [ ] Fail fast on set up errors such as broker registration errors to avoid misleading error traces
+   * [ ] refine cleans up of backing service using cf-java-client purge
+      * Upon ERROR logs in recent logs, tardown assert fails, preventing clean up. This may be useful to inspect problems afterwards
+   * [x] Disable wire trace logs are enabled in backend services for now   
 
-        ```
+
+String backingServiceInstanceName =
+			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
+
+* [x] Check existing test for Async successfull delete
         
 * [ ] Handle race conditions (including for K8S dups)      
    * [ ] Refactor race condition support
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
+   * [x] Impl delete error handling. 
+      * Error use-cases
+         * concurrent service key deletion (sync)
+         * concurrent service provisionning: a delete is in progress
+      * Recovery: lookup service instance and return status depending on its state 
    * [ ] Test delete https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
       * [x] Refine DSI sync success test  
          * [x] OSB provision dupl same SI: check same dupl receives right status  
@@ -18,10 +32,10 @@
       * [ ] New successful Async Delete test 
          * [ ] async DSI which gets accepted: check same dupl receives right status  
             * [ ] 202 Accepted as backing service deprovision is still in progress
-      * [ ] New Concurrent Async Delete test that does 
-         * [ ] async DSI which gets stalled  
-         * [ ] OSB unprovision dupl same SI: check same dupl receives right status  
-            * [ ] 202 Accepted as backing service deprovision is still in progress
+      * [x] New Concurrent Async Delete test that does 
+         * [x] async DSI which gets stalled  
+         * [x] OSB unprovision dupl same SI: check same dupl receives right status  
+            * [x] 202 Accepted as backing service deprovision is still in progress
    * [ ] Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
       * [ ] New interceptor StalledAsyncUpdate
       * [ ] Refine USI sync success test  
