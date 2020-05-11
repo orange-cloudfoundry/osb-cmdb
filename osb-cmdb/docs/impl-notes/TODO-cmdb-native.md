@@ -11,37 +11,31 @@
    * [x] Disable wire trace logs are enabled in backend services for now   
 
 
-String backingServiceInstanceName =
-			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
+* [ ] Harden/unifomize handling of long service instance guid:
+   ```  
+   String backingServiceInstanceName =
+   			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
+   ```
+  * Remove name truncation, and just flow the upstream CF CC API error to the caller ?
+  * Refactor to systematically/consistently truncate name everywhere 
 
-* [x] Check existing test for Async successfull delete
-        
+* [x] Reduce polling time in some tests to speed up feedback: from 45s to 5s
+
+
 * [ ] Handle race conditions (including for K8S dups)      
    * [ ] Refactor race condition support
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
-   * [x] Impl delete error handling. 
-      * Error use-cases
-         * concurrent service key deletion (sync)
-         * concurrent service provisionning: a delete is in progress
-      * Recovery: lookup service instance and return status depending on its state 
-   * [ ] Test delete https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
-      * [x] Refine DSI sync success test  
-         * [x] OSB provision dupl same SI: check same dupl receives right status  
-            * [x] 410 GONE
-      * [x] New interceptor StalledAsyncDelete
-      * [ ] New successful Async Delete test 
-         * [ ] async DSI which gets accepted: check same dupl receives right status  
-            * [ ] 202 Accepted as backing service deprovision is still in progress
-      * [x] New Concurrent Async Delete test that does 
-         * [x] async DSI which gets stalled  
-         * [x] OSB unprovision dupl same SI: check same dupl receives right status  
-            * [x] 202 Accepted as backing service deprovision is still in progress
    * [ ] Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
-      * [ ] New interceptor StalledAsyncUpdate
+      * [ ] Implement update error recovery
       * [ ] Refine USI sync success test  
          * [ ] OSB provision dupl same SI: check same dupl receives right status  
             * [ ] 200 Ok as backing service was completed
-      * [ ] New Create test that does 
+      * [ ] Check UpdateAsyncInstanceWithBackingServiceAcceptanceTest does 
+         * [ ] USI  
+         * [ ] OSB provision dupl same SI: check same dupl receives right status  
+            * [ ] 410 gone
+      * [ ] New concurrent stalled Update async test that does 
+         * [ ] New interceptor StalledAsyncUpdate
          * [ ] USI  
          * [ ] OSB provision dupl same SI: check same dupl receives right status  
             * [ ] 202 Accepted as backing service is still in progress
