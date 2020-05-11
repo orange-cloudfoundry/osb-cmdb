@@ -24,7 +24,8 @@ import org.junit.jupiter.api.Test;
  * Async service keys are not yet supported
  */
 @Tag("cmdb")
-class CreateAsyncInstanceWithBackingServiceKeysAcceptanceTest extends CreateInstanceWithBackingServiceKeysAcceptanceTest {
+class CreateDeleteAsyncInstanceWithBackingServiceKeysAcceptanceTest extends
+	CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest {
 
 	private static final String SK_NAME = "sk-async-create-service-keys";
 
