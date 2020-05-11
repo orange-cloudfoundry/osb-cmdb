@@ -423,3 +423,20 @@ java.util.concurrent.TimeoutException: Did not observe any item or terminal sign
 	at reactor.core.publisher.FluxTimeout$TimeoutMainSubscriber.handleTimeout(FluxTimeout.java:289)
 ```
 
+   * [x] Impl delete error handling (in particular concurrent deletes)
+      * Error use-cases
+         * concurrent service key deletion (sync)
+         * concurrent service provisionning: a delete is in progress
+      * Recovery: lookup service instance and return status depending on its state 
+   * [x] Test delete https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
+      * [x] Refine DSI sync success test  
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 410 GONE
+      * [x] New interceptor StalledAsyncDelete
+      * [x] Successful Async Delete test: covered in CreateDeleteAsyncInstanceWithBackingServiceKeysAcceptanceTest 
+         * [x] async DSI which gets accepted: check same dupl receives right status  
+            * [x] 202 Accepted as backing service deprovision is still in progress
+      * [x] New Concurrent Async Delete test that does 
+         * [x] async DSI which gets stalled  
+         * [x] OSB unprovision dupl same SI: check same dupl receives right status  
+            * [x] 202 Accepted as backing service deprovision is still in progress
