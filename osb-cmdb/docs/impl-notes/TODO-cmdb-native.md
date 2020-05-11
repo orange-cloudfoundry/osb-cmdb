@@ -25,7 +25,7 @@
 * [ ] Handle race conditions (including for K8S dups)      
    * [ ] Refactor race condition support
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
-   * [ ] Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
+   * [x] Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
       * [x] Implement update error recovery
          * Check si, if an update operation is in progress, then return 202 accepted, 
          * otherwise 500 bad request if update request was previously accepted
@@ -36,17 +36,17 @@
       * [x] Refine USI sync success test: sync update will trigger a new backing update and not enter error recovery branch, just perform the update twise   
          * [x] OSB provision dupl same SI: check same dupl receives right status  
             * [x] 200 Ok as backing service was completed
-      * [ ] Check UpdateAsyncInstanceWithBackingServiceAcceptanceTest does 
+      * [x] Check UpdateAsyncInstanceWithBackingServiceAcceptanceTest does 
+         * [x] USI  
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 202 accepted, and then 200
+      * [x] New concurrent stalled Update async test (ConcurrentAsyncUpdateInstanceWithBackingServiceAcceptanceTest) that does 
+         * [x] New interceptor StalledAsyncUpdate
          * [ ] USI  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 410 gone
-      * [ ] New concurrent stalled Update async test that does 
-         * [ ] New interceptor StalledAsyncUpdate
-         * [ ] USI  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 202 Accepted as backing service is still in progress
-         * [ ] OSB provision dupl different SI: check different dupl receives right status
-            * [ ] 409 Conflict
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 202 Accepted as backing service is still in progress
+         * [x] OSB update with invalid plan 
+            * [x] 400 Bad request
    * [ ] Test bind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
       * [ ] New interceptor StalledAsyncBind
       * [ ] Refine CSI sync success test  

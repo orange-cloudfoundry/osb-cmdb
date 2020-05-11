@@ -119,7 +119,6 @@ public class OpenServiceBrokerApiClient  {
 				"}");
 	}
 
-
 	public RequestSpecification serviceInstanceRequestWithCfOsbContext(String context) {
 		return serviceBrokerSpecification()
 			.body("{" +

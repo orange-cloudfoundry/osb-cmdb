@@ -355,11 +355,12 @@ public class CloudFoundryService {
 			.doOnError(error -> LOG.error("Error updating service instance " + serviceInstanceName + ": " + error));
 	}
 
-	public Mono<Void> updateServiceInstance(String serviceInstanceName, String planName) {
+	public Mono<Void> updateServiceInstance(String serviceInstanceName, String planName, Duration completionTimeout) {
 		return cloudFoundryOperations.services()
 			.updateInstance(UpdateServiceInstanceRequest.builder()
 				.serviceInstanceName(serviceInstanceName)
 				.planName(planName)
+				.completionTimeout(completionTimeout)
 				.build())
 			.doOnSuccess(item -> LOG.info("Updated service instance " + serviceInstanceName))
 			.doOnError(error -> LOG.error("Error updating service instance " + serviceInstanceName + ": " + error));

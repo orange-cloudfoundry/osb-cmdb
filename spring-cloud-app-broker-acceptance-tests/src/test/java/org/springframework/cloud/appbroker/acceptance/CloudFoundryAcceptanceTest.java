@@ -403,7 +403,8 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	protected void updateServiceInstance(String serviceInstanceName, String planName) {
-		cloudFoundryService.updateServiceInstance(serviceInstanceName, planName)
+		Duration completionTimeout = Duration.ofMinutes(5);
+		cloudFoundryService.updateServiceInstance(serviceInstanceName, planName, completionTimeout)
 			.then(getServiceInstanceMono(serviceInstanceName))
 			.flatMap(serviceInstance -> {
 				assertThat(serviceInstance.getStatus())
@@ -412,6 +413,16 @@ abstract class CloudFoundryAcceptanceTest {
 				return Mono.empty();
 			})
 			.block();
+	}
+	protected void updateServiceInstanceWithoutAsserts(String serviceInstanceName, String planName,
+		Duration completionTimeout) {
+		try {
+			cloudFoundryService.updateServiceInstance(serviceInstanceName, planName, completionTimeout)
+				.block();
+		}
+		catch (DelayTimeoutException e) {
+			LOG.info("deleteServiceInstance() completed with {}", e.toString());
+		}
 	}
 
 	protected void deleteServiceInstance(String serviceInstanceName) {

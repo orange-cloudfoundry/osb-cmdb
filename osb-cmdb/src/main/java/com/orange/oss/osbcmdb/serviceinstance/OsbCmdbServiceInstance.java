@@ -105,6 +105,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		if (osbInterceptor != null && osbInterceptor.accept(request)) {
 			return osbInterceptor.createServiceInstance(request);
 		}
+		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
+			request.getServiceDefinitionId(), request.getPlanId());
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
 		CloudFoundryOperations spacedTargetedOperations = null;
@@ -689,6 +691,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return osbInterceptor.updateServiceInstance(request);
 		}
 
+		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
+			request.getServiceDefinitionId(), request.getPlanId());
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
 		String backingServiceInstanceName = ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
@@ -752,6 +756,19 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			updateServiceInstanceMetadata(request, existingBackingServiceInstance.getId());
 		}
 		return Mono.just(responseBuilder.build());
+	}
+
+	private void validateServiceDefinitionAndPlanIds(ServiceDefinition serviceDefinition, Plan plan,
+		String serviceDefinitionId,
+		String planId) {
+		if (plan == null) {
+			LOG.info("Invalid plan received with unknown id {}", planId);
+			throw new ServiceBrokerInvalidParametersException("Invalid plan received with unknown id:" + planId);
+		}
+		if (serviceDefinition == null) {
+			LOG.info("Invalid service definition received with unknown id {}", serviceDefinitionId);
+			throw new ServiceBrokerInvalidParametersException("Invalid service definition received with unknown id:" + serviceDefinitionId);
+		}
 	}
 
 	protected CmdbOperationState fromJson(String operation) {
