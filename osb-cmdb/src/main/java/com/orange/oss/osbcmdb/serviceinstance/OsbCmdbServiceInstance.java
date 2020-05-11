@@ -362,6 +362,82 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		throw new ServiceInstanceDoesNotExistException(request.getServiceInstanceId());
 	}
 
+	/**
+	 * Handle exceptions by checking current backing service instance in order to return the appropriate response
+	 * as expected in the OSB specifications.
+	 * @param originalException The exception occuring during processing. Note that Subclasses of
+	 * ServiceBrokerException are considered already qualified, and returned as-is
+	 */
+	private Mono<UpdateServiceInstanceResponse> handleUpdateException(Exception originalException,
+		String backingServiceInstanceName,
+		CloudFoundryOperations spacedTargetedOperations,
+		UpdateServiceInstanceRequest request) {
+		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ", originalException, request);
+
+		if (originalException instanceof  ServiceBrokerException && ! originalException.getClass().equals(ServiceBrokerException.class)) {
+			LOG.info("Exception was thrown by ourselves, and already qualified, rethrowing it unmodified");
+			throw (ServiceBrokerException) originalException;
+		}
+
+		ServiceInstance updatedSi = getCfServiceInstance(spacedTargetedOperations, backingServiceInstanceName);
+		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
+
+		if (updatedSi != null) {
+			if (!"update".equals(updatedSi.getLastOperation())) {
+				LOG.info("No instance in the inventory with id={} in space with id={}, and recently updated: " +
+					"last_operation={}, flowing up original exception",
+					request.getServiceInstanceId(), spaceId, updatedSi.getLastOperation() );
+				//500 error
+				throw new ServiceBrokerInvalidParametersException(originalException.getMessage());
+			}
+			switch (updatedSi.getStatus()) {
+				case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
+					LOG.info("Concurrent update request is still in progress. " +
+						"Returning accepted: 202");
+					String operation = toJson(new CmdbOperationState(updatedSi.getId(),
+						OsbOperation.UPDATE));
+					//202 Accepted
+					return Mono.just(UpdateServiceInstanceResponse.builder()
+						.operation(operation)
+						.async(true)
+						.build());
+
+				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
+					if (updatedSi.getService().equals(request.getServiceDefinition().getName()) &&
+						updatedSi.getPlan().equals(request.getPlan().getName())) {
+						LOG.info("Concurrent update request has completed. " +
+							"Returning 200 OK");
+						//200 OK
+						return Mono.just(UpdateServiceInstanceResponse.builder()
+							.async(false)
+							.build());
+					}
+					else {
+						LOG.info("Plan update did not succeed while SI update completed, assuming invalid input. " +
+							"Existing si service name={} and service plan={}", updatedSi.getService(), updatedSi.getPlan());
+						throw new ServiceBrokerInvalidParametersException(originalException.getMessage());
+					}
+
+				case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
+					LOG.info("Backing service failed to update with {}, flowing up the original error to the osb " +
+							"client: ",
+						updatedSi.getMessage(), originalException.getMessage());
+					//500 error
+					//In the future, return the usable field once CF supports it
+					throw new ServiceBrokerException(originalException.getMessage());
+
+				default:
+					LOG.error("Unexpected last operation state:" + updatedSi.getStatus());
+					throw new ServiceBrokerException("Internal CF protocol error");
+			}
+		}
+		LOG.info("No existing instance in the inventory with id={} in space with id={}, assuming invalid requestrace " +
+			"condition " +
+			"among concurrent update request. Returning 410", request.getServiceInstanceId(), spaceId);
+		//410 Gone
+		throw new ServiceInstanceDoesNotExistException(request.getServiceInstanceId());
+	}
+
 	private String getRequestIncompatibilityWithExistingInstance(ServiceInstance existingServiceInstance,
 		ServiceDefinition serviceDefinition, Plan plan) {
 		if (! existingServiceInstance.getService().equals(serviceDefinition.getName())) {
@@ -615,11 +691,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
+		String backingServiceInstanceName = ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
 
 		//ignore race condition during space creation for K8S dupl requests
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
 		ServiceInstance existingBackingServiceInstance = getCfServiceInstance(spacedTargetedOperations,
-			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()));
+			backingServiceInstanceName);
 		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
@@ -667,10 +744,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			}
 			responseBuilder.async(asyncProvisioning);
 		}
-		catch (ClientV2Exception e) {
-			LOG.info("Unable to update service, caught:" + e, e);
-			//wrap to avoid log polution from sc-osb catching unexpectidely unknown (cf-java-client's) exceptions
-			throw new ServiceBrokerException(e.toString());
+		catch (Exception e) {
+			return handleUpdateException(e, backingServiceInstanceName, spacedTargetedOperations, request);
 		}
 		finally {
 			//systematically try to update metadata (e.g. service instance rename) even if update failed
