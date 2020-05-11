@@ -13,7 +13,7 @@ import org.springframework.cloud.servicebroker.model.instance.GetLastServiceOper
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
 
 /**
- * Simulates a successful asynchronous backing service requested in backing space.
+ * Simulates a successful asynchronous provision/deprovision backing service requested in backing space.
  */
 public class AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor extends BaseServiceInstanceBackingSpaceInstanceInterceptor {
 
@@ -30,6 +30,7 @@ public class AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor ex
 		return Mono.just(CreateServiceInstanceResponse.builder()
 			.async(true)
 			.dashboardUrl(DASHBOARD_URL)
+			.operation("create")
 			.build());
 	}
 
@@ -37,6 +38,7 @@ public class AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor ex
 	public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
 		return Mono.just(DeleteServiceInstanceResponse.builder()
 			.async(true)
+			.operation("delete")
 			.build());
 	}
 
@@ -45,6 +47,7 @@ public class AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor ex
 		return Mono.just(GetLastServiceOperationResponse.builder()
 			.description(this.getClass().getSimpleName())
 			.operationState(OperationState.SUCCEEDED)
+			.deleteOperation("delete".equals(request.getOperation()))
 			.build());
 	}
 
