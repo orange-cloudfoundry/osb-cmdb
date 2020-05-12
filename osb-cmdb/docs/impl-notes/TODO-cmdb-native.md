@@ -1,14 +1,69 @@
-* [ ] Check smoke test status
-   * [ ] noop plan unpublished 
-      * [ ] relaunch coab broker post-deploy
-         * [ ] update config to point to paas-templates-private
-            * [ ] add support for http proxy in git
+* [x] add timeout to reactor blocking calls ? Are cf-java-client timeouts sufficient ?
+   * [x] Benchmark how SCAB handles timeout. See related https://github.com/spring-cloud/spring-cloud-app-broker/pull/289#pullrequestreview-323604661
+      * api-timeout: sets a reactor level timeout to `cf push`, and `cf delete`
+       > Propagate a TimeoutException in case no item arrives within the given Duration. 
+       > the timeout before the onNext signal from this Mono
+      * api-polling-timeout: sets cf-java-client completionTimeout                                                                                                                                                                                                                               
+   * [x] Should osb-cmdb respond to last-operation polling indefinitely if case of a stalled async broker ?
+      * Without Osb-cmdb, osb-clients would poll backing service OSB endpoints
+         * as long as they wish
+         * no longer than [service plan's maximum_polling_duration](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#polling-interval-and-duration) 
+         * eventually waiting after [Retry-After HTTP header](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#body-1)
+           > The response MAY also include the Retry-After HTTP header. This header will indicate how long the Platform SHOULD wait 
+           > before polling again and is intended to prevent unnecessary, and premature, calls to the last_operation endpoint. 
+           > It is RECOMMENDED that the header include a duration rather than a timestamp.
+      * With Osb-cmdb, CF CC_NG CAPI configures a max polling duration after which it would stop polling. 
+   * [x] Check default values
+      * Polling timeout for async operation is 5 minutes: https://github.com/cloudfoundry/cf-java-client/blob/8ec06b4cdd61dda0f0ba5e4d546651b880735faa/cloudfoundry-operations/src/main/java/org/cloudfoundry/operations/services/_CreateServiceInstanceRequest.java#L36-L39
+         * Affected calls: none, call CloudFoundryOperations async calls were replaced by low-level calls 
+      * API connect timeout:
+         * Not configured in org.springframework.cloud.appbroker.autoconfigure.CloudFoundryAppDeployerAutoConfiguration.connectionContext()
+         * This would protect Osb-cmdb threads against CF API not accepting connections.  
+         * Default value in io.netty.channel.DefaultChannelConfig.DEFAULT_CONNECT_TIMEOUT is 30s which sounds sensible
+      * CF-Java-Client TLS timeouts
+         * Default values at https://projectreactor.io/docs/netty/release/api/reactor/netty/tcp/SslProvider.Builder.html sound sensible
+      * CAPI service broker client timeout: 60s
+         * [broker_client_timeout_seconds](https://bosh.io/jobs/cloud_controller_ng?source=github.com/cloudfoundry/capi-release&version=1.93.0#p%3dcc.broker_client_timeout_seconds)
+            > For requests to service brokers, this is the HTTP (open and read) timeout setting. Default 60s
+         * [broker_client_max_async_poll_duration_minutes](https://bosh.io/jobs/cloud_controller_ng?source=github.com/cloudfoundry/capi-release&version=1.93.0#p%3dcc.broker_client_max_async_poll_duration_minutes)
+            > The max duration the CC will fetch service instance state from a service broker (in minutes). Default is 1 week                                                                                                                                                                                              
+   * [x] ~~Implement new timeouts~~ ? No real added-value w.r.t. default timeouts
+      * [ ] Add new configuration entry for api-timeout with a default value of "2 mins"
+         * Benefit is to protect 
+      * [ ] Add reactor level timeout() calls / block(timeout) to sensitive calls + check error recovery
+         * [ ] CSI
+         * [ ] DSI
+         * [ ] USI
+         * [ ] CSB
+         * [ ] DSB
+   * [x] Validate our assumptions of default timeouts in a test
+      * [x] Add an interceptor sync blocking indefinitely on create 
+      * [x] Configure Test to not sync wait longer than 90s  
+      * [x] Assert that CC API 60s timeout indeed properly triggers
+      * [ ] Clean up message returned to end-user as to redact service broker url to avoid disclosing broker url + backing service instance guid
+        >  Resolved [org.springframework.cloud.servicebroker.exception.ServiceBrokerException: CF-HttpClientTimeout(10001): 
+        > The request to the service broker timed out: https://test-broker-app-create-instance-with-sync-backing-timeout.redacted-domain/v2/service_instances/8e6fadf5-f735-4dc9-9eed-4ceb2cac350f]
+        * [ ] Introduce new collaborator CCApiMessageCleaner
+        * [ ] Unit test it
+        * [ ] add a wrapper method in AbstractOsbCmdbService: redactAndReThrowException(Exception e)                                                                                                                                            
+
+* [ ] Refine concourse pipeline to honor `skip-ci` git commit keyword   
+* [ ] Manually test against K8S openshift
 
 * [ ] Harden acceptance tests
    * [ ] Fail fast on set up errors such as broker registration errors to avoid misleading error traces
    * [ ] refine cleans up of backing service using cf-java-client purge
       * Upon ERROR logs in recent logs, tardown assert fails, preventing clean up. This may be useful to inspect problems afterwards
    * [x] Disable wire trace logs are enabled in backend services for now   
+
+* [ ] Refactor AT:
+    * [ ] Ease identification of Cmdb AT and speed up compilation steps
+       * [ ] Try moving OsbCmdb tests in a different packages
+       * [ ] Delete unneeded scab test, once we get sufficient inspiration    
+    * [ ] Fix broker clean up
+       * [x] check cf-java-client support purge service offering (in cfclient) + purge service instance
+       * [ ] modify call to use cfclient.deleteService(purge=true) for each service 
+    * [ ] Rename Test class
 
 
 * [ ] Harden/uniformize handling of long service instance guid:
@@ -19,69 +74,14 @@
   * Remove name truncation, and just flow the upstream CF CC API error to the caller ?
   * Refactor to systematically/consistently truncate name everywhere 
 
-* [x] Reduce polling time in some tests to speed up feedback: from 45s to 5s
 
-* [ ] Harden binding request handling: validate service instance guid is in the proper org, ie a tenant can't bind a si from  another tenant    
-   * Lookup the existing service instance
-   * Check that org match
-* [ ] Harden deprovisionning request handling: validate service instance guid is in the proper org, ie a tenant can't bind a si from another tenant    
+* [ ] Refactor race condition support ?
+   * [ ] extract concurrent exception handler in its collaborator object to unit test it
 
-
-* [ ] Handle race conditions (including for K8S dups)      
-   * [ ] Refactor race condition support
-      * [ ] extract concurrent exception handler in its collaborator object to unit test it
-   * [ ] Test bind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
-      * [x] Refine CSI sync success test  
-         * [x] OSB provision dupl same SK: check same dupl receives right status  
-            * [x] 200 Ok as backing service key was completed
-         * [ ] ~~OSB provision dupl different SI~~: wait until SK params support in CF-java-client, and CCAPI V3 
-            * [ ] 409 Conflict
-      * [ ] No yet async binding sipport in CF API
-   * [x] Implement bind fix
-      * [x] catch or new method handleException() that is given any received exception + request
-         * existingSk = getServiceKey()
-         * [x] compare existingSb params -> delayed until GSBP
-            * using GSBP CF API, prereq
-               * [ ] GSB support in associated brokers
-                  * [ ] COAB
-                  * [ ] CF-mysql
-         * [x] return existingSk to trigger 200 ok.
-   * [x] Test unbind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
-      * [x] New interceptor StalledAsyncUnbind
-      * [x] Refine DSI sync success test  
-         * [x] OSB provision dupl same SI: check same dupl receives right status  
-            * [x] 200 Ok as backing service was completed
-      * [ ] No async bind support in CF.
-   * [x] Implement unbind fix
-            
-
-* [x] set up shorter feedback loop than current full CI (15 min per commit)
-   * [x] add new tag (eg "k8s") on tests being worked on
-   * [ ] filter on `cmdb & k8s`: stashed 
-      * [ ] prototype filtering on AND or multiple tags
-         * [ ] junit supports & syntax https://junit.org/junit5/docs/current/user-guide/#running-tests `smoke & feature-a`
-         * [ ] modify SCAB build to accept multiple tags
-            * [ ] adapt pipeline to renamed property
-            * [ ] support quotes and & in pipeline arg ?
-   * [x] filter only on `k8s`
-      * [x] run single test locally
-   * [x] transiently only run a subset of tests being worked on
-   * [ ] increase build concurrency: apparently 3 in parallel now
-      * [ ] attempted hardcoded 6
-      
-   
-   
-* [ ] add timeout to reactor blocking calls ? 
-   * Are cf-java-client timeouts sufficient ?
-   * Check default values
-   * [ ] Add an interceptor blocking indefinitely on create 
-   * [ ] Configure Test to not wait longer than 60s  
 
 * [ ] reduce pipeline feedback time by tuning gradle fork policy
    * [ ] double avail procs had no visible changes: `maxParallelForks = (2* Runtime.runtime.availableProcessors()) - 1 ?: 1`
 * [ ] automate triggering of smoke tests when concourse acceptance tests pass
-
-* [ ] assert handling of forged last operation request in a component test
 
 
 * [ ] implement OSB GSI and GSB 
@@ -117,6 +117,21 @@
             * [ ] call CF GSBP on backing si, and compare returned params to requested params
 
 
+     
+* [ ] Refactor AT with multi broker support 
+    * [ ] Wait for support in cf-java-client. https://github.com/cloudfoundry/cf-java-client/issues/1025
+    * [ ] Fail fast on org.springframework.cloud.appbroker.acceptance.CloudFoundryAcceptanceTest.initializeBroker()
+        > org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceBrokerNameTaken(270002): The service broker name is taken
+        * [ ] Replace `blockingSubscribe(Mono<? super T> publisher)` with Mono.block() ?                                                                                                                
+    * [ ] Modify AT to deploy two distinct brokers in the same CF app manifest, with distinct routes
+    * [ ] Modify AT to still deploy single cf app, exposing two brokers
+       * with distinct path prefix
+       * with distinct route
+       * backing broker 
+          * is controlled with spring profile / env var injected
+ 
+
+
 
 * [ ] Diagnose and fix suspected flaky test:  com.orange.oss.osbcmdb.CloudFoundryAppDeployerAutoConfigurationTest
 ```
@@ -128,7 +143,6 @@ to have a single bean of type:
 but context failed to start:
  org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'cloudFoundryClient': Invocation of init method failed; nested exception is reactor.core.Exceptions$ErrorCallbackNotImplemented: java.net.UnknownHostException: api.example.local
 ```
-
 
 
 * [ ] **Set up component test, mocking CF API** to get faster feedback than AT
@@ -160,6 +174,8 @@ but context failed to start:
                      * [ ] transiently remove spring security verbose logs
                      * [ ] control logback level with profiles: https://www.baeldung.com/spring-boot-testing-log-level#1-profile-based-logging-settings
                   *  [ ] fixture fails to wiremock CC service instance stub to reach timeout and trigger failure
+
+   * [ ] assert handling of forged last operation request in a component test
 
 Q: how to simulate an async service error ?
 * simplest: 1st response `last_operation` returns an error
@@ -322,7 +338,7 @@ Q: how to simulate and assert proper async service error support ?
    * [ ] Collect wire traces from CF API AT traces ?
    * [ ] check reasons for a distinct gradle module: can this be merged ?
 
-* [ ] Collect Cf java client exception
+* [ ] ~~Collect Cf java client exception~~ : designed to not rely on cf-java-client and CC API exceptions.
    * [ ] Submit cf-java client issue to have exceptions be documented and tested
    * [ ] Submit cf-java client issue to have purge option to OperationsService (in addition to cfclient low level) with async service deletion polling
 * [ ] Set up unit test, mocking CF java client
@@ -332,34 +348,15 @@ Q: how to simulate and assert proper async service error support ?
    * [ ] Adapt clean up script to also clean up backing (spacePerServiceDefinition) spaces ?
    
 * [ ] Refine AT coverage
-    * [ ] **dashboard url**
-    * [ ] update service instance plan
+    * [x] **dashboard url**
+    * [x] update service instance plan
     * [ ] dynamic catalog
     * [ ] service instance params ?
     * [ ] service binding params ?
-    * [ ] async backing service
-    * [ ] metadata
-* [ ] Refactor AT:
-    * [ ] Delete unneeded scab test, once we get sufficient inspiration    
-    * [ ] Fix broker clean up
-       * [x] check cf-java-client support purge service offering (in cfclient) + purge service instance
-       * [ ] modify call to use cfclient.deleteService(purge=true) for each service 
-    * [ ] Rename Test class
+    * [x] async backing service
+    * [x] metadata
 
-     
-* [ ] Refactor AT with multi broker support 
-    * [ ] Wait for support in cf-java-client. https://github.com/cloudfoundry/cf-java-client/issues/1025
-    * [ ] Fail fast on org.springframework.cloud.appbroker.acceptance.CloudFoundryAcceptanceTest.initializeBroker()
-        > org.cloudfoundry.client.v2.ClientV2Exception: CF-ServiceBrokerNameTaken(270002): The service broker name is taken
-        * [ ] Replace `blockingSubscribe(Mono<? super T> publisher)` with Mono.block() ?                                                                                                                
-    * [ ] Modify AT to deploy two distinct brokers in the same CF app manifest, with distinct routes
-    * [ ] Modify AT to still deploy single cf app, exposing two brokers
-       * with distinct path prefix
-       * with distinct route
-       * backing broker 
-          * is controlled with spring profile / env var injected
- 
-     
+    
     
 * [ ] ~~optimize cf api calls:~~ delayed
          > START  Get Organization, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587054025530176414}
