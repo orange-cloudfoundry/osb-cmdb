@@ -21,56 +21,29 @@
 
 * [x] Reduce polling time in some tests to speed up feedback: from 45s to 5s
 
+* [ ] Harden binding request handling: validate service instance guid is in the proper org, ie a tenant can't bind a si from  another tenant    
+* [ ] Harden deprovisionning request handling: validate service instance guid is in the proper org, ie a tenant can't bind a si from another tenant    
+
 
 * [ ] Handle race conditions (including for K8S dups)      
    * [ ] Refactor race condition support
       * [ ] extract concurrent exception handler in its collaborator object to unit test it
-   * [x] Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
-      * [x] Implement update error recovery
-         * Check si, if an update operation is in progress, then return 202 accepted, 
-         * otherwise 500 bad request if update request was previously accepted
-         * otherwise 400 bad request otherwise
-         * OSB api v2.16 will be supporting error details such as "usable", see https://github.com/openservicebrokerapi/servicebroker/pull/661
-            * But not yet implemented in CF API v3 http://v3-apidocs.cloudfoundry.org/version/3.83.0/index.html#create-a-service-instance
-            * Nor in SC-OSB
-      * [x] Refine USI sync success test: sync update will trigger a new backing update and not enter error recovery branch, just perform the update twise   
-         * [x] OSB provision dupl same SI: check same dupl receives right status  
-            * [x] 200 Ok as backing service was completed
-      * [x] Check UpdateAsyncInstanceWithBackingServiceAcceptanceTest does 
-         * [x] USI  
-         * [x] OSB provision dupl same SI: check same dupl receives right status  
-            * [x] 202 accepted, and then 200
-      * [x] New concurrent stalled Update async test (ConcurrentAsyncUpdateInstanceWithBackingServiceAcceptanceTest) that does 
-         * [x] New interceptor StalledAsyncUpdate
-         * [ ] USI  
-         * [x] OSB provision dupl same SI: check same dupl receives right status  
-            * [x] 202 Accepted as backing service is still in progress
-         * [x] OSB update with invalid plan 
-            * [x] 400 Bad request
    * [ ] Test bind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
-      * [ ] New interceptor StalledAsyncBind
-      * [ ] Refine CSI sync success test  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 200 Ok as backing service was completed
-      * [ ] New Create test that does 
-         * [ ] CSI  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 202 Accepted as backing service is still in progress
-         * [ ] OSB provision dupl different SI: check different dupl receives right status
+      * [x] Refine CSI sync success test  
+         * [x] OSB provision dupl same SK: check same dupl receives right status  
+            * [x] 200 Ok as backing service key was completed
+         * [ ] ~~OSB provision dupl different SI~~: wait until SK params support in CF-java-client, and CCAPI V3 
             * [ ] 409 Conflict
-   * [ ] Implement bind fix
-      * [ ] new method handleException() that is given any received exception + request
+      * [ ] No yet async binding sipport in CF API
+   * [x] Implement bind fix
+      * [x] catch or new method handleException() that is given any received exception + request
          * existingSk = getServiceKey()
-         * [ ] compare existingSb params
+         * [x] compare existingSb params -> delayed until GSBP
             * using GSBP CF API, prereq
                * [ ] GSB support in associated brokers
                   * [ ] COAB
                   * [ ] CF-mysql
-         * [ ] compare plans + service definition to request
-         * throw appropriate ServiceBrokerException
-            * 202 ACCEPTED: ServiceBrokerCreateOperationInProgressException
-            * 409 CONFLICT: ServiceInstanceExistsException
-         * return existingSk to trigger 200 ok.
+         * [x] return existingSk to trigger 200 ok.
    * [ ] Test unbind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
       * [ ] New interceptor StalledAsyncUnbind
       * [ ] Refine DSI sync success test  
@@ -114,6 +87,10 @@
 
 
 * [ ] implement OSB GSI and GSB 
+   * [ ] Refine race condition tests to handle conflicting params
+      * [ ] Create
+      * [ ] Update
+      * [ ] Binding
 
 * [ ] assert params are properly returned in AT
    * Using an Interceptor which stores received SIP/SBP and returns them into service binding   

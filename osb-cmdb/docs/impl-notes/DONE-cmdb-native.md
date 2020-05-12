@@ -440,3 +440,32 @@ java.util.concurrent.TimeoutException: Did not observe any item or terminal sign
          * [x] async DSI which gets stalled  
          * [x] OSB unprovision dupl same SI: check same dupl receives right status  
             * [x] 202 Accepted as backing service deprovision is still in progress
+   * [x] Test update https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-5
+      * [x] Implement update error recovery
+         * Check si, if an update operation is in progress, then return 202 accepted, 
+         * otherwise 500 bad request if update request was previously accepted
+         * otherwise 400 bad request otherwise
+         * OSB api v2.16 will be supporting error details such as "usable", see https://github.com/openservicebrokerapi/servicebroker/pull/661
+            * But not yet implemented in CF API v3 http://v3-apidocs.cloudfoundry.org/version/3.83.0/index.html#create-a-service-instance
+            * Nor in SC-OSB
+      * [x] Refine USI sync success test: sync update will trigger a new backing update and not enter error recovery branch, just perform the update twise   
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 200 Ok as backing service was completed
+      * [x] Check UpdateAsyncInstanceWithBackingServiceAcceptanceTest does 
+         * [x] USI  
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 202 accepted, and then 200
+      * [x] New concurrent stalled Update async test (ConcurrentAsyncUpdateInstanceWithBackingServiceAcceptanceTest) that does 
+         * [x] New interceptor StalledAsyncUpdate
+         * [ ] USI  
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 202 Accepted as backing service is still in progress
+         * [x] OSB update with invalid plan 
+            * [x] 400 Bad request
+
+
+* [x] Fix offending error log: Failing test CreateInstanceWithBackingServiceSyncFailureAcceptanceTest with message
+   ```
+   reactor.core.Exceptions$ReactiveException: java.lang.AssertionError: Expecting no ERROR log entry in broker recent logs, but got:[LogMessage{applicationId=b09d404b-f017-4a2a-ac8d-487870e93238, message=2020-05-11 16:29:31.131 ERROR 14 --- [nio-8080-exec-4] c.o.o.o.s.OsbCmdbServiceInstance         : Unable to lookup existing service with id=86c1a37f-e853-4964-90a0-5317e00539b7 caught java.lang.IllegalArgumentException: Service instance 86c1a37f-e853-4964-90a0-5317e00539b7 does not exist, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1589214571132120642}]
+   ``` 
+   * Suspecting race condition to get recent logs, resulting in this log entry usually not being collected, and explaining why this has not triggered before

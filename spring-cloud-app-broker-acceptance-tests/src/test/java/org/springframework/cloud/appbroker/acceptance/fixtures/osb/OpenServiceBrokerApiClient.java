@@ -174,8 +174,8 @@ public class OpenServiceBrokerApiClient  {
 	public RequestSpecification serviceKeyRequest() {
 		return serviceBrokerSpecification()
 			.body("{" +
-				"\"service_id\": \"" + serviceDefinitionId + "\"," +
-				"\"plan_id\": \"" + planId + "\"," +
+				"\"service_id\": \"" + this.serviceDefinitionId + "\"," +
+				"\"plan_id\": \"" + this.planId + "\"," +
 				"\"bind_resource\": {" +
 				"\"credential_client_id\": \"" + SERVICE_KEY_CLIENT_ID + "\"" +
 				"}" +

@@ -80,37 +80,45 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 				.build());
 		}
 		catch (Exception originalException) {
+			//CF API errors can be multiple and can change without notification
+			// To avoid relying on exceptions thrown to make decisions, we try to diagnose and recover the exception
+			// globally by inspecting the backing service instance state instead.
 			LOG.info("Unable to update bind service, caught:" + originalException, originalException);
-			LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ",
-				originalException, request);
-
-			ServiceKey existingServiceKey = null;
-			try {
-				existingServiceKey = spacedTargetedOperations.services().getServiceKey(GetServiceKeyRequest.builder()
-					.serviceInstanceName(request.getServiceInstanceId())
-					.serviceKeyName(request.getBindingId())
-					.build())
-					.block();
-			}
-			catch (Exception exception) {
-				LOG.info("Unable to lookup potential service key dup, caught {}", exception.toString());
-			}
-			if (existingServiceKey != null) {
-				LOG.info("Service binding guid {} already exists and is backed by service key: {}, returning 201",
-					request.getBindingId(), existingServiceKey);
-				//In the future (with CAPI v3) compare params to return a 409 conflict in case of params mismatch
-				//Would need cf-java-client to support fetching service key params, which it
-				//does not yet do: it only return service key parameter url
-				// See https://github.com/cloudfoundry/cf-java-client/blob/4ce8018050f69619cc9e1eb61a8a7f5a36e2d5c7/cloudfoundry-client/src/main/java/org/cloudfoundry/client/v2/servicekeys/_ServiceKeyEntity.java#L69
-				return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
-					.credentials(existingServiceKey.getCredentials())
-					.bindingExisted(true)
-					.build());
-			}
-			LOG.info("Unable to lookup potential service key dup, flowing up original exception {}",
-				originalException.toString());
-			throw new ServiceBrokerException(originalException.getMessage(), originalException);
+			return handleBindException(request, spacedTargetedOperations, originalException);
 		}
+	}
+
+	public Mono<CreateServiceInstanceBindingResponse> handleBindException(CreateServiceInstanceBindingRequest request,
+		CloudFoundryOperations spacedTargetedOperations, Exception originalException) {
+		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ",
+			originalException, request);
+
+		ServiceKey existingServiceKey = null;
+		try {
+			existingServiceKey = spacedTargetedOperations.services().getServiceKey(GetServiceKeyRequest.builder()
+				.serviceInstanceName(request.getServiceInstanceId())
+				.serviceKeyName(request.getBindingId())
+				.build())
+				.block();
+		}
+		catch (Exception exception) {
+			LOG.info("Unable to lookup potential service key dup, caught {}", exception.toString());
+		}
+		if (existingServiceKey != null) {
+			LOG.info("Service binding guid {} already exists and is backed by service key: {}, returning 200",
+				request.getBindingId(), existingServiceKey);
+			//In the future (with CAPI v3) compare params to return a 409 conflict in case of params mismatch
+			//Would need cf-java-client to support fetching service key params, which it
+			//does not yet do: it only return service key parameter url
+			// See https://github.com/cloudfoundry/cf-java-client/blob/4ce8018050f69619cc9e1eb61a8a7f5a36e2d5c7/cloudfoundry-client/src/main/java/org/cloudfoundry/client/v2/servicekeys/_ServiceKeyEntity.java#L69
+			return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
+				.credentials(existingServiceKey.getCredentials())
+				.bindingExisted(true)
+				.build());
+		}
+		LOG.info("Unable to lookup potential service key dup, flowing up original exception {}",
+			originalException.toString());
+		throw new ServiceBrokerException(originalException.getMessage(), originalException);
 	}
 
 	@Override
