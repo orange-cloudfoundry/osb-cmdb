@@ -17,10 +17,13 @@ public class BaseBackingSpaceInstanceInterceptor {
 	protected String defaultSpaceName;
 
 	/**
-	 * Tracks provisionned CSI guids in order to accept associated DSI and GetLastOperation calls which can't be
-	 * filtered from space in Context (as OSB call has no Context)
+	 * Tracks provisionned<ol>
+	 * <li>CSI guids in order to accept associated DSI and GetLastOperation calls which can't be
+	 * 	 * filtered from space in Context (as OSB call has no Context)</li>
+	 * <li>CSB guids in order to accept associated DSB</li>
+	 * </ol>
 	 */
-	protected Set<String> provisionnedServiceInstanceGuids = Collections.synchronizedSet(new HashSet<>());
+	protected Set<String> provisionnedInstanceGuids = Collections.synchronizedSet(new HashSet<>());
 
 	public BaseBackingSpaceInstanceInterceptor(
 		String defaultSpaceName) {
@@ -41,7 +44,7 @@ public class BaseBackingSpaceInstanceInterceptor {
 	}
 
 	protected boolean isServiceGuidPreviousProvisionnedByUs(String serviceInstanceId, String requestToString) {
-		boolean isGuidPreviouslyProvisionnedByUs = provisionnedServiceInstanceGuids.contains(serviceInstanceId);
+		boolean isGuidPreviouslyProvisionnedByUs = provisionnedInstanceGuids.contains(serviceInstanceId);
 		LOG.debug("Accept: isServiceGuidPreviousProvisionnedByUs={} for serviceInstanceId={} and request={}",
 			isGuidPreviouslyProvisionnedByUs, serviceInstanceId, requestToString);
 		return isGuidPreviouslyProvisionnedByUs;

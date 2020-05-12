@@ -28,7 +28,7 @@ public class ASyncStalledUpdateBackingSpaceInstanceInterceptor extends BaseServi
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
-		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(UpdateServiceInstanceResponse.builder()
 			.async(true)
 			.build());

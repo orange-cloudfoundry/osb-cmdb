@@ -39,6 +39,10 @@ The tests require the following properties to be set:
 * `spring.cloud.appbroker.acceptance-test.cloudfoundry.client-id` - The CF API OAuth2 client ID. It requires the following authorities: cloud_controller.read,cloud_controller.write,clients.admin
 * `spring.cloud.appbroker.acceptance-test.cloudfoundry.client-secret` - The CF API OAuth2 client secret.
 
+=== Running from IDE
+
+Make sure to have the osb-cmdb:bootJar gradle target executed before each test to ensure the latest code change are deployed within the test. In Intellij, add a gradle tasks to the test configuration `Before Launch` in the `Run/Debug configuration` dialog. See
+
 When running tests from an IDE, the following property must also be set (it is set automatically when running the entire suite via Gradle):
 
 * `tests.broker-app-path` - The path to the test broker jar file (eg. `spring-cloud-app-broker-acceptance-tests/build/libs/spring-cloud-app-broker-acceptance-tests.jar`).
@@ -61,7 +65,7 @@ $ ./gradlew test -PacceptanceTests \
  -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.client-secret=secret
 ----
 
-== Running from CI
+=== Running from CI
 
 See concourse pipeline configuration at [ci/pipeline.yml](ci/pipeline.yml) and associated acceptance test execution script at [ci/scripts/acceptance-tests.sh](ci/scripts/acceptance-tests.sh)
 

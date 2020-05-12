@@ -15,6 +15,11 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
+import org.springframework.cloud.servicebroker.model.catalog.Plan;
+import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
+
 public class AbstractOsbCmdbService {
 
 	protected final Logger LOG = Loggers.getLogger(AbstractOsbCmdbService.class);
@@ -64,18 +69,40 @@ public class AbstractOsbCmdbService {
 			.build();
 	}
 
+	protected String getSpacedIdFromTargettedOperationsInternals(CloudFoundryOperations spacedTargetedOperations) {
+		DefaultCloudFoundryOperations spacedTargetedOperationsInternals = (DefaultCloudFoundryOperations) spacedTargetedOperations;
+		String spaceId = spacedTargetedOperationsInternals.getSpaceId().block();
+		if (spaceId == null) {
+			LOG.error("Unexpected null spaceId in DefaultCloudFoundryOperations {}", spacedTargetedOperationsInternals);
+			throw new ServiceBrokerException("Internal CF client error");
+		}
+		return spaceId;
+	}
+
+	protected void validateServiceDefinitionAndPlanIds(ServiceDefinition serviceDefinition, Plan plan,
+		String serviceDefinitionId,
+		String planId) {
+		if (plan == null) {
+			LOG.info("Invalid plan received with unknown id {}", planId);
+			throw new ServiceBrokerInvalidParametersException("Invalid plan received with unknown id:" + planId);
+		}
+		if (serviceDefinition == null) {
+			LOG.info("Invalid service definition received with unknown id {}", serviceDefinitionId);
+			throw new ServiceBrokerInvalidParametersException(
+				"Invalid service definition received with unknown id:" + serviceDefinitionId);
+		}
+	}
+
 	private Mono<Void> addSpaceDeveloperRoleForCurrentUser(String orgName, String spaceName) {
-		return Mono.defer(() -> {
-			return operations.userAdmin().setSpaceRole(SetSpaceRoleRequest.builder()
-				.spaceRole(SpaceRole.DEVELOPER)
-				.organizationName(orgName)
-				.spaceName(spaceName)
-				.username(this.userName)
-				.build())
-				.doOnSuccess(v -> LOG.info("Set space developer role for space {}", spaceName))
-				.doOnError(e -> LOG.warn(String
-					.format("Error setting space developer role for space %s: %s", spaceName, e.getMessage())));
-		});
+		return Mono.defer(() -> operations.userAdmin().setSpaceRole(SetSpaceRoleRequest.builder()
+			.spaceRole(SpaceRole.DEVELOPER)
+			.organizationName(orgName)
+			.spaceName(spaceName)
+			.username(this.userName)
+			.build())
+			.doOnSuccess(v -> LOG.info("Set space developer role for space {}", spaceName))
+			.doOnError(e -> LOG.warn(String
+				.format("Error setting space developer role for space %s: %s", spaceName, e.getMessage()))));
 	}
 
 	private Mono<String> createSpace(String spaceName) {

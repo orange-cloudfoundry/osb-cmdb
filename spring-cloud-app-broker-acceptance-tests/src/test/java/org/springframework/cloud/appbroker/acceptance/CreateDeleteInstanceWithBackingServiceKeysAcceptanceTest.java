@@ -107,6 +107,9 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		//when concurrent binding requests as received, they are properly handled
 		assertDuplicateCreateServiceKeyOsbRequestsHandling(brokeredServiceInstance, brokeredServiceKey);
 
+		//when an attacker
+		assertInvalidForgedCreateServiceKeyOsbRequestsHandling(backingServiceInstance, "any-service-binding-id");
+
 		//when a service key is deleted
 		deleteServiceKey(getSkName(), brokeredServiceInstanceName());
 
@@ -170,13 +173,26 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 			.statusCode(HttpStatus.OK.value());
 	}
 
+	private void assertInvalidForgedCreateServiceKeyOsbRequestsHandling(
+		ServiceInstance unauthorizedBackendServiceInstance, String serviceKeyId) {
+		//When requesting a concurrent request to the same broker with the same instance id, service definition,
+		// plan and params
+		given(brokerFixture.serviceKeyRequest())
+			.when()
+			.put(brokerFixture.createBindingUrl(), unauthorizedBackendServiceInstance.getId(),
+				serviceKeyId)
+			.then()
+			//Then the duplicate is ignored as expected
+			.statusCode(HttpStatus.BAD_REQUEST.value());
+	}
+
 	private void assertDuplicateDeleteServiceKeyOsbRequestsHandling(ServiceInstance brokeredServiceInstance,
 		ServiceKey brokeredServiceKey) {
 		//When requesting a concurrent request to the same broker with the same instance id, service definition,
 		// plan and params
 		given(brokerFixture.serviceKeyRequest())
 			.when()
-			.delete(brokerFixture.createBindingUrl(), brokeredServiceInstance.getId(), brokeredServiceKey.getId())
+			.delete(brokerFixture.deleteBindingUrl(), brokeredServiceInstance.getId(), brokeredServiceKey.getId())
 			.then()
 			//Then the duplicate is ignored as expected
 			.statusCode(HttpStatus.GONE.value());

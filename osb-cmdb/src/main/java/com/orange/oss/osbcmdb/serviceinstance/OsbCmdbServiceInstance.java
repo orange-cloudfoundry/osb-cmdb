@@ -502,16 +502,6 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		return null; //no incompatibility
 	}
 
-	private String getSpacedIdFromTargettedOperationsInternals(CloudFoundryOperations spacedTargetedOperations) {
-		DefaultCloudFoundryOperations spacedTargetedOperationsInternals = (DefaultCloudFoundryOperations) spacedTargetedOperations;
-		String spaceId = spacedTargetedOperationsInternals.getSpaceId().block();
-		if (spaceId == null) {
-			LOG.error("Unexpected null spaceId in DefaultCloudFoundryOperations {}", spacedTargetedOperationsInternals);
-			throw new ServiceBrokerException("Internal CF client error");
-		}
-		return spaceId;
-	}
-
 	/**
 	 * Handle exceptions by checking current backing service instance in order to return the appropriate response
 	 * as expected in the OSB specifications.
@@ -804,20 +794,6 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	private void updateServiceInstanceMetadata(UpdateServiceInstanceRequest request, String serviceInstanceId) {
 		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
 		updateMetadata(metaData, serviceInstanceId);
-	}
-
-	private void validateServiceDefinitionAndPlanIds(ServiceDefinition serviceDefinition, Plan plan,
-		String serviceDefinitionId,
-		String planId) {
-		if (plan == null) {
-			LOG.info("Invalid plan received with unknown id {}", planId);
-			throw new ServiceBrokerInvalidParametersException("Invalid plan received with unknown id:" + planId);
-		}
-		if (serviceDefinition == null) {
-			LOG.info("Invalid service definition received with unknown id {}", serviceDefinitionId);
-			throw new ServiceBrokerInvalidParametersException(
-				"Invalid service definition received with unknown id:" + serviceDefinitionId);
-		}
 	}
 
 	protected enum OsbOperation {

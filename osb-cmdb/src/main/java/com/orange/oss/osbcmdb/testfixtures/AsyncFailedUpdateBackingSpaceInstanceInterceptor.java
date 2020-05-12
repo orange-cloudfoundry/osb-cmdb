@@ -29,7 +29,7 @@ public class AsyncFailedUpdateBackingSpaceInstanceInterceptor extends BaseServic
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
 		LOG.debug("Async update returned");
-		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(UpdateServiceInstanceResponse.builder()
 			.async(true)
 			.build());

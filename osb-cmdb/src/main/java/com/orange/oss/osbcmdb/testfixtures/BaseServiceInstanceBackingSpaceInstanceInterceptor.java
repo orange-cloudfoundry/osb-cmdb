@@ -52,7 +52,7 @@ public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBack
 
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
-		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(CreateServiceInstanceResponse.builder()
 			.async(false)
 			.dashboardUrl(DASHBOARD_URL)
@@ -85,7 +85,7 @@ public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBack
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
-		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(UpdateServiceInstanceResponse.builder()
 			.async(false)
 			.build());

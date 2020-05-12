@@ -11,7 +11,7 @@
    * [x] Disable wire trace logs are enabled in backend services for now   
 
 
-* [ ] Harden/unifomize handling of long service instance guid:
+* [ ] Harden/uniformize handling of long service instance guid:
    ```  
    String backingServiceInstanceName =
    			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
@@ -22,6 +22,8 @@
 * [x] Reduce polling time in some tests to speed up feedback: from 45s to 5s
 
 * [ ] Harden binding request handling: validate service instance guid is in the proper org, ie a tenant can't bind a si from  another tenant    
+   * Lookup the existing service instance
+   * Check that org match
 * [ ] Harden deprovisionning request handling: validate service instance guid is in the proper org, ie a tenant can't bind a si from another tenant    
 
 
@@ -44,17 +46,13 @@
                   * [ ] COAB
                   * [ ] CF-mysql
          * [x] return existingSk to trigger 200 ok.
-   * [ ] Test unbind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
-      * [ ] New interceptor StalledAsyncUnbind
-      * [ ] Refine DSI sync success test  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 200 Ok as backing service was completed
-      * [ ] New Create test that does 
-         * [ ] USI  
-         * [ ] OSB provision dupl same SI: check same dupl receives right status  
-            * [ ] 202 Accepted as backing service is still in progress
-         * [ ] OSB provision dupl different SI: check different dupl receives right status
-            * [ ] 409 Conflict
+   * [x] Test unbind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
+      * [x] New interceptor StalledAsyncUnbind
+      * [x] Refine DSI sync success test  
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 200 Ok as backing service was completed
+      * [ ] No async bind support in CF.
+   * [x] Implement unbind fix
             
 
 * [x] set up shorter feedback loop than current full CI (15 min per commit)

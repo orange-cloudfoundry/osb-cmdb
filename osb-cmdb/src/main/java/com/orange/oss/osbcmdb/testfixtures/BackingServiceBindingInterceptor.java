@@ -17,30 +17,36 @@ import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstan
 /**
  * Supports intercepting OSB service provisionning calls, mainly for acceptance test purposes. Reuses prototypes from
  * {@link org.springframework.cloud.servicebroker.service.ServiceInstanceBindingService}
- *
+ * <p>
  * By default, behaves like noop
  */
 public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceInterceptor implements
 	ServiceBindingInterceptor {
-	public static final Logger LOG = Loggers.getLogger(BackingServiceBindingInterceptor.class);
 
-	public static final Map<String, Object> CREDENTIALS = Collections.singletonMap("noop-binding-key", "noop-binding-value");
+	public static final Map<String, Object> CREDENTIALS = Collections
+		.singletonMap("noop-binding-key", "noop-binding-value");
+
+	public static final Logger LOG = Loggers.getLogger(BackingServiceBindingInterceptor.class);
 
 	public BackingServiceBindingInterceptor(String defaultSpaceName) {
 		super(defaultSpaceName);
 	}
 
 	@Override
-	public boolean accept(CreateServiceInstanceBindingRequest request) { return isScabAcceptanceTest(request.getContext(),
-		request.toString());}
+	public boolean accept(CreateServiceInstanceBindingRequest request) {
+		return isScabAcceptanceTest(request.getContext(), request.toString());
+	}
+
 	@Override
-	public boolean accept(DeleteServiceInstanceBindingRequest request) { return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(),
-		request.toString());}
+	public boolean accept(DeleteServiceInstanceBindingRequest request) {
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+	}
 
 
 	@Override
 	public Mono<CreateServiceInstanceBindingResponse> createServiceInstanceBinding(
 		CreateServiceInstanceBindingRequest request) {
+		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
 			.credentials(CREDENTIALS)
 			.build());
