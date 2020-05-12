@@ -252,6 +252,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return Mono.just(responseBuilder.build());
 		}
 		catch (Exception e) {
+			LOG.info("Unable to deprovision service, caught:" + e, e);
 			return handleDeleteException(e, backingServiceInstanceName, spacedTargetedOperations, request);
 		}
 	}
@@ -402,6 +403,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			responseBuilder.async(asyncProvisioning);
 		}
 		catch (Exception e) {
+			LOG.info("Unable to update service, caught:" + e, e);
 			return handleUpdateException(e, backingServiceInstanceName, spacedTargetedOperations, request);
 		}
 		finally {
