@@ -11,7 +11,6 @@ import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl
 import com.orange.oss.osbcmdb.metadata.MetaData;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
@@ -152,14 +151,6 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				}
 				responseBuilder.async(asyncProvisioning);
 			}
-			catch (ClientV2Exception e) {
-				LOG.info("Unable to provision service, caught:" + e, e);
-				//CF API errors can be multiple and can change without notification
-				//See CF service broker client specs at
-				// https://github.com/cloudfoundry/cloud_controller_ng/blob/80176ff0068741088e19629516c0285b4cf57ef3/spec/unit/lib/services/service_brokers/v2/client_spec.rb
-				// To avoid relying on exceptions thrown, we try to diagnose and recover the exception globally
-				throw new ServiceBrokerException(e.toString());
-			}
 			finally {
 				if (backingServiceInstanceInstanceId != null) {
 					updateServiceInstanceMetadata(request, backingServiceInstanceInstanceId);
@@ -169,6 +160,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return Mono.just(responseBuilder.build());
 		}
 		catch (Exception e) {
+			LOG.info("Unable to provision service, caught:" + e, e);
+			//CF API errors can be multiple and can change without notification
+			//See CF service broker client specs at
+			// https://github.com/cloudfoundry/cloud_controller_ng/blob/80176ff0068741088e19629516c0285b4cf57ef3/spec/unit/lib/services/service_brokers/v2/client_spec.rb
+			// To avoid relying on exceptions thrown to make decisions, we try to diagnose and recover the exception
+			// globally by inspecting the backing service instance state instead.
 			return handleCreateException(e, backingServiceName, spacedTargetedOperations, request);
 		}
 	}
@@ -587,9 +584,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			}
 		}
 		LOG.info("No existing instance in the inventory with id={} in space with id={}, the exception is likely not " +
-			"related to " +
-			"concurrent or " +
-			"conflicting duplicate, rethrowing it", request.getServiceInstanceId(), spaceId);
+			"related to concurrent or conflicting duplicate, rethrowing it", request.getServiceInstanceId(), spaceId);
 		throw new ServiceBrokerException(originalException);
 	}
 
