@@ -7,11 +7,14 @@ import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.servicekeys.CreateServiceKeyRequest;
 import org.cloudfoundry.client.v2.servicekeys.CreateServiceKeyResponse;
 import org.cloudfoundry.operations.CloudFoundryOperations;
+import org.cloudfoundry.operations.services.GetServiceKeyRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
+import org.cloudfoundry.operations.services.ServiceKey;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse;
@@ -60,20 +63,54 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 		}
 
 		//Directly use the v2 api to avoid a second API call to fetch the service key credentials
-		CreateServiceKeyResponse createServiceKeyResponse = client.serviceKeys()
-			.create(CreateServiceKeyRequest.builder()
-				.serviceInstanceId(existingSi.getId())
-				.parameters(request.getParameters())
-				.name(request.getBindingId())
-				.build())
-			.block();
+		try {
+			CreateServiceKeyResponse createServiceKeyResponse = client.serviceKeys()
+				.create(CreateServiceKeyRequest.builder()
+					.serviceInstanceId(existingSi.getId())
+					.parameters(request.getParameters())
+					.name(request.getBindingId())
+					.build())
+				.block();
 
-		//For now CF api V2 & V3 do not support async service bindings
-		assert createServiceKeyResponse != null;
-		return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
-			.credentials(createServiceKeyResponse.getEntity().getCredentials())
-			.async(false)
-			.build());
+			//For now CF api V2 & V3 do not support async service bindings
+			assert createServiceKeyResponse != null;
+			return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
+				.credentials(createServiceKeyResponse.getEntity().getCredentials())
+				.async(false)
+				.build());
+		}
+		catch (Exception originalException) {
+			LOG.info("Unable to update bind service, caught:" + originalException, originalException);
+			LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ",
+				originalException, request);
+
+			ServiceKey existingServiceKey = null;
+			try {
+				existingServiceKey = spacedTargetedOperations.services().getServiceKey(GetServiceKeyRequest.builder()
+					.serviceInstanceName(request.getServiceInstanceId())
+					.serviceKeyName(request.getBindingId())
+					.build())
+					.block();
+			}
+			catch (Exception exception) {
+				LOG.info("Unable to lookup potential service key dup, caught {}", exception.toString());
+			}
+			if (existingServiceKey != null) {
+				LOG.info("Service binding guid {} already exists and is backed by service key: {}, returning 201",
+					request.getBindingId(), existingServiceKey);
+				//In the future (with CAPI v3) compare params to return a 409 conflict in case of params mismatch
+				//Would need cf-java-client to support fetching service key params, which it
+				//does not yet do: it only return service key parameter url
+				// See https://github.com/cloudfoundry/cf-java-client/blob/4ce8018050f69619cc9e1eb61a8a7f5a36e2d5c7/cloudfoundry-client/src/main/java/org/cloudfoundry/client/v2/servicekeys/_ServiceKeyEntity.java#L69
+				return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
+					.credentials(existingServiceKey.getCredentials())
+					.bindingExisted(true)
+					.build());
+			}
+			LOG.info("Unable to lookup potential service key dup, flowing up original exception {}",
+				originalException.toString());
+			throw new ServiceBrokerException(originalException.getMessage(), originalException);
+		}
 	}
 
 	@Override
@@ -112,6 +149,7 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 		catch (Exception e) {
 			LOG.info("Unable to delete service key {} from service instance {} Got {}", request.getBindingId(),
 				existingSi.getName(), e.toString());
+			throw new ServiceBrokerException(e.toString());
 		}
 
 		//For now CF api V2 & V3 do not support async service bindings

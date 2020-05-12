@@ -587,7 +587,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		LOG.info("No existing instance in the inventory with id={} in space with id={}, the exception is likely not " +
 			"related to concurrent or conflicting duplicate, rethrowing it", request.getServiceInstanceId(), spaceId);
-		throw new ServiceBrokerException(originalException);
+		throw new ServiceBrokerException(originalException.getMessage(), originalException);
 	}
 
 	/**
@@ -711,8 +711,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						updatedSi.getMessage(), originalException.getMessage());
 					//500 error
 					//In the future, return the usable field once CF supports it
-					throw new ServiceBrokerException(originalException.getMessage());
-
+					throw new ServiceBrokerException(originalException.getMessage(), originalException);
 				default:
 					LOG.error("Unexpected last operation state:" + updatedSi.getStatus());
 					throw new ServiceBrokerException("Internal CF protocol error");
