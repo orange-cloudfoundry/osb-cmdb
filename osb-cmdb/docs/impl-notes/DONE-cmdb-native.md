@@ -303,7 +303,22 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
         cloudfoundry-client.response             : 200    /v2/spaces?q=name:bsn-create-instance-with-service-keys&q=organization_guid:14af188e-b07f-4041-9488-d97bacfcb49c&page=1 (21 ms), messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766959017675688}
         cloudfoundry-client.request              : GET    /v2/spaces/0dbabfa1-3ed9-46c6-8fbb-e0c0c62605a7/services?q=label:bsn-create-instance-with-service-keys&page=1, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1587766959037185146}
 
-
+        
+* [x] set up shorter feedback loop than current full CI (15 min per commit)
+   * [x] add new tag (eg "k8s") on tests being worked on
+   * [ ] filter on `cmdb & k8s`: stashed 
+      * [ ] prototype filtering on AND or multiple tags
+         * [ ] junit supports & syntax https://junit.org/junit5/docs/current/user-guide/#running-tests `smoke & feature-a`
+         * [ ] modify SCAB build to accept multiple tags
+            * [ ] adapt pipeline to renamed property
+            * [ ] support quotes and & in pipeline arg ?
+   * [x] filter only on `k8s`
+      * [x] run single test locally
+   * [x] transiently only run a subset of tests being worked on
+   * [ ] increase build concurrency: apparently 3 in parallel now
+      * [ ] attempted hardcoded 6
+      
+   
 * [ ] Handle race conditions (including for K8S dups)      
    * [x] Implement race/conflict handling in create
       * [x] new method handleException() that is given any received exception + request
@@ -417,12 +432,10 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
 * [x] Diagnose test failures: suspecting CF instability or concourse worker overload
    * [x] high concourse load some 15 mins ago (28 and 48 on 2 workers)
       * [x] retrigger test: successfull within 10 mins
-
-``` 
-java.util.concurrent.TimeoutException: Did not observe any item or terminal signal within 30000ms in 'source(MonoCreate)' (and no fallback has been configured)
-	at reactor.core.publisher.FluxTimeout$TimeoutMainSubscriber.handleTimeout(FluxTimeout.java:289)
-```
-
+          ``` 
+          java.util.concurrent.TimeoutException: Did not observe any item or terminal signal within 30000ms in 'source(MonoCreate)' (and no fallback has been configured)
+          	at reactor.core.publisher.FluxTimeout$TimeoutMainSubscriber.handleTimeout(FluxTimeout.java:289)
+          ```
    * [x] Impl delete error handling (in particular concurrent deletes)
       * Error use-cases
          * concurrent service key deletion (sync)
@@ -463,9 +476,50 @@ java.util.concurrent.TimeoutException: Did not observe any item or terminal sign
          * [x] OSB update with invalid plan 
             * [x] 400 Bad request
 
+   * [x] Test bind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-3
+      * [x] Refine CSI sync success test  
+         * [x] OSB provision dupl same SK: check same dupl receives right status  
+            * [x] 200 Ok as backing service key was completed
+         * [ ] ~~OSB provision dupl different SI~~: wait until SK params support in CF-java-client, and CCAPI V3 
+            * [ ] 409 Conflict
+      * [ ] No yet async binding sipport in CF API
+   * [x] Implement bind fix
+      * [x] catch or new method handleException() that is given any received exception + request
+         * existingSk = getServiceKey()
+         * [x] compare existingSb params -> delayed until GSBP
+            * using GSBP CF API, prereq
+               * [ ] GSB support in associated brokers
+                  * [ ] COAB
+                  * [ ] CF-mysql
+         * [x] return existingSk to trigger 200 ok.
+   * [x] Test unbind https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-9
+      * [x] New interceptor StalledAsyncUnbind
+      * [x] Refine DSI sync success test  
+         * [x] OSB provision dupl same SI: check same dupl receives right status  
+            * [x] 200 Ok as backing service was completed
+      * [ ] No async bind support in CF.
+   * [x] Implement unbind fix
+
 
 * [x] Fix offending error log: Failing test CreateInstanceWithBackingServiceSyncFailureAcceptanceTest with message
    ```
    reactor.core.Exceptions$ReactiveException: java.lang.AssertionError: Expecting no ERROR log entry in broker recent logs, but got:[LogMessage{applicationId=b09d404b-f017-4a2a-ac8d-487870e93238, message=2020-05-11 16:29:31.131 ERROR 14 --- [nio-8080-exec-4] c.o.o.o.s.OsbCmdbServiceInstance         : Unable to lookup existing service with id=86c1a37f-e853-4964-90a0-5317e00539b7 caught java.lang.IllegalArgumentException: Service instance 86c1a37f-e853-4964-90a0-5317e00539b7 does not exist, messageType=OUT, sourceInstance=0, sourceType=APP/PROC/WEB, timestamp=1589214571132120642}]
    ``` 
    * Suspecting race condition to get recent logs, resulting in this log entry usually not being collected, and explaining why this has not triggered before
+   
+* [x] Reduce polling time in some tests to speed up feedback: from 45s to 5s
+   
+* [x] Harden binding request handling: validate service instance guid is in the proper org, ie a tenant can't bind a si from  another tenant    
+   * Lookup the existing service instance
+   * Check that org match
+* [x] Harden deprovisionning request handling: validate service instance guid is in the proper org, ie a tenant can't bind a si from another tenant    
+
+
+* [x] Check smoke test status
+   * [x] noop plan unpublished 
+      * [ ] relaunch coab broker post-deploy
+         * [ ] update config to point to paas-templates-private
+            * [ ] add support for http proxy in git
+
+
+  
