@@ -104,8 +104,14 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		// and credentials from backing service key is returned in brokered service key
 		assertThat(backingServiceKey.getCredentials()).isEqualTo(STATIC_CREDENTIALS);
 
+		//when concurrent binding requests as received, they are properly handled
+		assertDuplicateCreateServiceKeyOsbRequestsHandling(brokeredServiceInstance, brokeredServiceKey);
+
 		//when a service key is deleted
 		deleteServiceKey(getSkName(), brokeredServiceInstanceName());
+
+		//when concurrent unbinding requests as received, they are properly handled
+		assertDuplicateDeleteServiceKeyOsbRequestsHandling(brokeredServiceInstance, brokeredServiceKey);
 
 		//then the backing service key is deleted
 		assertThat(listServiceKeys(backingServiceName, brokeredServiceName())).isEmpty();
@@ -150,6 +156,30 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 			.then()
 			//Then the duplicate is ignored as expected
 			.statusCode(HttpStatus.OK.value());
+	}
+
+	private void assertDuplicateCreateServiceKeyOsbRequestsHandling(ServiceInstance brokeredServiceInstance,
+		ServiceKey brokeredServiceKey) {
+		//When requesting a concurrent request to the same broker with the same instance id, service definition,
+		// plan and params
+		given(brokerFixture.serviceKeyRequest())
+			.when()
+			.put(brokerFixture.createBindingUrl(), brokeredServiceInstance.getId(), brokeredServiceKey.getId())
+			.then()
+			//Then the duplicate is ignored as expected
+			.statusCode(HttpStatus.OK.value());
+	}
+
+	private void assertDuplicateDeleteServiceKeyOsbRequestsHandling(ServiceInstance brokeredServiceInstance,
+		ServiceKey brokeredServiceKey) {
+		//When requesting a concurrent request to the same broker with the same instance id, service definition,
+		// plan and params
+		given(brokerFixture.serviceKeyRequest())
+			.when()
+			.delete(brokerFixture.createBindingUrl(), brokeredServiceInstance.getId(), brokeredServiceKey.getId())
+			.then()
+			//Then the duplicate is ignored as expected
+			.statusCode(HttpStatus.GONE.value());
 	}
 
 	private void assertDuplicateDeleteServiceInstanceOsbRequestsHandling(ServiceInstance brokeredServiceInstance) {
