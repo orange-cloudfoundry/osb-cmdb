@@ -28,7 +28,7 @@ public class ASyncFailedCreateBackingSpaceInstanceInterceptor extends BaseServic
 
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
-		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(CreateServiceInstanceResponse.builder()
 			.async(true)
 			.build());

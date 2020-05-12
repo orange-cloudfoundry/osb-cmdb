@@ -28,7 +28,7 @@ public class AsyncSuccessfulUpdateBackingSpaceInstanceInterceptor extends BaseSe
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
-		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(UpdateServiceInstanceResponse.builder()
 			.async(true)
 			.build());

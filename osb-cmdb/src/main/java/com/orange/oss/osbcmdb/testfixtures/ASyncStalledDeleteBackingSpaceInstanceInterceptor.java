@@ -28,7 +28,7 @@ public class ASyncStalledDeleteBackingSpaceInstanceInterceptor extends BaseServi
 
 	@Override
 	public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
-		provisionnedServiceInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(DeleteServiceInstanceResponse.builder()
 			.async(true)
 			.build());
