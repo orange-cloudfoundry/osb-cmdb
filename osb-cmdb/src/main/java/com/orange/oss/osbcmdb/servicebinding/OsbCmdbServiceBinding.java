@@ -28,10 +28,9 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 
 	public static final Duration SYNC_COMPLETION_TIMEOUT = Duration.ofSeconds(5);
 
-	private ServiceBindingInterceptor osbInterceptor;
-
-
 	private final Logger log = Loggers.getLogger(OsbCmdbServiceBinding.class);
+
+	private ServiceBindingInterceptor osbInterceptor;
 
 	public OsbCmdbServiceBinding(CloudFoundryClient cloudFoundryClient, String defaultOrg, String userName,
 		CloudFoundryOperations cloudFoundryOperations, ServiceBindingInterceptor osbInterceptor) {
@@ -52,7 +51,8 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 
 		//Lookup corresponding service instance in the backend org to validate incoming request against security
 		// attacks passing forged service instance guid
-		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
+		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(
+			request.getServiceDefinition().getName());
 		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
 
 		if (existingSi == null) {
@@ -60,11 +60,12 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 		}
 
 		//Directly use the v2 api to avoid a second API call to fetch the service key credentials
-		CreateServiceKeyResponse createServiceKeyResponse = client.serviceKeys().create(CreateServiceKeyRequest.builder()
-			.serviceInstanceId(existingSi.getId())
-			.parameters(request.getParameters())
-			.name(request.getBindingId())
-			.build())
+		CreateServiceKeyResponse createServiceKeyResponse = client.serviceKeys()
+			.create(CreateServiceKeyRequest.builder()
+				.serviceInstanceId(existingSi.getId())
+				.parameters(request.getParameters())
+				.name(request.getBindingId())
+				.build())
 			.block();
 
 		//For now CF api V2 & V3 do not support async service bindings
@@ -73,19 +74,6 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 			.credentials(createServiceKeyResponse.getEntity().getCredentials())
 			.async(false)
 			.build());
-	}
-
-	private void validateServiceDefinitionAndPlanIds(ServiceDefinition serviceDefinition, Plan plan,
-		String serviceDefinitionId,
-		String planId) {
-		if (plan == null) {
-			LOG.info("Invalid plan received with unknown id {}", planId);
-			throw new ServiceBrokerInvalidParametersException("Invalid plan received with unknown id:" + planId);
-		}
-		if (serviceDefinition == null) {
-			LOG.info("Invalid service definition received with unknown id {}", serviceDefinitionId);
-			throw new ServiceBrokerInvalidParametersException("Invalid service definition received with unknown id:" + serviceDefinitionId);
-		}
 	}
 
 	@Override
@@ -101,7 +89,8 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 
 		//Lookup corresponding service instance to validate incoming request against security attacks passing
 		// forged service instance guid
-		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(request.getServiceDefinition().getName());
+		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(
+			request.getServiceDefinition().getName());
 		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
 
 		if (existingSi == null) {
@@ -113,10 +102,11 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 
 		//For now CF api V2 & V3 do not support async service bindings
 		try {
-			spacedTargetedOperations.services().deleteServiceKey(org.cloudfoundry.operations.services.DeleteServiceKeyRequest.builder()
-				.serviceInstanceName(existingSi.getName())
-				.serviceKeyName(request.getBindingId())
-				.build())
+			spacedTargetedOperations.services()
+				.deleteServiceKey(org.cloudfoundry.operations.services.DeleteServiceKeyRequest.builder()
+					.serviceInstanceName(existingSi.getName())
+					.serviceKeyName(request.getBindingId())
+					.build())
 				.block();
 		}
 		catch (Exception e) {
@@ -127,6 +117,20 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 		//For now CF api V2 & V3 do not support async service bindings
 		return Mono.just(DeleteServiceInstanceBindingResponse.builder()
 			.build());
+	}
+
+	private void validateServiceDefinitionAndPlanIds(ServiceDefinition serviceDefinition, Plan plan,
+		String serviceDefinitionId,
+		String planId) {
+		if (plan == null) {
+			LOG.info("Invalid plan received with unknown id {}", planId);
+			throw new ServiceBrokerInvalidParametersException("Invalid plan received with unknown id:" + planId);
+		}
+		if (serviceDefinition == null) {
+			LOG.info("Invalid service definition received with unknown id {}", serviceDefinitionId);
+			throw new ServiceBrokerInvalidParametersException(
+				"Invalid service definition received with unknown id:" + serviceDefinitionId);
+		}
 	}
 
 }
