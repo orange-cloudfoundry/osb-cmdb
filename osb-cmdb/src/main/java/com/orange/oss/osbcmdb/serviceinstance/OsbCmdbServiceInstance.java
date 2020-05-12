@@ -517,6 +517,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		if (osbInterceptor != null && osbInterceptor.accept(request)) {
 			return osbInterceptor.deleteServiceInstance(request);
 		}
+
+		//Validate mandatory service id and plan Id
+		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
+			request.getServiceDefinitionId(), request.getPlanId());
+
 		String backingServiceInstanceName =
 			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
 
@@ -595,6 +600,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		if (osbInterceptor != null && osbInterceptor.accept(request)) {
 			return osbInterceptor.getLastOperation(request);
 		}
+
+		//Note: we don't validate optional service id and plan Id that we don't use
 
 		String requestOperation = request.getOperation();
 		if (requestOperation == null) {
