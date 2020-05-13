@@ -16,24 +16,27 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
-import java.time.Duration;
-
-import org.cloudfoundry.client.v2.ClientV2Exception;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import org.springframework.http.HttpStatus;
+
+import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("cmdb")
-class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
+class CreateInstanceWithBackingServiceSyncTimeoutAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
-	private static final String SUFFIX = "create-instance-with-sync-backing-failure";
+	private static final String SUFFIX = "create-instance-with-sync-backing-timeout";
 
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
+
+	private static final Logger LOG = LoggerFactory.getLogger(CreateInstanceWithBackingServiceSyncTimeoutAcceptanceTest.class);
 
 	@Test
 	@AppBrokerTestProperties({
@@ -43,8 +46,8 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 		"spring.security.user.password=password",
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
-		// control backing service response: have it fail async
-		"spring.profiles.active=acceptanceTests,SyncFailedCreateBackingSpaceInstanceInterceptor",
+		// control backing service response: have it sync timeout after 2 mins
+		"spring.profiles.active=acceptanceTests,SyncTimeoutCreateBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 //		"logging.level.cloudfoundry-client.wire=trace",
@@ -58,29 +61,17 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 	})
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
 		// given a brokered service instance is created
-		// and a backing service is asked to fail synchronously
-		try {
-			createServiceInstanceWithoutAsserts(brokeredServiceInstanceName(), Duration.ofSeconds(5));
-			Assertions.fail("Expected sync CSI failure");
-		}
-		catch (ClientV2Exception e) {
-			// then the brokered service instance sync fails
-		}
-
-		// and a sync backing service instance is not created
-		try {
-			getServiceInstance(brokeredServiceInstanceName());
-			Assertions.fail("Expected backing service to be missing due to sync failure");
-		}
-		catch (IllegalArgumentException e) {
-			// Service instance si-create-service-sync-fail does not exist
-		}
-
-		// when the service instance is deleted
-		deleteServiceInstance(brokeredServiceInstanceName());
-
-		// and the backing service instance is still missing
-		assertThat(listServiceInstances(brokeredServiceName())).isEmpty();
+		// and a backing service is asked to hang for 2 mins and trigger CF 60s sync timeout
+		String responseString = given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN_ID))
+			.when()
+			.put(brokerFixture.createServiceInstanceUrl(), "a-random-service-instance-guid")
+			//then it fails after CF API timeout (60s) with
+			.then()
+			.statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+			.extract()
+			.asString();
+		assertThat(responseString).contains("CF-HttpClientTimeout"); //response include some diagnostics
+		assertThat(responseString).doesNotContain("https"); //but response is redacted
 	}
 
 }

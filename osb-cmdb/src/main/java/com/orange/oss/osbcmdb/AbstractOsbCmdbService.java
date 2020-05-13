@@ -32,6 +32,8 @@ public class AbstractOsbCmdbService {
 
 	protected final String userName;
 
+	private CfApiMessageCleaner cfApiMessageCleaner = new CfApiMessageCleaner();
+
 	public AbstractOsbCmdbService(
 		CloudFoundryClient cloudFoundryClient, String defaultOrg, String userName,
 		CloudFoundryOperations cloudFoundryOperations) {
@@ -142,5 +144,12 @@ public class AbstractOsbCmdbService {
 					.next()));
 	}
 
+	protected String redactExceptionMessage(String description) {
+		return cfApiMessageCleaner.redactExceptionMessage(description);
+	}
+
+	protected ServiceBrokerException redactExceptionAndWrapAsServiceBrokerException(Exception originalException) {
+		return cfApiMessageCleaner.redactExceptionAndWrapAsServiceBrokerException(originalException);
+	}
 
 }
