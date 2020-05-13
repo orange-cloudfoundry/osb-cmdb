@@ -19,6 +19,7 @@ import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceI
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncTimeoutCreateBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 
@@ -82,6 +83,13 @@ public class OsbCmdbBrokerConfiguration {
 	public ServiceInstanceInterceptor acceptanceTestSyncFailedCreateBackingServiceInstanceInterceptor(
 		CloudFoundryTargetProperties targetProperties) {
 		return new SyncFailedCreateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & SyncTimeoutCreateBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestSyncTimeoutCreateBackingSpaceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new SyncTimeoutCreateBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean

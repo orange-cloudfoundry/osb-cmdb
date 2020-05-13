@@ -144,7 +144,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
 						LOG.info("Backing service failed to provision with {}, flowing up the error to the osb client",
 							lastOperation);
-						throw new OsbCmdbInternalErrorException(lastOperation.getDescription());
+						throw new OsbCmdbInternalErrorException(redactExceptionMessage(lastOperation.getDescription()));
 					default:
 						LOG.error("Unexpected last operation state:" + lastOperation.getState());
 						throw new OsbCmdbInternalErrorException("Internal CF protocol error");
@@ -183,6 +183,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		String backingServiceInstanceName =
 			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
 
+		//Lookup corresponding service instance in the backend org. This also validates incoming request against
+		// security attacks passing forged service instance guid
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(
 			request.getServiceDefinition().getName());
 		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, backingServiceInstanceName);
@@ -191,7 +193,6 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			LOG.info("No such backing service instance id={} to delete, return early.", backingServiceInstanceName);
 			throw new ServiceInstanceDoesNotExistException(request.getServiceInstanceId());
 		}
-
 
 		try {
 			// Don't not ask to purge the service instance, as this would create leaks in backing service instance
@@ -240,7 +241,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						LOG.info("Backing service failed to delete with {}, flowing up the error to the osb " +
 								"client",
 							deletedSi.getMessage());
-						throw new ServiceBrokerException(deletedSi.getMessage());
+						throw new ServiceBrokerException(redactExceptionMessage(deletedSi.getMessage()));
 					default:
 						LOG.error("Unexpected last operation state:" + deletedSi.getStatus());
 						throw new ServiceBrokerException("Internal CF protocol error");
@@ -395,7 +396,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					LOG.info("Backing service failed to update with {}, flowing up the error to the osb " +
 							"client",
 						lastOperation);
-					throw new ServiceBrokerException(lastOperation.getDescription());
+					throw new ServiceBrokerException(redactExceptionMessage(lastOperation.getDescription()));
 				default:
 					LOG.error("Unexpected last operation state:" + lastOperation.getState());
 					throw new ServiceBrokerException("Internal CF protocol error");
@@ -429,7 +430,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		catch (JsonProcessingException e) {
 			LOG.error("Unable to json serialize {} caught {}", cmdbOperationState, e.toString());
-			throw new RuntimeException(e);
+			throw new OsbCmdbInternalErrorException(e.getMessage(), e);
 		}
 	}
 
@@ -577,7 +578,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		LOG.info("No existing instance in the inventory with id={} in space with id={}, the exception is likely not " +
 			"related to concurrent or conflicting duplicate, rethrowing it", request.getServiceInstanceId(), spaceId);
-		throw new ServiceBrokerException(originalException.getMessage(), originalException);
+		throw redactExceptionAndWrapAsServiceBrokerException(originalException);
 	}
 
 	/**

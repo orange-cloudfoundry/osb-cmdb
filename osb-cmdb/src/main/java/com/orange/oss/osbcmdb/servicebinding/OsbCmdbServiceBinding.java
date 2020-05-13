@@ -14,7 +14,6 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
-import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceBindingDoesNotExistException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
@@ -167,7 +166,7 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 		}
 		LOG.info("Unable to lookup potential service key dup, flowing up original exception {}",
 			originalException.toString());
-		throw new ServiceBrokerException(originalException.getMessage(), originalException);
+		throw redactExceptionAndWrapAsServiceBrokerException(originalException);
 	}
 
 	public Mono<DeleteServiceInstanceBindingResponse> handleUnbindException(DeleteServiceInstanceBindingRequest request,
@@ -190,7 +189,7 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 			LOG.info("Service binding guid {} still exists and is backed by service key: {}, flowing up " +
 					"original exception {}",
 				request.getBindingId(), existingServiceKey, originalException);
-			throw new ServiceBrokerException(originalException.getMessage(), originalException);
+			throw redactExceptionAndWrapAsServiceBrokerException(originalException);
 		}
 		LOG.info("Assuming duplicate concurrent unbind request, returning 410 GONE");
 		throw new ServiceInstanceBindingDoesNotExistException(request.getBindingId());

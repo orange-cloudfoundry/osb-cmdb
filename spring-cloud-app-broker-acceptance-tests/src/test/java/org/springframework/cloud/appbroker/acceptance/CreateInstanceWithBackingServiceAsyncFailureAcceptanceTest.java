@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
+import java.time.Duration;
+
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -56,7 +58,8 @@ class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
 		// given a brokered service instance is created
 		// and a backing service is asked to fail asynchronously
-		ServiceInstance brokeredServiceInstance = createServiceInstanceWithoutAsserts(brokeredServiceInstanceName());
+		ServiceInstance brokeredServiceInstance = createServiceInstanceWithoutAsserts(brokeredServiceInstanceName(),
+			Duration.ofSeconds(5));
 
 		// then the brokered service instance once completes, is expected to be failed
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("failed");
