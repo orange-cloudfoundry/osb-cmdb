@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CfApiMessageCleanerTest {
 
@@ -20,9 +19,7 @@ class CfApiMessageCleanerTest {
 			"CF-HttpClientTimeout");
 		//when asking
 		CfApiMessageCleaner cfApiMessageCleaner = new CfApiMessageCleaner();
-		//noinspection ThrowableNotThrown
-		ServiceBrokerException rethrownException = assertThrows(ServiceBrokerException.class,
-			() -> cfApiMessageCleaner.redactExceptionAndWrapAsServiceBrokerException(e));
+		ServiceBrokerException rethrownException = cfApiMessageCleaner.redactExceptionAndWrapAsServiceBrokerException(e);
 		assertThat(rethrownException.getMessage()).doesNotContain("https://test-broker-app-create-instance-with-sync-backing-timeout.redacted-domain.com");
 		assertThat(rethrownException.getMessage()).doesNotContain("99fa775a-f56d-4598-a903-9a67617274af");
 		assertThat(rethrownException.getMessage()).doesNotContain("accepts_incomplete=true");
