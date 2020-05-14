@@ -1,4 +1,4 @@
-rootProject.name = "osb-cmdb-root"
+rootProject.name = "osb-cmdb"
 
 include "spring-cloud-app-broker-acceptance-tests"
 include "osb-cmdb"

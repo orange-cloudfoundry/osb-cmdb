@@ -1,5 +1,7 @@
 
-## Osb-cmdb-spike
+## Osb-cmdb
+
+This project provides a configuration management for Open Service Broker API broker implementations. See [orange-cloudfoundry/paas-templates#492](https://github.com/orange-cloudfoundry/paas-templates/issues/492) for more background around use-cases and considered alternatives.
 
 <!-- 
  TOC generated during https://github.com/ekalinin/github-markdown-toc
@@ -25,22 +27,27 @@ cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc -
  * [Releasing](#releasing)
 
 
-This repo contains a spike for the osb-cmdb project.
 
-This project provides a configuration management for Open Service Broker API broker implementations. See [orange-cloudfoundry/paas-templates#492](https://github.com/orange-cloudfoundry/paas-templates/issues/492) for more background around use-cases and considered alternatives.
-
-At this stage of the spike, this is a fork of the [spring-cloud/spring-cloud-app-broker](https://github.com/spring-cloud/spring-cloud-app-broker) project (referred as SCAB).
-
-Plan is to work with the SCAB team to contribute upstream osb-cmdb's changes to SCAB, and move osb-cmdb in its own repo which would pull SCAB from maven central, see related issue [spring-cloud/spring-cloud-app-broker/#285](https://github.com/spring-cloud/spring-cloud-app-broker/issues/285) for progress.
+Credits: this project initially spiked and inspired from the great [spring-cloud/spring-cloud-app-broker](https://github.com/spring-cloud/spring-cloud-app-broker) project. After attempting upstream contribution in `spring-cloud-app-broker` to support osb-cmdb use-cases, see [#6](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/6) and related issue [spring-cloud/spring-cloud-app-broker/#285](https://github.com/spring-cloud/spring-cloud-app-broker/issues/285), a redesign and reimplementation of osb-cmdb independently of `spring-cloud-app-broker` was conducted in version 1.0, see [#13](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/13). Osb-cmdb 1.0 still uses some app-broker configuration, acceptance and component-test code fragments, referenced with acronym SCAB below. 
 
 ### Functional overview
 
 The following diagram presents a functional overview of the ocb-cdmb feature scope
 ![Overview diagram](osb-cmdb/overview.png)
 
-The feature are supported by coarse gain components used by osb-cmdb:
+The features are supported by coarse gain components used by osb-cmdb:
 
 ![Osb cmdb component diagrams](osb-cmdb/Osb-cmdb-zoom.png)
+
+Osb-cmdb is an OSB facade that provides the following features to service admins:
+* maintain an inventory of service instances and service keys consummed by OSB clients
+   * list/find/delete service instances and service bindings (per osb client/ service definition or osb-client context, see metadata)
+   * display usage analytics on consumed service instances/bindings (e.g. through grafana dashboard)
+   * receive alerts upon failed osb requests  
+* manage service offering visbility per OSB client
+* manage authentication (including credentials rotation) per OSB client, independently of underlying brokers
+
+In addition, Osb-cmdb handle OSB API viriants such as K8S svcat duplicated calls, protecting service broker authors from having to deal with each OSB api variations. See [#17](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/17) for more details.
 
 The osb-cdmb service broker translates received osb calls into equivalent CF CC API calls
 
@@ -72,10 +79,6 @@ java \
  -Dspring.cloud.appbroker.deployer.cloudfoundry.default-space=p-mysql \
  -Dspring.cloud.appbroker.deployer.cloudfoundry.username=redacted \
  -Dspring.cloud.appbroker.deployer.cloudfoundry.password=redacted \
- -Dspring.cloud.appbroker.deployer.cloudfoundry.properties.health-check=http \
- -Dspring.cloud.appbroker.deployer.cloudfoundry.properties.health-check-http-endpoint=health \
- -Dspring.cloud.appbroker.deployer.cloudfoundry.properties.health-check-timeout=180 \
- -Dspring.cloud.appbroker.deployer.cloudfoundry.properties.memory=1G \
  -Dspring.security.user.name=user \
  -Dspring.security.user.password=password \
  -Dosbcmdb.admin.user=user \
@@ -91,15 +94,13 @@ java \
     -jar ./osb-cmdb.jar 
 ```
 
-The SCAB properties are documented at https://docs.spring.io/spring-cloud-app-broker/docs/current/reference/html5/
-
 Osb-cmdb adds support for additional properties which are illustrated below. Source of truth is associated unit tests, e.g. `SecurityConfigTest`
 
 Osb-cmdb requires two users auth to be configured:
 * `spring.security.user`: used for OSB API calls
 * `osbcmdb.admin`: used to access sensitive supportability endpoints (powered by springboot actuators)
 
-Osb-Cmdb is expected to be deployed once per OSB client, each having its own basic authentication, its own brokered services catalog, and backend services organization.
+Osb-Cmdb expects to be deployed once per OSB client, each having its own basic authentication, its own brokered services catalog, and backend services organization.
 
 #### Increasing log levels dynamically
 
@@ -111,9 +112,9 @@ curl -kv https://admin:password@test-broker-app-create-instance-with-service-key
 
 #### Manual catalog of Brokered and backing services 
 
-SCAB supports by default user-provided catalog of brokered services, and associated backing services.
+Osb-cmdb supports by default a statically configured catalog of brokered services.
 
-Following is an example of a simple SCAB configuration (without detailed catalog customization)
+Following is an example of a simple [spring-cloud-open-service-broker catalog configuration](https://docs.spring.io/spring-cloud-open-service-broker/docs/3.1.1.RELEASE/reference/html5/#providing-a-catalog-using-properties) (without detailed catalog customization)
 
 ```yaml
 #### Manual catalog and brokered service configuration
@@ -138,42 +139,12 @@ Following is an example of a simple SCAB configuration (without detailed catalog
                   id: p-mysql-cmdb-20mb
                   description: A standard plan
                   free: true
-      appbroker:
-        services:
-          - service-name: p-mysql-cmdb
-            plan-name: 10mb
-            target:
-              name: SpacePerServiceDefinition
-            services:
-              - service-instance-name: p-mysql
-                name: p-mysql
-                plan: 10mb
-          - service-name: p-mysql-cmdb
-            plan-name: 20mb
-            target:
-              name: SpacePerServiceDefinition
-            services:
-              - service-instance-name: p-mysql
-                name: p-mysql
-                plan: 20mb
 ```
 
 
-##### Backing service instance target strategies
-
-This configures where backing service instances are created and how they get named.
-
-Beyond built-in [SCAB strategies](https://docs.spring.io/spring-cloud-app-broker/docs/current/reference/html5/#_backing_application_target), Osb-cmdb brings the following additional strategies:
-* `SpacePerServicePlan`: 
-    * backing service instances are created in dynamically created spaces in the default org, named `${service-definition-name}-${service-plan-name}` 
-    * This is useful to apply quota per service plans. However, associated brokered service instances don't support anymore service plan upgrades.   
-* `SpacePerServiceDefinition`: 
-    * backing service instances are created in dynamically created spaces in the default org, named `${service-definition-name}` 
-    * This is useful to apply quota per service definitions.   
-
 #### Typical CMDB content
 
-The following figure displays a hiearchical cloudfoundry org/space/service instance|binding|key organization before osb-cmdb startups with `SpacePerServiceDefinition` strategy 
+The following figure displays a hierarchical cloudfoundry org/space/service instance|binding|key organization before osb-cmdb startups and apply its `SpacePerServiceDefinition` strategy 
 
 ```
 01    ├── osb-cmdb-backend-services-org-client-0 
@@ -188,9 +159,9 @@ The following figure displays a hiearchical cloudfoundry org/space/service insta
 * 05 is typically used by paas-templates smoke tests. 05 would be emptied at each test execution. 
 * 06 may be used by the embedded CF instance to consume brokered services
 
-Osb-cmdb provides smoke tests in the paas-templates repo that use CF as an OSB client to send OSB API calls to osb-cmdb.
+Osb-cmdb provides smoke tests in the [paas-templates repo](https://github.com/orange-cloudfoundry/paas-templates/blob/manual-drop/ops-depls/cf-apps-deployments/osb-cmdb-broker/README.md) that uses CF as an OSB client to send OSB API calls to osb-cmdb.
 
-Following consumption of brokered services by smoke tests, spaces/service instances and service keys are dynamically created as described into [Functional overview](#functional-overview) 
+Following consumption of brokered services by smoke tests, Osb-cmdb have dynamically created spaces/service instances and service keys as described into [Functional overview](#functional-overview) 
 
 ```
 01    ├── osb-cmdb-backend-services-org-client-0 
@@ -338,7 +309,7 @@ $ cf curl "/v3/service_instances?label_selector=brokered_service_instance_guid==
 
 #### Dynamic catalog
 
-With large marketplace being brokered, manually maintainaing the catalog might be a tedious task.
+With large marketplace being brokered, manually maintaining the catalog might be a tedious task.
 
 Osb-Cmdb brings the feature of dynamic catalog generation which can be opted-in as follows. 
 
@@ -535,6 +506,10 @@ The following diagram summarizes the interactions between OSB-CMDB and its clien
 
 ### Contributing
 
+#### Design documentation
+
+Design docs, and implementation notes are available in the [osb-cmdb/docs/impl-notes](osb-cmdb/docs/impl-notes) directory
+
 #### Circle ci tests
 
 Circle ci tests run offline without a cloudfoundry instance. They include scab tests and osb-cmdb tests. See osb-cmdb/.circle/config.yml
@@ -547,7 +522,7 @@ See https://github.com/orange-cloudfoundry/osb-cmdb-ci for the concourse task ru
 
 Like scab, osb-cmdb acceptance tests use distinct properties than osb-cmdb production properties. Refer to [Getting started](#getting-started) for the list of prod properties supported, and paas-templates smoke tests. 
 
-
+See more details in [spring-cloud-app-broker-acceptance-tests/README.adoc](spring-cloud-app-broker-acceptance-tests/README.adoc)
 
 #### Releasing
 
