@@ -55,7 +55,7 @@ if (project.hasProperty("reactorVersion")) {
 apply plugin: "io.spring.nohttp"
 
 configure(allprojects) {
-	group = "org.springframework.cloud"
+	group = "com.orange.oss"
 
 	apply plugin: "eclipse"
 	apply plugin: "idea"
@@ -88,7 +88,7 @@ configure(allprojects) {
 	}
 }
 
-configure(allprojects - [project(":spring-cloud-app-broker-docs")]) {
+configure(allprojects) {
 	apply plugin: "checkstyle"
 	apply plugin: "pmd"
 
@@ -159,8 +159,7 @@ subprojects {
 	task dependencyReport(type: DependencyReportTask)
 }
 
-configure(subprojects - [project(":spring-cloud-starter-app-broker"), 
-						 project(":spring-cloud-starter-app-broker-cloudfoundry")]) {
+configure(subprojects) {
 	sourceCompatibility = 1.8
 	targetCompatibility = 1.8
 	[compileJava, compileTestJava]*.options*.encoding = "UTF-8"
@@ -234,7 +233,7 @@ configure(subprojects - [project(":spring-cloud-starter-app-broker"),
 }
 
 configure(rootProject) {
-	description = "Spring Cloud App Broker"
+	description = "Osb-Cmdb-Root"
 
 	// don't publish the default jar for the root project
 	configurations.archives.artifacts.clear()
@@ -262,22 +261,9 @@ configure(rootProject) {
 		})
 
 		exclude 'org/springframework/cloud/appbroker/integration/**',
-			'org/springframework/cloud/appbroker/osb-cmdb/**',
 			'org/springframework/cloud/appbroker/acceptance/**'
 		maxMemory = "1024m"
 		destinationDir = new File(buildDir, "api")
-	}
-
-	task docsZip(type: Zip, dependsOn: [':spring-cloud-app-broker-docs:asciidoctor']) {
-		group = "Distribution"
-		archiveClassifier = "docs"
-		description = "Builds -${archiveClassifier} archive containing api and reference " +
-				"for deployment."
-
-		from (api) { into "api" }
-		from(project.tasks.findByPath(':spring-cloud-app-broker-docs:asciidoctor')) {
-			into 'reference'
-		}
 	}
 
 	task distZip(type: Zip, dependsOn: docsZip) {
@@ -290,11 +276,8 @@ configure(rootProject) {
 
 		from(zipTree(docsZip.archivePath)) { into "${baseDir}/docs" }
 
-		def mainSubprojects = subprojects - [project(":spring-cloud-starter-app-broker"),
-				project(":spring-cloud-starter-app-broker-cloudfoundry"),
-				project(":spring-cloud-app-broker-docs"),
-				project(":spring-cloud-app-broker-acceptance-tests"),
-				project(":spring-cloud-app-broker-integration-tests")]
+		def mainSubprojects = subprojects - [
+				project(":spring-cloud-app-broker-acceptance-tests")]
 		mainSubprojects.each { subproject ->
 			into ("${baseDir}/libs") {
 				from subproject.jar
