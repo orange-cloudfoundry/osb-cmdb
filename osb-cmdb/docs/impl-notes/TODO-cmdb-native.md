@@ -54,6 +54,8 @@
    * [ ] Update user documentation 
    * [ ] Update design documentation 
       * [ ] Document Test strategy 
+   * [ ] collect a publish code coverage report
+      * Look at SCAB CI for leveraging `codeCoverageReport` task
    
 * [ ] Refine concourse pipeline to honor `skip-ci` git commit keyword   
 
