@@ -33,7 +33,6 @@ configurations.archives.artifacts.clear()
 apply plugin: 'org.springframework.boot'
 
 dependencies {
-	implementation project(":spring-cloud-starter-app-broker-cloudfoundry")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
@@ -46,13 +45,11 @@ dependencies {
 // build the test broker from /src into a jar that the tests can deploy
 test.dependsOn assemble
 
-// omit the version from the test broker jar file
-jar {
-	archiveVersion = ''
-}
+//fake a dummy main application to keep bootJar task happy
 bootJar {
-	archiveVersion = ''
+	mainClassName = 'fake.nomain.in.acceptance.test.Anymore'
 }
+
 
 test {
 	// Our acceptance tests are not bound by cpu or RAM, but server-side response time for sequential operations (e.g. push).
