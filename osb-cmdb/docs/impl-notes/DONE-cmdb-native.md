@@ -572,3 +572,5 @@ Pb: cf-java client org.cloudfoundry.operations.services.DefaultServices.createIn
         * [x] Unit test it
         * [x] add a wrapper method in AbstractOsbCmdbService: redactAndReThrowException(Exception e)                                                                                                                                            
 
+* [x] Manually test race conditions against K8S openshift
+

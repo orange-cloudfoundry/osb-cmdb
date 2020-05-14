@@ -1,5 +1,58 @@
+* [ ] Release 1.0.0 version
+   * [ ] Design whether/how to clean up scab code from osb-cmdb code base
+      * Criterias/goals (highest priority first)
+         * Build faster
+         * Faster IDE because less code loaded/managed
+         * Simplify contributions (by other team members and by the community)
+            * Avoid google/github search request to index/return scab dead code hosted by osb-cmdb
+         * Still be able to be inspired-by/reuse scab component tests, acceptance test, unit tests, reactor syntax, gradle build,
+         * Remove github public fork relationship
+         * Faster git clone
+      * Approaches   
+         * keep scab code but don't build it in gradle/ide
+         * **clean up scab code from develop branch**
+            * rename module `spring-cloud-app-broker-integration-tests` into `osb-cmdb-integration-tests` 
+         * clean up scab code from git history
+   * [x] Collect inspiration pointers in acceptance tests:
+      * Junit experimental `@TestMethodOrder` for smaller test case methods: org.springframework.cloud.appbroker.acceptance.UpgradeInstanceAcceptanceTest
+      * Use Optional instead of null: UpdateInstanceWithNewServiceAcceptanceTest
+         ```
+           Optional<ApplicationSummary> backingApplication = getApplicationSummary(APP_NAME);
+           		assertThat(backingApplication).hasValueSatisfying(app ->
+           			assertThat(app.getRunningInstances()).isEqualTo(1)); 
+         ```
+      * Health listener used when backing application is updated: org.springframework.cloud.appbroker.acceptance.UpdateInstanceAcceptanceTest
+         ```
+                //Given a backing application is serving traffic
+        		String path = backingApplication.get().getUrls().get(0);
+        		healthListener.start(path);
+                        
+                //When the backing application is updated with zero-down-time
+                ...
+        
+        		// then the backing application was updated with zero downtime
+        		healthListener.stop();
+        		assertThat(healthListener.getFailures()).isEqualTo(0);
+        		assertThat(healthListener.getSuccesses()).isGreaterThan(0); 
+         ```
+      * ManagementController: a rest controller within AT to test BackingAppManagementService to start/stop/restage/restart backing applications
+         * Not mentionned in https://docs.spring.io/spring-cloud-app-broker/docs/current/reference/html5/
+         * Likely used by brokers leveraging SCAB wiht custom endpoints to manage backing apps in batch
+   * [ ] Perform clean up scab code from osb-cmdb code base
+      * [x] Update status of component test usage: 
+         * all components tests are currently ignored, including Dynamic catalog 
+         * components tests have been moved to `osb-cmdb` module along with test fixtures: no more dependency on `spring-cloud-app-broker-integration-tests` 
+      * [ ] Refactor AT:
+          * [ ] Ease identification of Cmdb AT and speed up compilation steps
+             * [ ] Try moving OsbCmdb tests in a different packages
+             * [x] Delete unneeded scab test, once we get sufficient inspiration    
+         * [ ] rename module `spring-cloud-app-broker-acceptance-tests` into `osb-cmdb-acceptance-tests` 
+ 
+   * [ ] Update user documentation 
+   * [ ] Update design documentation 
+      * [ ] Document Test strategy 
+   
 * [ ] Refine concourse pipeline to honor `skip-ci` git commit keyword   
-* [ ] Manually test against K8S openshift
 
 * [ ] Harden acceptance tests
    * [ ] Fail fast on set up errors such as broker registration errors to avoid misleading error traces
@@ -8,9 +61,6 @@
    * [x] Disable wire trace logs are enabled in backend services for now   
 
 * [ ] Refactor AT:
-    * [ ] Ease identification of Cmdb AT and speed up compilation steps
-       * [ ] Try moving OsbCmdb tests in a different packages
-       * [ ] Delete unneeded scab test, once we get sufficient inspiration    
     * [ ] Fix broker clean up
        * [x] check cf-java-client support purge service offering (in cfclient) + purge service instance
        * [ ] modify call to use cfclient.deleteService(purge=true) for each service 
