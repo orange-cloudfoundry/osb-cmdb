@@ -1,4 +1,4 @@
-= Spring Cloud App Broker Acceptance Tests
+= OsbCmdb Acceptance Tests (inspired from Spring Cloud App Broker Acceptance Tests)
 
 The acceptance tests (AT), run end-to-end scenarios against real dependencies:
 * Cloud Foundry CC API

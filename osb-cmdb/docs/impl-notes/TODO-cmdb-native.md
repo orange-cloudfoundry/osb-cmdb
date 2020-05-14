@@ -5,7 +5,9 @@
          * Faster IDE because less code loaded/managed
          * Simplify contributions (by other team members and by the community)
             * Avoid google/github search request to index/return scab dead code hosted by osb-cmdb
-         * Still be able to be inspired-by/reuse scab component tests, acceptance test, unit tests, reactor syntax, gradle build,
+         * Still be able to be inspired-by/reuse scab component tests, acceptance test, unit tests, reactor syntax, gradle build
+            * Compare with the same clone scab remotes
+            * Compare/cherry picky upcoming commits in SCAB
          * Remove github public fork relationship
          * Faster git clone
       * Approaches   
@@ -43,10 +45,11 @@
          * all components tests are currently ignored, including Dynamic catalog 
          * components tests have been moved to `osb-cmdb` module along with test fixtures: no more dependency on `spring-cloud-app-broker-integration-tests` 
       * [ ] Refactor AT:
-          * [ ] Ease identification of Cmdb AT and speed up compilation steps
-             * [ ] Try moving OsbCmdb tests in a different packages
+          * [x] Ease identification of Cmdb AT and speed up compilation steps
              * [x] Delete unneeded scab test, once we get sufficient inspiration    
-         * [ ] rename module `spring-cloud-app-broker-acceptance-tests` into `osb-cmdb-acceptance-tests` 
+         * [ ] rename module `spring-cloud-app-broker-acceptance-tests` into `osb-cmdb-acceptance-tests`: delayed 
+            * Delayed until SCAB prioritizes spinning off acceptance tests in a 1st class repo
+               * In order to ease getting updates in the meantime.
  
    * [ ] Update user documentation 
    * [ ] Update design documentation 
