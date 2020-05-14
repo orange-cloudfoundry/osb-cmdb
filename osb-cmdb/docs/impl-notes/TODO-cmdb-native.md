@@ -40,18 +40,18 @@
       * ManagementController: a rest controller within AT to test BackingAppManagementService to start/stop/restage/restart backing applications
          * Not mentionned in https://docs.spring.io/spring-cloud-app-broker/docs/current/reference/html5/
          * Likely used by brokers leveraging SCAB wiht custom endpoints to manage backing apps in batch
-   * [ ] Perform clean up scab code from osb-cmdb code base
+   * [x] Perform clean up scab code from osb-cmdb code base
       * [x] Update status of component test usage: 
          * all components tests are currently ignored, including Dynamic catalog 
          * components tests have been moved to `osb-cmdb` module along with test fixtures: no more dependency on `spring-cloud-app-broker-integration-tests` 
-      * [ ] Refactor AT:
+      * [x] clean up AT:
           * [x] Ease identification of Cmdb AT and speed up compilation steps
              * [x] Delete unneeded scab test, once we get sufficient inspiration    
          * [ ] rename module `spring-cloud-app-broker-acceptance-tests` into `osb-cmdb-acceptance-tests`: delayed 
             * Delayed until SCAB prioritizes spinning off acceptance tests in a 1st class repo
                * In order to ease getting updates in the meantime.
- 
-   * [ ] Update user documentation 
+   * [x] Update user documentation 
+   * [x] Update release procedure: should the root project version be sufficient ? 
    * [ ] Update design documentation 
       * [ ] Document Test strategy 
    * [ ] collect a publish code coverage report
