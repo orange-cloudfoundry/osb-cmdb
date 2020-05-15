@@ -1,0 +1,276 @@
+/*
+ * Copyright 2002-2020 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+buildscript {
+	repositories {
+		maven { url "https://repo.spring.io/plugins-release" }
+	}
+	dependencies {
+		classpath("io.spring.gradle:propdeps-plugin:0.0.10.RELEASE")
+		classpath("io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE")
+		classpath("org.jfrog.buildinfo:build-info-extractor-gradle:4.9.9")
+		classpath("io.spring.nohttp:nohttp-gradle:0.0.4.RELEASE")
+	}
+}
+
+ext {
+	springBootVersion = project.findProperty("springBootVersion") ?: "2.2.6.RELEASE"
+	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.5.RELEASE"
+	reactorVersion = project.findProperty("reactorVersion") ?: "Dysprosium-SR6"
+	openServiceBrokerVersion = "3.1.1.RELEASE"
+	springCredhubVersion = "2.1.0.RELEASE"
+	cfJavaClientVersion = "4.6.0.RELEASE"
+	blockHoundVersion = "1.0.3.RELEASE"
+	junitPlatformLauncherVersion = "1.6.1"
+	checkstyleVersion = "8.29"
+	pmdVersion = "6.21.0"
+
+	javadocLinks = [
+		"https://docs.oracle.com/javase/8/docs/api/",
+		"https://docs.spring.io/spring/docs/${springFrameworkVersion}/javadoc-api/",
+	] as String[]
+}
+
+//override managed Spring Boot versions
+if (project.hasProperty("springFrameworkVersion")) {
+	ext['spring-framework.version'] = ext.springFrameworkVersion
+}
+if (project.hasProperty("reactorVersion")) {
+	ext['reactor-bom.version'] = ext.reactorVersion
+}
+
+apply plugin: "io.spring.nohttp"
+
+configure(allprojects) {
+	group = "com.orange.oss"
+
+	apply plugin: "eclipse"
+	apply plugin: "idea"
+	apply plugin: "jacoco"
+	apply plugin: "propdeps"
+	apply plugin: "propdeps-idea"
+	apply plugin: "propdeps-eclipse"
+	apply plugin: "io.spring.dependency-management"
+
+	apply from: "${rootProject.projectDir}/publish-maven.gradle"
+
+	repositories {
+		mavenCentral()
+		if (!version.endsWith('RELEASE')) {
+			maven { url "https://repo.spring.io/milestone" }
+		}
+		if (version.endsWith('BUILD-SNAPSHOT')) {
+			maven { url "https://repo.spring.io/snapshot" }
+		}
+	}
+
+	dependencies {
+		testRuntimeOnly("io.spring.nohttp:nohttp:0.0.3.RELEASE")
+	}
+
+	if (project.hasProperty("springFrameworkVersion") || project.hasProperty("springBootVersion") || project.hasProperty("reactorVersion")) {
+		repositories {
+			maven { url "https://repo.spring.io/libs-snapshot" }
+		}
+	}
+}
+
+configure(allprojects) {
+	apply plugin: "checkstyle"
+	apply plugin: "pmd"
+
+	checkstyle {
+		configFile = file("${project.rootDir}/src/checkstyle/checkstyle.xml")
+		toolVersion = "${checkstyleVersion}"
+	}
+	checkstyleMain {
+		source = "src/main/java"
+	}
+	checkstyleTest {
+		source = "src/test/java"
+	}
+
+	pmd {
+		toolVersion = "${pmdVersion}"
+	}
+	pmdMain {
+		ruleSets = []
+		ruleSetFiles = files("${project.rootDir}/src/pmd/pmdRuleSet.xml")
+		source = "src/main/java"
+	}
+	pmdTest {
+		ruleSets = []
+		ruleSetFiles = files("${project.rootDir}/src/pmd/pmdTestRuleSet.xml")
+		source = "src/test/java"
+	}
+
+	test {
+		// enable JUnit 5
+		useJUnitPlatform()
+
+		testLogging {
+			// display all the events
+			events 'PASSED', 'FAILED', 'SKIPPED'
+			// display stdout and stderr
+			showStandardStreams = true
+		}
+
+		// create a summary after the execution
+		afterSuite { desc, result ->
+			if (!desc.parent) {
+				println "\nTest result: ${result.resultType}"
+				println "Test summary: ${result.testCount} tests, " +
+					"${result.successfulTestCount} succeeded, " +
+					"${result.failedTestCount} failed, " +
+					"${result.skippedTestCount} skipped"
+			}
+		}
+
+		// print failed tests after the execution
+		def failedTests = []
+
+		afterTest { test, result ->
+			if (result.resultType == TestResult.ResultType.FAILURE) {
+				failedTests << test
+			}
+		}
+
+		afterSuite {
+			failedTests.each { test -> println "FAILED test: ${test.className} > ${test.name}" }
+		}
+	}
+}
+
+subprojects {
+	task allDependencyInsight(type: DependencyInsightReportTask)
+	task dependencyReport(type: DependencyReportTask)
+}
+
+configure(subprojects) {
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
+	[compileJava, compileTestJava]*.options*.encoding = "UTF-8"
+
+	[compileJava, compileTestJava]*.options*.compilerArgs = [
+		"-Xlint:serial",
+		"-Xlint:varargs",
+		"-Xlint:cast",
+		"-Xlint:classfile",
+		"-Xlint:dep-ann",
+		"-Xlint:divzero",
+		"-Xlint:empty",
+		"-Xlint:finally",
+		"-Xlint:overrides",
+		"-Xlint:path",
+		"-Xlint:-processing",
+		"-Xlint:static",
+		"-Xlint:try",
+		"-Xlint:fallthrough",
+		"-Xlint:rawtypes",
+		"-Xlint:deprecation",
+		"-Xlint:unchecked",
+		"-Xlint:-options"
+//		"-Werror"  //Don't fail on warnings in osb-cmdb https://docs.oracle.com/javase/7/docs/technotes/tools/windows/javac.html
+	]
+
+	jar {
+		manifest.attributes["Created-By"] =
+				"${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+		manifest.attributes["Implementation-Title"] = project.name
+		manifest.attributes["Implementation-Version"] = project.version
+
+		from("${rootProject.projectDir}/src/dist") {
+			include "license.txt"
+			include "notice.txt"
+			into "META-INF"
+			expand(copyright: new Date().format("yyyy"), version: project.version)
+		}
+	}
+
+	javadoc {
+		description = "Generates project-level javadoc for use in -javadoc jar"
+
+		options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
+		options.author = true
+		options.header = project.name
+		options.links(javadocLinks)
+		options.addStringOption('Xdoclint:none', '-quiet')
+	}
+
+	task sourcesJar(type: Jar, dependsOn:classes) {
+		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+		archiveClassifier = "sources"
+		from sourceSets.main.allJava
+	}
+
+	task javadocJar(type: Jar) {
+		archiveClassifier = "javadoc"
+		from javadoc
+	}
+
+	artifacts {
+		archives sourcesJar
+		archives javadocJar
+	}
+
+	configurations {
+		// exclude JUnit 4 globally, in favor of JUnit 5
+		testImplementation.exclude group: "junit", module: "junit"
+	}
+}
+
+configure(rootProject) {
+	description = "Osb-Cmdb-Root"
+
+	// don't publish the default jar for the root project
+	configurations.archives.artifacts.clear()
+
+	dependencies {
+		// for integration tests
+	}
+
+}
+
+task codeCoverageReport(type: JacocoReport) {
+	executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+	subprojects.each { subproject ->
+		if (subproject.name.endsWith("-integration-tests") || subproject.name.endsWith("-acceptance-tests")|| subproject.name.endsWith("osb-cmdb")) {
+			// Work-around for issue with jacoco and multiple-release jar files
+			// (like Log4J 2.10 and above)
+			// see https://github.com/jacoco/jacoco/issues/407
+			getSourceDirectories().from(subproject.sourceSets.main.java)
+			getClassDirectories().from(subproject.sourceSets.main.output.classesDirs)
+		} else {
+			 sourceSets subproject.sourceSets.main
+		}
+	}
+
+	reports {
+		xml.enabled true
+		xml.destination new File("${buildDir}/reports/jacoco/report.xml")
+		html.enabled false
+		csv.enabled false
+	}
+}
+
+codeCoverageReport.dependsOn {
+	subprojects*.test
+}
+
+wrapper {
+	gradleVersion = "6.3"
+}

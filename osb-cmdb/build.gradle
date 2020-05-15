@@ -1,0 +1,123 @@
+/*
+ * Copyright 2002-2019. the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+buildscript {
+	repositories {
+		mavenCentral()
+		maven { url "https://plugins.gradle.org/m2/" }
+	}
+
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+plugins {
+	id "com.gorylenko.gradle-git-properties" version "2.2.0"
+}
+
+description = "Osb Cmdb"
+
+// don't publish the jar for the acceptance tests project
+configurations.archives.artifacts.clear()
+
+ext {
+	wiremockVersion = "2.25.1"
+}
+
+apply plugin: 'org.springframework.boot'
+
+dependencies {
+	compile("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}")
+	implementation ("org.springframework.boot:spring-boot-starter-actuator")
+	compile("org.springframework.boot:spring-boot-starter-webflux")
+	compile("org.springframework.boot:spring-boot-starter-security")
+	compile("org.springframework.boot:spring-boot-starter-web")
+    compile("org.springframework.boot:spring-boot-starter-actuator")
+	compile("org.apache.commons:commons-text:1.8")
+	compile("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
+	compile("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
+	compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9")
+
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+	testCompile("org.junit.jupiter:junit-jupiter-api")
+	testImplementation("org.springframework.boot:spring-boot-starter-test") {
+		//See https://github.com/junit-team/junit5/issues/2105#issuecomment-609077749
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+	testCompile("org.springframework.security:spring-security-test")
+	testCompile("io.projectreactor:reactor-test")
+	testCompile("org.assertj:assertj-core")
+	//For custom workflows
+	testImplementation("org.mockito:mockito-core")
+	testImplementation("org.mockito:mockito-junit-jupiter")
+	testImplementation("io.rest-assured:rest-assured")
+	testImplementation("com.github.tomakehurst:wiremock:${wiremockVersion}")
+}
+
+// build the test broker from /src into a jar that the tests can deploy
+test.dependsOn assemble
+
+
+
+test {
+	maxParallelForks = Runtime.runtime.availableProcessors() - 1 ?: 1
+
+//	// Only run the tests if acceptanceTests is specified
+//	onlyIf {
+//		project.hasProperty("acceptanceTests")
+//	}
+
+	//Propagate tags from gradle command line to fine tune test selection
+	//See https://javabydeveloper.com/run-tag-specific-junit-5-tests-from-gradle-command/
+	String itagsProp = System.getProperty("includeTags")
+	String etagsProp = System.getProperty("excludeTags")
+
+
+	useJUnitPlatform{
+		if (itagsProp !=null) {
+			String[] itags = itagsProp.split(",");
+			includeTags  itags
+		}
+		if (etagsProp != null) {
+			String[] etags = etagsProp.split(",");
+			excludeTags  etags
+		}
+	}
+
+
+	systemProperty "tests.broker-app-path", "${buildDir}/libs/osb-cmdb.jar"
+	// Pass relevant java properties to the test task
+	systemProperties << System.properties.findAll {
+		//
+		it.key.startsWith("spring.") || it.key.startsWith("osbcmdb.")|| it.key.startsWith("debug")
+	}
+}
+
+gitProperties {
+	extProperty = 'gitProps' // git properties will be put in a map at project.ext.gitProps
+}
+generateGitProperties.outputs.upToDateWhen { false } // make sure the generateGitProperties task always executes (even when git.properties is not changed)
+
+//Add SCM information to jar.
+//See https://github.com/n0mer/gradle-git-properties#other-usages
+bootJar {
+	manifest {
+		attributes(
+			'SCM-Revision': "${-> project.ext.gitProps['git.commit.id.describe']} with message ${-> project.ext.gitProps['git.commit.message.short']} from branch=${-> project.ext.gitProps['git.branch']} user.name=${-> project.ext.gitProps['git.commit.user.name']} at time=${-> project.ext.gitProps['git.commit.time']}"  // Use GString lazy evaluation to delay until git properties are populated
+		)
+	}
+}
