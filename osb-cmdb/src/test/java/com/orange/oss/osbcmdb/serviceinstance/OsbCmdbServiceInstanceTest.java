@@ -35,6 +35,9 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
+/**
+ * Skeletton unit test. Mostly incomplete for now.
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class OsbCmdbServiceInstanceTest {
