@@ -107,29 +107,64 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		//when concurrent binding requests as received, they are properly handled
 		assertDuplicateCreateServiceKeyOsbRequestsHandling(brokeredServiceInstance, brokeredServiceKey);
 
-		//when an attacker
+		//when an attacker tries to forge osb request to create service binding from other tenant, it is properly
+		// rejected
 		assertInvalidForgedCreateServiceKeyOsbRequestsHandling(backingServiceInstance, "any-service-binding-id");
 
 		//when a service key is deleted
 		deleteServiceKey(getSkName(), brokeredServiceInstanceName());
 
-		//when concurrent unbinding requests as received, they are properly handled
-		assertDuplicateDeleteServiceKeyOsbRequestsHandling(brokeredServiceInstance, brokeredServiceKey);
-
 		//then the backing service key is deleted
 		assertThat(listServiceKeys(backingServiceName, brokeredServiceName())).isEmpty();
+
+		//when concurrent unbinding requests as received, they are properly handled
+		assertDuplicateDeleteServiceKeyOsbRequestsHandling(brokeredServiceInstance, brokeredServiceKey);
 
 		// when the service instance is deleted
 		deleteServiceInstance(brokeredServiceInstanceName());
 
-		// and the backing service instance is deleted
+		// then the backing service instance is deleted
 		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
 
 		//when concurrent deprovision requests as received, they are properly handled
 		assertDuplicateDeleteServiceInstanceOsbRequestsHandling(brokeredServiceInstance);
 
-		//when invalid service id or service plan is passed, they are rejected
+		//when invalid service id or service plan is passed in unprovisionning request, they are rejected
 		assertInvalidServiceProvisionningRequestsAreRejected();
+
+		//when a DSI is received while there are service keys, service keys are deleted
+		assertDeleteServiceInstanceDeletesServiceKeys();
+	}
+
+	private void assertDeleteServiceInstanceDeletesServiceKeys() {
+		// given a brokered service instance is created
+		createServiceInstance(brokeredServiceInstanceName());
+		// then a backing service instance is created in the backing service with the id as service name
+		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
+		String backingServiceName = brokeredServiceInstance.getId();
+
+		//when a service key is created with params
+		createServiceKey(getSkName(), brokeredServiceInstanceName());
+
+		// when the service instance is deleted without unbinding
+		int expectedStatusCode = isSync() ? HttpStatus.OK.value(): HttpStatus.ACCEPTED.value();
+		given(brokerFixture.serviceInstanceRequest())
+			.when()
+			.delete(brokerFixture.deleteServiceInstanceUrl(),brokeredServiceInstance.getId())
+			.then()
+			.statusCode(expectedStatusCode);
+
+		if (isSync()) {
+			//and the backing service instance is deleted (and the previously associated service key)
+			assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
+		} else {
+			//Pending assertion for async. Need to loop/wait for async DSI completion
+		}
+	}
+
+	// Overriden by async subclass to modify expected status code
+	protected boolean isSync() {
+		return true;
 	}
 
 	private void assertInvalidServiceProvisionningRequestsAreRejected() {
