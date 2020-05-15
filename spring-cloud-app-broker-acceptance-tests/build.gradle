@@ -1,0 +1,93 @@
+/*
+ * Copyright 2002-2020. the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+buildscript {
+	repositories {
+		mavenCentral()
+		maven { url "https://plugins.gradle.org/m2/" }
+	}
+
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+description = "Spring Cloud App Broker Acceptance Tests"
+
+// don't publish the jar for the acceptance tests project
+configurations.archives.artifacts.clear()
+
+apply plugin: 'org.springframework.boot'
+
+dependencies {
+	implementation("org.springframework.boot:spring-boot-starter-webflux")
+
+	testImplementation("org.springframework.boot:spring-boot-starter-test") {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+	testImplementation("io.projectreactor:reactor-test")
+	testImplementation("io.rest-assured:rest-assured") //for osbapi client
+	testImplementation("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
+	testImplementation("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
+	testImplementation("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}") //Just for OSB API constants
+
+}
+
+// build the test broker from /src into a jar that the tests can deploy
+test.dependsOn assemble
+
+//fake a dummy main application to keep bootJar task happy
+bootJar {
+	mainClassName = 'fake.nomain.in.acceptance.test.Anymore'
+}
+
+
+test {
+	// Our acceptance tests are not bound by cpu or RAM, but server-side response time for sequential operations (e.g. push).
+	// Since CF accepts parallel workload, we increase number of parallel fork beyond number of client processors to improve
+	// feedback time.
+//	maxParallelForks = (Runtime.runtime.availableProcessors()) - 1 ?: 1
+	// transient experiment to see if feedback cycle will improve
+	maxParallelForks = 6
+
+	// Only run the tests if acceptanceTests is specified
+	onlyIf {
+		project.hasProperty("acceptanceTests")
+	}
+
+
+	// Pass relevant java properties to the test task
+	//	systemProperty "tests.broker-app-path", "${buildDir}/libs/spring-cloud-app-broker-acceptance-tests.jar"
+	systemProperties << System.properties.findAll { it.key.startsWith("spring.") ||  it.key.startsWith("tests.")}
+
+
+	String itag = project.hasProperty("includeTag") ?
+			project.property("includeTag") : null
+	String etag = project.hasProperty("excludeTag") ?
+			project.property("excludeTag") : null
+
+	useJUnitPlatform{
+		if (itag !=null) {
+			includeTags  itag
+		}
+		if (etag != null) {
+			excludeTags  etag
+		}
+	}
+
+}
+
+

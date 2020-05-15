@@ -1,0 +1,34 @@
+<configuration debug="true">
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>
+				%d{dd-MM-yyyy HH:mm:ss.SSS} %magenta([%thread]) %highlight(%-5level) %logger{36}.%M - %msg%n
+			</pattern>
+		</encoder>
+	</appender>
+
+	<root level="info">
+		<appender-ref ref="STDOUT"/>
+	</root>
+	<logger name="com.orange.oss.osbcmdb" level="DEBUG" />
+	<logger name="com.orange.oss.osbcmdb.metadata" level="DEBUG" />
+
+	<!--	See https://github.com/cloudfoundry/cf-java-client/blob/master/cloudfoundry-client-reactor/src/test/resources/logback-test.xml-->
+	<logger name="cloudfoundry-client" level="trace" />
+<!--	<logger name="cloudfoundry-client" level="debug" />-->
+	<logger name="cloudfoundry-client.operations" level="debug" />
+	<logger name="cloudfoundry-client.request" level="debug" />
+	<logger name="cloudfoundry-client.response" level="debug" />
+	<logger name="cloudfoundry-client.wire" level="trace" />
+
+	<logger name="org.springframework.cloud.servicebroker" level="debug" />
+	<logger name="org.springframework.cloud.servicebroker.controller" level="debug" />
+	<logger name="okhttp3"                      level="DEBUG"/>
+
+	<!--	<logger name="org.springframework.security" level="DEBUG" />-->
+<!--	<logger name="org.springframework.boot.actuate" level="DEBUG" />-->
+<!--	<logger name="org.springframework.boot.actuate.autoconfigure" level="DEBUG" />-->
+<!--	<logger name="org.springframework.boot.actuate.autoconfigure.endpoint" level="DEBUG" />-->
+<!--	<logger name="org.springframework.security.web" level="DEBUG" />-->
+</configuration>

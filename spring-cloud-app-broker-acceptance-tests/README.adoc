@@ -1,0 +1,102 @@
+= OsbCmdb Acceptance Tests (inspired from Spring Cloud App Broker Acceptance Tests)
+
+The acceptance tests (AT), run end-to-end scenarios against real dependencies:
+* Cloud Foundry CC API
+* UAA API
+
+The AT setup step (in `CloudFoundryAcceptanceTest`) populates the required shared environment to execute:
+* a CF org and nested space
+
+The AT setup step (in `CloudFoundryAcceptanceTest`) populates on a per test basis (e.g. `CreateInstanceWithOnlyServicesAcceptanceTest` :
+* A UAA client id, with authorities "cloud_controller.read", "cloud_controller.write", "clients.write"
+* An app (e.g. `test-broker-app-create-instance-with-only-services`) exposing an OSB API endpoint
+* A service broker (e.g. `test-broker-create-instance-with-only-services`) with
+  * A service offering used as backend service (e.g. `app-service-create-instance-with-only-services` and a single plan (e.g. `Standard`)
+  * A service offering used as brokered service (e.g. `backing-service-create-instance-with-only-services` and a single plan (e.g. `Standard`)
+
+Each AT then provisions (and unprovisions) brokered services with associated backing apps and services. E.g. for `CreateInstanceWithOnlyServicesAcceptanceTest`
+* A pre-existing backing service instance (e.g. `backing-service-instance-existing`
+* A brokered service instance (e.g. `si-create-only-services`)
+* A backing service instance (e.g. `backing-service-instance-created`
+
+== Running locally
+
+=== Compile the project
+
+    $ ./gradlew build
+
+=== Run the tests
+
+The tests require the following properties to be set:
+
+* `spring.cloud.appbroker.acceptance-test.cloudfoundry.api-host` - The CF API host where the tests are going to run.
+* `spring.cloud.appbroker.acceptance-test.cloudfoundry.api-port` - The CF API port where the tests are going to run.
+* `spring.cloud.appbroker.acceptance-test.cloudfoundry.default-org` - The CF organization where the tests are going to run.
+* `spring.cloud.appbroker.acceptance-test.cloudfoundry.default-space` - The CF space where the tests are going to run.
+* `spring.cloud.appbroker.acceptance-test.cloudfoundry.skip-ssl-validation` - If SSL validation should be skipped.
+* `spring.cloud.appbroker.acceptance-test.cloudfoundry.username` - The CF API username.
+* `spring.cloud.appbroker.acceptance-test.cloudfoundry.password` - The CF API password.
+* `spring.cloud.appbroker.acceptance-test.cloudfoundry.client-id` - The CF API OAuth2 client ID. It requires the following authorities: cloud_controller.read,cloud_controller.write,clients.admin
+* `spring.cloud.appbroker.acceptance-test.cloudfoundry.client-secret` - The CF API OAuth2 client secret.
+
+=== Cleaning up left over after test failures
+
+While the test attempts to clean up resources provisionned, upon failure left overs might remain and then further fail other tests.
+
+You may use the following script to clean up the environment from left over https://github.com/orange-cloudfoundry/osb-cmdb-ci/blob/master/scripts/clean-at-cf-environment.sh
+
+You'd need to be logged in CF CLI and target the default org and space
+
+=== Running from IDE
+
+Make sure to have the osb-cmdb:bootJar gradle target executed before each test to ensure the latest code change are deployed within the test. In Intellij, add a gradle tasks to the test configuration `Before Launch` in the `Run/Debug configuration` dialog. See
+
+When running tests from an IDE, the following property must also be set (it is set automatically when running the entire suite via Gradle):
+
+* `tests.broker-app-path` - The path to the test broker jar file (eg. `spring-cloud-app-broker-acceptance-tests/build/libs/spring-cloud-app-broker-acceptance-tests.jar`).
+
+These properties can be set with `-D` system properties on the gradle command line.
+
+Also, the flag acceptanceTests must be provided as `-PacceptanceTests`.
+
+[source,bash]
+----
+$ ./gradlew test -PacceptanceTests \
+ -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.api-host=api.cf.my.cf.io  \
+ -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.api-port=443 \
+ -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.default-org=test \
+ -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.default-space=development \
+ -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.skip-ssl-validation=true \
+ -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.username=admin \
+ -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.password=password \
+ -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.client-id=admin \
+ -Dspring.cloud.appbroker.acceptance-test.cloudfoundry.client-secret=secret
+----
+
+=== Running from CI
+
+See concourse pipeline configuration at [ci/pipeline.yml](ci/pipeline.yml) and associated acceptance test execution script at [ci/scripts/acceptance-tests.sh](ci/scripts/acceptance-tests.sh)
+
+=== Troubleshoot failing tests
+
+Diagnostics:
+* check the broker logs
+   * Since cf app is removed by the tests, `cf logs broker-app --recent` can't be executed
+      * Enable debug log for `org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryService` and look for Junit log `Dumping recent logs for broker `      * Set up a debugger breakpoint on test failures
+      * Access cf app logs drained by CF
+      * Collect logs locally (` cf logs broker-app`) in a sidecar script running on the local test execution
+   * Control the default logging levels
+      * at build-time in  spring-cloud-app-broker-acceptance-tests/src/main/resources/application.yml
+
+Symptoms:
+* clean up step was not performed (e.g. because ot test failure or interrupted test)
+
+Resolution:
+* clean up potential left overs from previous test executions, e.g.
+
+[source,bash]
+----
+cf purge-service-offering -f -b test-broker-create-instance-with-only-services   backing-service-create-instance-with-only-services
+cf purge-service-offering -f -b test-broker-create-instance-with-only-services   app-service-create-instance-with-only-services
+cf delete-service-broker -f test-broker-create-instance-with-only-services
+----

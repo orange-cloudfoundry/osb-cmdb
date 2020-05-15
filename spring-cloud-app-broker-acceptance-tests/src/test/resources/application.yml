@@ -1,0 +1,4 @@
+logging:
+  level:
+    cloudfoundry-client: ERROR
+    org.springframework.cloud.appbroker: DEBUG

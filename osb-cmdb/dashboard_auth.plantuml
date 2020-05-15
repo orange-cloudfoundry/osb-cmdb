@@ -1,0 +1,16 @@
+@startuml
+"Developer/User-Agent" -> OsbCmdb: 1. (Start the procedure by calling one OsbCmdb dashboard url .)
+OsbCmdb -> "Developer/User-Agent": 2. HTTP 302: Redirect to the "Authorization Code Request" URL with parameters:\n scope="profile <color:red>openid</color>"&redirect_uri=[client_callback]&client_id=[client_id]&response_type=code&state=foobar
+"Developer/User-Agent" -> AuthorizationServer: 3. Call "Authorization Request" URL with parameters listed above.
+AuthorizationServer -> "Developer/User-Agent": 4. Whould you like to permit \n"<color:red>openid</color>, cloud_controller_service_permissions.read " \nfor [client]?
+"Developer/User-Agent" -> AuthorizationServer: 5. [Y]
+AuthorizationServer -> "Developer/User-Agent": 6. HTTP 302: Redirect to the [client_callback] URL with parameters: code=[authorization_code]&state=foobar
+"Developer/User-Agent" -> OsbCmdb: 7. Call [client_callback] URL with parameters listed above.
+OsbCmdb -> AuthorizationServer: 8. Call <color:red>"Access Token / ID Token Request"</color> URL with parameters:\n code=[authorization_code]&client_id=[client_id]&client_secret=[client_secret]&grant_type=authorization_code
+AuthorizationServer -> OsbCmdb: 9. HTTP 200 with the [access_token, <color:red>id_token</color>]
+OsbCmdb -> OidcResourceServer: <color:red>10. Call userInfo endpoint with the header: {Authorization: Bearer [access_token]}
+OidcResourceServer -> OsbCmdb: <color:red>11. HTTP 200 with more detailed user information.
+OsbCmdb -> AuthZEndPoint: 12. Get Service instane Permissions\nAuthentication: Bearer   \n GET /v2/service_instances/:guid/permissions
+AuthZEndPoint -> OsbCmdb: 13. 200 OK {manage:true, read:true}
+OsbCmdb -> "Developer/User-Agent": <color:red>14. Dashboard access granted, \ndisplay dashboard content
+@enduml
