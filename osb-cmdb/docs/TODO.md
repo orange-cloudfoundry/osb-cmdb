@@ -1,4 +1,25 @@
 
+Polish before 1.0 release
+* [ ] rename configuration to not pull anymore SCAB config prefix
+   * [ ] update documentation
+   * [ ] update CI
+   * [ ] update paas-template manifest.yml file
+* [ ] Manage git repo history. 
+   * 0.x are based on scab code base
+   * `redesign-cmdb` branch rewritten spike history in a single squashed commit, and added incremental redesign and cleanup
+   * Goals
+      * make repo smaller
+      * don't pollute git history that much with unrelated scab work
+      * keep ability to compare SCAB AT/CT/gradle as they evolve/spin-off 
+   * Alternatives:
+      * **Squash `redesign-cmdb` branch into a single initial commit, update master to it, and leave the `redesign-cmdb` for further instropection/history as necessary**
+      * Selectively squash `redesign-cmdb` branch to isolate scab work
+   * 
+
+Clean up after 1.0 release
+* [ ] update CI to differentiate SCAB contribs from Osb-cmdb contribs ?
+
+
 * Improve packaging & release process
    * [ ] collect a publish code coverage report
       * Look at SCAB CI for leveraging `codeCoverageReport` task
