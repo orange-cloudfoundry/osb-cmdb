@@ -1,9 +1,5 @@
 
 Polish before 1.0 release
-* [ ] rename configuration to not pull anymore SCAB config prefix
-   * [ ] update documentation
-   * [ ] update CI
-   * [ ] update paas-template manifest.yml file
 * [ ] Manage git repo history. 
    * 0.x are based on scab code base
    * `redesign-cmdb` branch rewritten spike history in a single squashed commit, and added incremental redesign and cleanup
@@ -14,10 +10,19 @@ Polish before 1.0 release
    * Alternatives:
       * **Squash `redesign-cmdb` branch into a single initial commit, update master to it, and leave the `redesign-cmdb` for further instropection/history as necessary**
       * Selectively squash `redesign-cmdb` branch to isolate scab work
-   * 
+   * [ ] Squash `redesign-cmdb` branch into a single initial commit
+      * Mention commit with history with URL to `redesign-cmdb` commit in github  
+      
 
 Clean up after 1.0 release
 * [ ] update CI to differentiate SCAB contribs from Osb-cmdb contribs ?
+* [ ] rename configuration to not pull anymore SCAB config prefix
+   * Goal: look independent of scab for community contribs    
+   * Rationales for delaying post 1.0
+      * Impacts AT/CT/UT config. Would conflict SCAB exchanges there
+   * [ ] update documentation
+   * [ ] update CI
+   * [ ] update paas-template manifest.yml file
 
 
 * Improve packaging & release process
