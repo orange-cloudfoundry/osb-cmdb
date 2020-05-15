@@ -146,15 +146,25 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		//when a service key is created with params
 		createServiceKey(getSkName(), brokeredServiceInstanceName());
 
-		// when the service instance is deleted without un
+		// when the service instance is deleted without unbinding
+		int expectedStatusCode = isSync() ? HttpStatus.OK.value(): HttpStatus.ACCEPTED.value();
 		given(brokerFixture.serviceInstanceRequest())
 			.when()
 			.delete(brokerFixture.deleteServiceInstanceUrl(),brokeredServiceInstance.getId())
 			.then()
-			.statusCode(HttpStatus.OK.value());
+			.statusCode(expectedStatusCode);
 
-		//and the backing service instance is deleted (and the previously associated service key)
-		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
+		if (isSync()) {
+			//and the backing service instance is deleted (and the previously associated service key)
+			assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
+		} else {
+			//Pending assertion for async. Need to loop/wait for async DSI completion
+		}
+	}
+
+	// Overriden by async subclass to modify expected status code
+	protected boolean isSync() {
+		return true;
 	}
 
 	private void assertInvalidServiceProvisionningRequestsAreRejected() {
