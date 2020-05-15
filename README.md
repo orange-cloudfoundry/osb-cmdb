@@ -8,28 +8,31 @@ This project provides a configuration management for Open Service Broker API bro
 cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc - 
 -->
 
- * [Functional overview](#functional-overview)
- * [Getting started](#getting-started)
-    * [Manual catalog of Brokered and backing services](#manual-catalog-of-brokered-and-backing-services)
-       * [Backing service instance target strategies](#backing-service-instance-target-strategies)
-    * [Typical CMDB content](#typical-cmdb-content)
-    * [Dynamic catalog](#dynamic-catalog)
- * [Technical details](#technical-details)
-    * [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
-    * [Future support for additional meta-data](#future-support-for-additional-meta-data)
-    * [Dashboard AuthN and AuthZ support (WIP)](#dashboard-authn-and-authz-support-wip)
-       * [Discovery of the OIDC endpoint](#discovery-of-the-oidc-endpoint)
-       * [Discovery of the OAuth client_id and client_secret to provision](#discovery-of-the-oauth-client_id-and-client_secret-to-provision)
-       * [Dashboard AuthN using OIDC](#dashboard-authn-using-oidc)
-       * [Dashboard AuthZ using CF service instance permission](#dashboard-authz-using-cf-service-instance-permission)
-       * [Dashboard AuthZ using K8S API](#dashboard-authz-using-k8s-api)
-       * [Interaction flow diagram](#interaction-flow-diagram)
- * [Releasing](#releasing)
-
-
-
-Credits: this project initially spiked and inspired from the great [spring-cloud/spring-cloud-app-broker](https://github.com/spring-cloud/spring-cloud-app-broker) project. After attempting upstream contribution in `spring-cloud-app-broker` to support osb-cmdb use-cases, see [#6](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/6) and related issue [spring-cloud/spring-cloud-app-broker/#285](https://github.com/spring-cloud/spring-cloud-app-broker/issues/285), a redesign and reimplementation of osb-cmdb independently of `spring-cloud-app-broker` was conducted in version 1.0, see [#13](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/13). Osb-cmdb 1.0 still uses some app-broker configuration, acceptance and component-test code fragments, referenced with acronym SCAB below. 
-
+   * [Functional overview](#functional-overview)
+   * [Getting started](#getting-started)
+      * [Deploying](#deploying)
+      * [Increasing log levels dynamically](#increasing-log-levels-dynamically)
+      * [Manual catalog of Brokered and backing services](#manual-catalog-of-brokered-and-backing-services)
+      * [Typical CMDB content](#typical-cmdb-content)
+      * [Metadata attached to backing services](#metadata-attached-to-backing-services)
+      * [Dynamic catalog](#dynamic-catalog)
+   * [Technical details](#technical-details)
+      * [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
+      * [Future support for additional meta-data](#future-support-for-additional-meta-data)
+      * [Dashboard AuthN and AuthZ support (WIP)](#dashboard-authn-and-authz-support-wip)
+         * [Discovery of the OIDC endpoint](#discovery-of-the-oidc-endpoint)
+         * [Discovery of the OAuth client_id and client_secret to provision](#discovery-of-the-oauth-client_id-and-client_secret-to-provision)
+         * [Dashboard AuthN using OIDC](#dashboard-authn-using-oidc)
+         * [Dashboard AuthZ using CF service instance permission](#dashboard-authz-using-cf-service-instance-permission)
+         * [Dashboard AuthZ using K8S API](#dashboard-authz-using-k8s-api)
+         * [Interaction flow diagram](#interaction-flow-diagram)
+   * [Contributing](#contributing)
+      * [Credits](#credits)
+      * [Design documentation](#design-documentation)
+      * [Circle ci tests](#circle-ci-tests)
+      * [Acceptance tests](#acceptance-tests)
+      * [Releasing](#releasing)
+			
 ### Functional overview
 
 The following diagram presents a functional overview of the ocb-cdmb feature scope
@@ -505,6 +508,10 @@ The following diagram summarizes the interactions between OSB-CMDB and its clien
 ![sequence diagram](./osb-cmdb/seq-diagram.png)
 
 ### Contributing
+
+#### Credits
+
+This project initially spiked and inspired from the great [spring-cloud/spring-cloud-app-broker](https://github.com/spring-cloud/spring-cloud-app-broker) project. After attempting upstream contribution in `spring-cloud-app-broker` to support osb-cmdb use-cases, see [#6](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/6) and related issue [spring-cloud/spring-cloud-app-broker/#285](https://github.com/spring-cloud/spring-cloud-app-broker/issues/285), a redesign and reimplementation of osb-cmdb independently of `spring-cloud-app-broker` was conducted in version 1.0, see [#13](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/13). Osb-cmdb 1.0 still uses some app-broker configuration, acceptance and component-test code fragments, referenced with acronym SCAB below. 
 
 #### Design documentation
 
