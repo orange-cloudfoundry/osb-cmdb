@@ -64,4 +64,9 @@ class CreateDeleteAsyncInstanceWithBackingServiceKeysAcceptanceTest extends
 		super.deployAppsAndCreateServiceKeysOnBindService();
 	}
 
+	@Override
+	protected boolean isSync() {
+		return false;
+	}
+
 }
