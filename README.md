@@ -1,7 +1,7 @@
 
 ## Osb-cmdb
 
-This project provides a configuration management for Open Service Broker API broker implementations. See [orange-cloudfoundry/paas-templates#492](https://github.com/orange-cloudfoundry/paas-templates/issues/492) for more background around use-cases and considered alternatives.
+This project provides a configuration management for Open Service Broker API broker implementations, enabling sharing of service brokers among multiple OSB client platoforms. See [orange-cloudfoundry/paas-templates#492](https://github.com/orange-cloudfoundry/paas-templates/issues/492) for more background around use-cases and considered alternatives.
 
 <!-- 
  TOC generated during https://github.com/ekalinin/github-markdown-toc
@@ -113,9 +113,22 @@ In production like in acceptance tests, use spring boot actuator logger to dynam
 curl -kv https://admin:password@test-broker-app-create-instance-with-service-keys.redacted-domain/actuator/loggers/cloudfoundry-client.wire -X POST -H 'Content-Type: application/json' -d '{"configuredLevel": "TRACE"}'
 ```
 
-#### Manual catalog of Brokered and backing services 
+#### Catalog management
 
-Osb-cmdb supports by default a statically configured catalog of brokered services.
+##### Dynamic catalog
+
+Osb-cmdb by default dynamically generates a catalog from the services and service plans visible from the backing service organization configured with the `spring.cloud.appbroker.deployer.cloudfoundry.default-org` property. The following properties enable configuring the dynamically generated catalog
+
+property name | default value | description  
+-- | -- | -- 
+osbcmdb.dynamic-catalog.enabled | true | enables dynamic catalog when set to true 
+osbcmdb.dynamic-catalog.catalog.services.suffix| null| when set, adds a suffix to every service definition names 
+osbcmdb.dynamic-catalog.catalog.services.excludeBrokerNamesRegexp| null | when set, exclude service brokers from dynamic catalog whose name match the specified java regular expression 
+
+
+##### Static catalog
+
+Osb-cmdb also supports a statically configured catalog of brokered services, by setting `osbcmdb.dynamic-catalog.enabled=false`, and configuring the spring-cloud-open-service-broker catalog.
 
 Following is an example of a simple [spring-cloud-open-service-broker catalog configuration](https://docs.spring.io/spring-cloud-open-service-broker/docs/3.1.1.RELEASE/reference/html5/#providing-a-catalog-using-properties) (without detailed catalog customization)
 
@@ -511,7 +524,7 @@ The following diagram summarizes the interactions between OSB-CMDB and its clien
 
 #### Credits
 
-This project initially spiked and inspired from the great [spring-cloud/spring-cloud-app-broker](https://github.com/spring-cloud/spring-cloud-app-broker) project. After attempting upstream contribution in `spring-cloud-app-broker` to support osb-cmdb use-cases, see [#6](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/6) and related issue [spring-cloud/spring-cloud-app-broker/#285](https://github.com/spring-cloud/spring-cloud-app-broker/issues/285), a redesign and reimplementation of osb-cmdb independently of `spring-cloud-app-broker` was conducted in version 1.0, see [#13](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/13). Osb-cmdb 1.0 still uses some app-broker configuration, acceptance and component-test code fragments, referenced with acronym SCAB below. 
+This project initially spiked and inspired from the great [spring-cloud/spring-cloud-app-broker](https://github.com/spring-cloud/spring-cloud-app-broker) project. After attempting upstream contribution in `spring-cloud-app-broker` to support osb-cmdb use-cases, see [#6](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/6) and related issue [spring-cloud/spring-cloud-app-broker/#285](https://github.com/spring-cloud/spring-cloud-app-broker/issues/285), a redesign and reimplementation of osb-cmdb independently of `spring-cloud-app-broker` was conducted in version 1.0, see [#13](https://github.com/orange-cloudfoundry/osb-cmdb-spike/issues/13). Osb-cmdb 1.0 still uses some app-broker configuration (prefixed with `spring.cloud.appbroker.`, acceptance and component-test code fragments, referenced with acronym SCAB below. 
 
 #### Design documentation
 
