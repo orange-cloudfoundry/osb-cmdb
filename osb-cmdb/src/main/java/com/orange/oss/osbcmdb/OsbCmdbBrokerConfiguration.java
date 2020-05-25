@@ -191,7 +191,8 @@ public class OsbCmdbBrokerConfiguration {
 		return new OsbCmdbServiceInstance(cloudFoundryOperations, cloudFoundryClient,
 			targetProperties.getDefaultOrg(), targetProperties.getUsername(),
 			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(),
-			new UpdateServiceMetadataFormatterService(), osbCmdbBrokerProperties.isPropagateMetadataAsCustomParam());
+			new UpdateServiceMetadataFormatterService(), osbCmdbBrokerProperties.isPropagateMetadataAsCustomParam(),
+			osbCmdbBrokerProperties.isHideMetadataCustomParamInGetServiceInstanceEndpoint());
 	}
 
 }

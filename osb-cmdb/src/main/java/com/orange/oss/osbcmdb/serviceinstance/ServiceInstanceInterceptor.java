@@ -20,6 +20,8 @@ import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInsta
  */
 public interface ServiceInstanceInterceptor {
 
+	boolean accept(GetServiceInstanceRequest request);
+
 	boolean accept(CreateServiceInstanceRequest request);
 
 	boolean accept(GetLastServiceOperationRequest request);
