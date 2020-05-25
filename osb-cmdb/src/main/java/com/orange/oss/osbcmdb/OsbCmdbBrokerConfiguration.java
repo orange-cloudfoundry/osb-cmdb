@@ -25,6 +25,8 @@ import org.cloudfoundry.operations.CloudFoundryOperations;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -33,6 +35,7 @@ import org.springframework.core.env.Profiles;
 
 @Profile("!offline-test-without-scab")
 @Configuration
+@EnableConfigurationProperties
 public class OsbCmdbBrokerConfiguration {
 
 
@@ -154,6 +157,14 @@ public class OsbCmdbBrokerConfiguration {
 			targetProperties.getUsername(), cloudFoundryOperations, serviceBindingInterceptor);
 	}
 
+	@Bean
+	@ConfigurationProperties(prefix = OsbCmdbBrokerProperties.PROPERTY_PREFIX, ignoreUnknownFields = false)
+	public OsbCmdbBrokerProperties osbCmdbBrokerProperties() {
+		return new OsbCmdbBrokerProperties();
+	}
+
+
+
 	/**
 	 * Provide a {@link OsbCmdbServiceInstance} bean
 	 *
@@ -170,7 +181,8 @@ public class OsbCmdbBrokerConfiguration {
 		CloudFoundryTargetProperties targetProperties,
 		@Autowired(required = false)
 			ServiceInstanceInterceptor serviceInstanceInterceptor,
-		Environment environment) {
+		Environment environment,
+		OsbCmdbBrokerProperties osbCmdbBrokerProperties) {
 		String acceptanceTestsProfile = "acceptanceTests";
 		if (serviceInstanceInterceptor == null && environment.acceptsProfiles(Profiles.of(acceptanceTestsProfile))) {
 			throw new IllegalArgumentException("With " + acceptanceTestsProfile + " profile, at least one interceptor" +
@@ -179,7 +191,7 @@ public class OsbCmdbBrokerConfiguration {
 		return new OsbCmdbServiceInstance(cloudFoundryOperations, cloudFoundryClient,
 			targetProperties.getDefaultOrg(), targetProperties.getUsername(),
 			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(),
-			new UpdateServiceMetadataFormatterService());
+			new UpdateServiceMetadataFormatterService(), osbCmdbBrokerProperties.isPropagateMetadataAsCustomParam());
 	}
 
 }
