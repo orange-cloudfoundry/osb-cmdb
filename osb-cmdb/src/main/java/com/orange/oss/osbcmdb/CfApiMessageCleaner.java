@@ -12,7 +12,9 @@ public class CfApiMessageCleaner {
 
 	public ServiceBrokerException redactExceptionAndWrapAsServiceBrokerException(Exception originalException) {
 		String message = originalException.getMessage();
-		message = redactExceptionMessage(message);
+		if (message !=null) {
+			message = redactExceptionMessage(message);
+		}
 		return new ServiceBrokerException(message, originalException);
 	}
 

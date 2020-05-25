@@ -201,10 +201,12 @@ abstract class CloudFoundryAcceptanceTest {
 		String[] openServiceBrokerProperties = {
 			"spring.cloud.openservicebroker.catalog.services[0].id=" + SERVICE_ID,
 			"spring.cloud.openservicebroker.catalog.services[0].name=" + appServiceName(),
-			"spring.cloud.openservicebroker.catalog.services[0].description=A service that deploys a backing app",
+			"spring.cloud.openservicebroker.catalog.services[0].description=An osb-cmdb service that deploys a " +
+				"backing service",
 			"spring.cloud.openservicebroker.catalog.services[0].bindable=true",
 			"spring.cloud.openservicebroker.catalog.services[0].plan_updateable=true",
 			"spring.cloud.openservicebroker.catalog.services[0].allow_context_updates=true",
+			"spring.cloud.openservicebroker.catalog.services[0].instances_retrievable=true",
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].id=" + PLAN_ID,
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].name=" + PLAN_NAME,
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].bindable=true",
@@ -217,7 +219,7 @@ abstract class CloudFoundryAcceptanceTest {
 			"spring.cloud.openservicebroker.catalog.services[0].plans[1].free=true",
 			"spring.cloud.openservicebroker.catalog.services[1].id=" + BACKING_SERVICE_ID,
 			"spring.cloud.openservicebroker.catalog.services[1].name=" + backingServiceName(),
-			"spring.cloud.openservicebroker.catalog.services[1].description=A backing service that can be bound to backing apps",
+			"spring.cloud.openservicebroker.catalog.services[1].description=A backing service",
 			"spring.cloud.openservicebroker.catalog.services[1].bindable=true",
 			"spring.cloud.openservicebroker.catalog.services[1].plans[0].id=" + BACKING_SERVICE_PLAN_ID,
 			"spring.cloud.openservicebroker.catalog.services[1].plans[0].name=standard",
@@ -462,6 +464,10 @@ abstract class CloudFoundryAcceptanceTest {
 
 	protected ServiceInstance getServiceInstance(String serviceInstanceName) {
 		return getServiceInstanceMono(serviceInstanceName).block();
+	}
+
+	protected Map<String, Object> getServiceInstanceParams(String serviceInstanceGuid) {
+		return cloudFoundryService.getServiceInstanceParams(serviceInstanceGuid).block();
 	}
 
 	protected ServiceKey getServiceKey(String serviceKeyName, String serviceInstanceName, String space) {
