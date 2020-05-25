@@ -279,6 +279,9 @@ class OsbCmdbBrokerConfigurationTest {
 	@DisplayName("custom metadata is enabled by default")
 	void customMetadataAsParamFlagDefaultsToTrue() {
 		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=cloud"
+			)
 			.withPropertyValues(cloudFoundryDeploymentProperties())
 			.run((context) -> {
 				assertThat(context).hasSingleBean(OsbCmdbBrokerProperties.class);
@@ -290,6 +293,9 @@ class OsbCmdbBrokerConfigurationTest {
 	@DisplayName("custom metadata option can be opted out")
 	void customMetadataAsParamFlagOptOut() {
 		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=cloud"
+			)
 			.withPropertyValues(cloudFoundryDeploymentProperties())
 			.withPropertyValues(new String[]{"osbcmdb.broker.propagateMetadataAsCustomParam=false"})
 			.run((context) -> {
