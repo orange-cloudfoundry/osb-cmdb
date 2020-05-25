@@ -149,8 +149,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.map(GetServiceInstanceParametersResponse::getParameters)
 					.block();
 				if (hideMetadataCustomParamInGetServiceInstanceEndpoint) {
-					Object customOsbParam = backingServiceInstanceParams.remove(X_OSB_CMDB_CUSTOM_KEY_NAME);
-					LOG.debug("Hiding param with key {} and value {} from GSI response", X_OSB_CMDB_CUSTOM_KEY_NAME, customOsbParam);
+					Map<String, Object>  sanitizedParams = new HashMap<>(); //Original map is immutable.
+					sanitizedParams.putAll(backingServiceInstanceParams);
+					Object customParams = sanitizedParams.remove(X_OSB_CMDB_CUSTOM_KEY_NAME);
+					LOG.debug("Hiding param with key {} and value {} from GSI response", X_OSB_CMDB_CUSTOM_KEY_NAME, customParams);
+					backingServiceInstanceParams = sanitizedParams;
 				}
 				org.springframework.cloud.servicebroker.model.instance.GetServiceInstanceResponse.GetServiceInstanceResponseBuilder builder =
 					org.springframework.cloud.servicebroker.model.instance.GetServiceInstanceResponse.builder()
@@ -163,6 +166,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			}
 		}
 		catch (Exception e) {
+			LOG.info("Unable to process {}, caught: {}", request, e.toString(), e);
 			throw redactExceptionAndWrapAsServiceBrokerException(e);
 		}
 		LOG.debug("No brokered service found from metadata with id {}, returning 404", serviceInstanceId);

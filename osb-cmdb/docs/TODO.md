@@ -19,10 +19,11 @@ Propagate metadata as custom params https://github.com/orange-cloudfoundry/cf-op
                * [x] Fetch backend service instance using V2 api to fetch dashboard
                * [x] Fetch backend service instance params using V2 api to fetch params
                   * [x] filter custom param when `hideMetadataCustomParamInGetServiceInstanceEndpoint` is set 
-      * add asserts on create: 
-         * [ ] configure catalog with instance retreivable
-         * [ ] call CF GSIP on backing si, and compare returned params to requested params, check no extra 
-      * add asserts on update: copy plan update test into params update test
+      * [x] add asserts on create: 
+         * [x] configure catalog with instance retreivable
+         * [x] call CF GSIP on backing si, and compare returned params to requested params, check no extra 
+      * [ ] add asserts on update: copy plan update test into params update test
+   * [ ] Add new AT with `hideMetadataCustomParamInGetServiceInstanceEndpoint` opt-out and assert `x-osb-cmdb` custom param is returned
          
 
 

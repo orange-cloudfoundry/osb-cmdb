@@ -70,11 +70,15 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
 	void deployAppsAndCreateServiceKeysOnBindService() throws InterruptedException {
-		// given a brokered service instance is created
-		createServiceInstance(brokeredServiceInstanceName());
+		// given a brokered service instance is created with some params
+		Map<String, Object> parameters = Collections.singletonMap("a-key", "a-value");
+		createServiceInstance(brokeredServiceInstanceName(), parameters);
 		// then the brokered service instance is indeed successfully created
 		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
+		//And the brokered service instance returns the same params provisionned
+		Map<String, Object> brokeredServiceInstanceParams = getServiceInstanceParams(brokeredServiceInstance.getId());
+		assertThat(brokeredServiceInstanceParams).containsExactlyInAnyOrderEntriesOf(parameters);
 
 		// and a backing service instance is created in the backing service with the id as service name
 		String backingServiceName = brokeredServiceInstance.getId();
