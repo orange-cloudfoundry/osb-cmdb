@@ -4,7 +4,26 @@ Propagate metadata as custom params https://github.com/orange-cloudfoundry/cf-op
    * [x] Add associated unit test
 * [x] Service instance params gets fill with a new custom param
 * [ ] Acceptance test to assert param 
-
+   * Using GSI endpoint 
+      * Pb: `x-osb-cmdb` custom param would be exposed to app developers if returned in GSI endpoint
+         * An an opt-in `hideMetadataCustomParamInGetServiceInstanceEndpoint` to return the custom param in GSI, and only activate this endpoint in the custom param AT
+   * [ ] implement GSI
+      * [x] implement GSI on interceptor
+         * Pb: GSI call has no context unlike CSI to distinguish backing from brokered service instance using context.
+         * Only accept call if previously provisionned in create call
+      * [x] implement GSI on CmdbServiceInstance
+         * [x] check javaclient support GSIP: org.cloudfoundry.client.v2.serviceinstances.ServiceInstances.getParameters()
+         * Pb: SCOSB does not yet leverage 2.16 spaceId and serviceDefinitionId hints see https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/287 necessary to lookup in service instance by name in backend space
+            * workaround: 
+               * [x] Lookup backend service instance guid in metadata using brokered service instance guid
+               * [x] Fetch backend service instance using V2 api to fetch dashboard
+               * [x] Fetch backend service instance params using V2 api to fetch params
+                  * [x] filter custom param when `hideMetadataCustomParamInGetServiceInstanceEndpoint` is set 
+      * add asserts on create: 
+         * [ ] configure catalog with instance retreivable
+         * [ ] call CF GSIP on backing si, and compare returned params to requested params, check no extra 
+      * add asserts on update: copy plan update test into params update test
+         
 
 
 Polish before 1.0 release
@@ -139,13 +158,6 @@ Clean up after 1.0 release
               "code": 120004
            }
          ```
-      * [ ] implement GSI
-         * [x] implement GSI on interceptor
-         * [ ] implement GSI on CmdbServiceInstance
-            * [x] check javaclient support GSIP: org.cloudfoundry.client.v2.serviceinstances.ServiceInstances.getParameters() 
-         * add asserts on create: 
-            * [ ] call CF GSIP on backing si, and compare returned params to requested params
-         * add asserts on update: copy plan update test into params update test
       * [ ] implement GSB
          * [ ] implement GSB on interceptor
          * [ ] implement GSB on CmdbServiceInstance

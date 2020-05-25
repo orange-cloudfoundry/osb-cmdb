@@ -179,7 +179,7 @@ class OsbCmdbServiceInstanceTest {
 
 		osbCmdbServiceInstance = new OsbCmdbServiceInstance(cloudFoundryOperations,
 			cloudFoundryClient, defaultOrg, "userName", null,
-			new CreateServiceMetadataFormatterServiceImpl(), new UpdateServiceMetadataFormatterService(), true);
+			new CreateServiceMetadataFormatterServiceImpl(), new UpdateServiceMetadataFormatterService(), true, true);
 	}
 
 }

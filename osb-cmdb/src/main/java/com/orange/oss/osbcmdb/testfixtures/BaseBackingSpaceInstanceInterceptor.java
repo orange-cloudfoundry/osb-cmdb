@@ -1,7 +1,9 @@
 package com.orange.oss.osbcmdb.testfixtures;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import reactor.util.Logger;
@@ -24,6 +26,12 @@ public class BaseBackingSpaceInstanceInterceptor {
 	 * </ol>
 	 */
 	protected Set<String> provisionnedInstanceGuids = Collections.synchronizedSet(new HashSet<>());
+
+	/**
+	 * Stores the params passed at creation or update of each entity (service instance or service binding). Indexed
+	 * by entity guid.
+	 */
+	protected Map<String, Map<String, Object>> provisionnedInstanceParams = new HashMap<>();
 
 	public BaseBackingSpaceInstanceInterceptor(
 		String defaultSpaceName) {
