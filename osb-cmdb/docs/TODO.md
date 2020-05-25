@@ -1,6 +1,14 @@
 
+Propagate metadata as custom params https://github.com/orange-cloudfoundry/cf-ops-automation-broker/issues/47#issuecomment-630726012
+* [x] Add new flag to support opt-out
+   * [x] Add associated unit test
+* [x] Service instance params gets fill with a new custom param
+* [ ] Acceptance test to assert param 
+
+
+
 Polish before 1.0 release
-* [ ] Manage git repo history. 
+* [x] Manage git repo history. 
    * 0.x are based on scab code base
    * `redesign-cmdb` branch rewritten spike history in a single squashed commit, and added incremental redesign and cleanup
    * Goals
@@ -10,8 +18,9 @@ Polish before 1.0 release
    * Alternatives:
       * **Squash `redesign-cmdb` branch into a single initial commit, update master to it, and leave the `redesign-cmdb` for further instropection/history as necessary**
       * Selectively squash `redesign-cmdb` branch to isolate scab work
-   * [ ] Squash `redesign-cmdb` branch into a single initial commit
-      * Mention commit with history with URL to `redesign-cmdb` commit in github  
+   * [x] Squash `redesign-cmdb` branch into a single initial commit
+      * Mention commit with history with URL to `redesign-cmdb` commit in github
+   * [ ] Squash and edit/change the root commit
       
 
 Clean up after 1.0 release
@@ -131,7 +140,7 @@ Clean up after 1.0 release
            }
          ```
       * [ ] implement GSI
-         * [ ] implement GSI on interceptor
+         * [x] implement GSI on interceptor
          * [ ] implement GSI on CmdbServiceInstance
             * [x] check javaclient support GSIP: org.cloudfoundry.client.v2.serviceinstances.ServiceInstances.getParameters() 
          * add asserts on create: 

@@ -1,7 +1,9 @@
 package com.orange.oss.osbcmdb.serviceinstance;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -64,6 +66,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+	public static final String X_OSB_CMDB_CUSTOM_KEY_NAME = "x-osb-cmdb";
+
 	protected final Logger LOG = Loggers.getLogger(OsbCmdbServiceInstance.class);
 
 	private final CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService;
@@ -72,16 +76,20 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private final UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService;
 
+	private boolean propagateMetadataAsCustomParam;
+
 	public OsbCmdbServiceInstance(CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		String defaultOrg, String userName,
 		ServiceInstanceInterceptor osbInterceptor,
 		CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService,
-		UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService) {
+		UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService,
+		boolean propagateMetadataAsCustomParam) {
 		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
 
 		this.osbInterceptor = osbInterceptor;
 		this.createServiceMetadataFormatterService = createServiceMetadataFormatterService;
 		this.updateServiceMetadataFormatterService = updateServiceMetadataFormatterService;
+		this.propagateMetadataAsCustomParam = propagateMetadataAsCustomParam;
 	}
 
 	@Override
@@ -105,6 +113,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 			CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
 			String backingServiceInstanceInstanceId = null;
+			MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
 			try {
 				rejectDuplicateServiceInstanceGuid(request, spacedTargetedOperations);
 
@@ -113,7 +122,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
 						.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()))
 						.servicePlanId(backingServicePlanId)
-						.parameters(request.getParameters())
+						.parameters(formatParameters(metaData, request.getParameters()))
 						.spaceId(spaceId)
 						.build())
 					.block();
@@ -153,7 +162,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			}
 			finally {
 				if (backingServiceInstanceInstanceId != null) {
-					updateServiceInstanceMetadata(request, backingServiceInstanceInstanceId);
+					updateServiceInstanceMetadata(backingServiceInstanceInstanceId, metaData);
 				}
 			}
 
@@ -168,6 +177,15 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			// globally by inspecting the backing service instance state instead.
 			return handleCreateException(e, backingServiceName, spacedTargetedOperations, request);
 		}
+	}
+
+	private Map<String, Object> formatParameters(MetaData metaData, Map<String, Object> requestParams) {
+		Map<String, Object> parameters = new HashMap<>();
+		parameters.putAll(requestParams);
+		if (propagateMetadataAsCustomParam) {
+			parameters.put(X_OSB_CMDB_CUSTOM_KEY_NAME, metaData);
+		}
+		return parameters;
 	}
 
 	@Override
@@ -361,6 +379,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
 
 		UpdateServiceInstanceResponseBuilder responseBuilder = UpdateServiceInstanceResponse.builder();
+		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
 
 		try {
 			org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceResponse updateServiceInstanceResponse;
@@ -368,7 +387,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				.update(org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceRequest.builder()
 					.serviceInstanceId(existingBackingServiceInstance.getId())
 					.servicePlanId(backingServicePlanId)
-					.parameters(request.getParameters())
+					.parameters(formatParameters(metaData, request.getParameters()))
 					.build())
 				.block();
 
@@ -409,7 +428,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		finally {
 			//systematically try to update metadata (e.g. service instance rename) even if update failed
-			updateServiceInstanceMetadata(request, existingBackingServiceInstance.getId());
+			updateServiceInstanceMetadata(existingBackingServiceInstance.getId(), metaData);
 		}
 		return Mono.just(responseBuilder.build());
 	}
@@ -787,13 +806,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			.block();
 	}
 
-	private void updateServiceInstanceMetadata(CreateServiceInstanceRequest request, String serviceInstanceId) {
-		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
-		updateMetadata(metaData, serviceInstanceId);
-	}
-
-	private void updateServiceInstanceMetadata(UpdateServiceInstanceRequest request, String serviceInstanceId) {
-		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
+	private void updateServiceInstanceMetadata(String serviceInstanceId, MetaData metaData) {
 		updateMetadata(metaData, serviceInstanceId);
 	}
 
