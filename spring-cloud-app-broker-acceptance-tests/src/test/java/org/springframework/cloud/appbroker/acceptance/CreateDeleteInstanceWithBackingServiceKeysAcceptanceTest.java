@@ -28,6 +28,7 @@ import org.springframework.http.HttpStatus;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Tag("cmdb")
 class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
@@ -94,6 +95,9 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 			.isNotEmpty()
 			.isEqualTo(backingServiceInstance.getDashboardUrl());
 
+		//and invalid get service instance requests are rejected
+		assertInvalidGetServiceInstanceAreRejected(backingServiceInstanceId);
+
 		//when concurrent requests as received, they are properly handled
 		assertDuplicateCreateServiceInstanceOsbRequestsHandling(brokeredServiceInstance);
 
@@ -138,6 +142,13 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 
 		//when a DSI is received while there are service keys, service keys are deleted
 		assertDeleteServiceInstanceDeletesServiceKeys();
+	}
+
+	private void assertInvalidGetServiceInstanceAreRejected(String backingServiceInstanceId) {
+		assertThatThrownBy(() -> getServiceInstanceParams("an-invalid-id")).hasMessageContaining("CF-ServiceInstanceNotFound");
+		//Backing service guid should be rejected. However, we can't assert it since the interceptor will handle the
+		// GSI OSB request in place of OSB-cmdb
+//		assertThatThrownBy(() -> getServiceInstanceParams(backingServiceInstanceId)).hasMessageContaining("CF-ServiceInstanceNotFound");
 	}
 
 	private void assertDeleteServiceInstanceDeletesServiceKeys() {
