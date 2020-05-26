@@ -23,7 +23,7 @@ Propagate metadata as custom params https://github.com/orange-cloudfoundry/cf-op
          * [x] configure catalog with instance retreivable
          * [x] call CF GSIP on backing si, and compare returned params to requested params, check no extra 
          * [x] assert invalid service guid is rejected
-      * [ ] add asserts on update: copy plan update test into params update test
+      * [x] add asserts on update: copy plan update test into params update test
    * [x] Add new AT with `hideMetadataCustomParamInGetServiceInstanceEndpoint` opt-out and assert `x-osb-cmdb` custom param is returned
          
 
