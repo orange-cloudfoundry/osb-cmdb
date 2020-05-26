@@ -1,6 +1,7 @@
 
+
 Polish before 1.0 release
-* [ ] Manage git repo history. 
+* [x] Manage git repo history. 
    * 0.x are based on scab code base
    * `redesign-cmdb` branch rewritten spike history in a single squashed commit, and added incremental redesign and cleanup
    * Goals
@@ -10,8 +11,9 @@ Polish before 1.0 release
    * Alternatives:
       * **Squash `redesign-cmdb` branch into a single initial commit, update master to it, and leave the `redesign-cmdb` for further instropection/history as necessary**
       * Selectively squash `redesign-cmdb` branch to isolate scab work
-   * [ ] Squash `redesign-cmdb` branch into a single initial commit
-      * Mention commit with history with URL to `redesign-cmdb` commit in github  
+   * [x] Squash `redesign-cmdb` branch into a single initial commit
+      * Mention commit with history with URL to `redesign-cmdb` commit in github
+   * [ ] Squash and edit/change the root commit
       
 
 Clean up after 1.0 release
@@ -130,13 +132,6 @@ Clean up after 1.0 release
               "code": 120004
            }
          ```
-      * [ ] implement GSI
-         * [ ] implement GSI on interceptor
-         * [ ] implement GSI on CmdbServiceInstance
-            * [x] check javaclient support GSIP: org.cloudfoundry.client.v2.serviceinstances.ServiceInstances.getParameters() 
-         * add asserts on create: 
-            * [ ] call CF GSIP on backing si, and compare returned params to requested params
-         * add asserts on update: copy plan update test into params update test
       * [ ] implement GSB
          * [ ] implement GSB on interceptor
          * [ ] implement GSB on CmdbServiceInstance

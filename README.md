@@ -8,30 +8,33 @@ This project provides a configuration management for Open Service Broker API bro
 cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc - 
 -->
 
-   * [Functional overview](#functional-overview)
-   * [Getting started](#getting-started)
-      * [Deploying](#deploying)
-      * [Increasing log levels dynamically](#increasing-log-levels-dynamically)
-      * [Manual catalog of Brokered and backing services](#manual-catalog-of-brokered-and-backing-services)
-      * [Typical CMDB content](#typical-cmdb-content)
-      * [Metadata attached to backing services](#metadata-attached-to-backing-services)
-      * [Dynamic catalog](#dynamic-catalog)
-   * [Technical details](#technical-details)
-      * [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
-      * [Future support for additional meta-data](#future-support-for-additional-meta-data)
-      * [Dashboard AuthN and AuthZ support (WIP)](#dashboard-authn-and-authz-support-wip)
-         * [Discovery of the OIDC endpoint](#discovery-of-the-oidc-endpoint)
-         * [Discovery of the OAuth client_id and client_secret to provision](#discovery-of-the-oauth-client_id-and-client_secret-to-provision)
-         * [Dashboard AuthN using OIDC](#dashboard-authn-using-oidc)
-         * [Dashboard AuthZ using CF service instance permission](#dashboard-authz-using-cf-service-instance-permission)
-         * [Dashboard AuthZ using K8S API](#dashboard-authz-using-k8s-api)
-         * [Interaction flow diagram](#interaction-flow-diagram)
-   * [Contributing](#contributing)
-      * [Credits](#credits)
-      * [Design documentation](#design-documentation)
-      * [Circle ci tests](#circle-ci-tests)
-      * [Acceptance tests](#acceptance-tests)
-      * [Releasing](#releasing)
+ * [Functional overview](#functional-overview)
+ * [Getting started](#getting-started)
+    * [Deploying](#deploying)
+    * [Increasing log levels dynamically](#increasing-log-levels-dynamically)
+    * [Catalog management](#catalog-management)
+       * [Dynamic catalog](#dynamic-catalog)
+       * [Static catalog](#static-catalog)
+    * [Typical CMDB content](#typical-cmdb-content)
+    * [Metadata attached to backing services](#metadata-attached-to-backing-services)
+    * [Dynamic catalog](#dynamic-catalog-1)
+ * [Technical details](#technical-details)
+    * [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
+       * [Future support for additional meta-data](#future-support-for-additional-meta-data)
+    * [OSB-api extension used with backing service brokers](#osb-api-extension-used-with-backing-service-brokers)
+    * [Dashboard AuthN and AuthZ support (WIP)](#dashboard-authn-and-authz-support-wip)
+       * [Discovery of the OIDC endpoint](#discovery-of-the-oidc-endpoint)
+       * [Discovery of the OAuth client_id and client_secret to provision](#discovery-of-the-oauth-client_id-and-client_secret-to-provision)
+       * [Dashboard AuthN using OIDC](#dashboard-authn-using-oidc)
+       * [Dashboard AuthZ using CF service instance permission](#dashboard-authz-using-cf-service-instance-permission)
+       * [Dashboard AuthZ using K8S API](#dashboard-authz-using-k8s-api)
+       * [Interaction flow diagram](#interaction-flow-diagram)
+ * [Contributing](#contributing)
+    * [Credits](#credits)
+    * [Design documentation](#design-documentation)
+    * [Circle ci tests](#circle-ci-tests)
+    * [Acceptance tests](#acceptance-tests)
+    * [Releasing](#releasing)
 			
 ### Functional overview
 
@@ -89,6 +92,8 @@ java \
  -Dosbcmdb.dynamic-catalog.enabled=true \
  -Dosbcmdb.dynamic-catalog.catalog.services.suffix=suffix \
  -Dosbcmdb.dynamic-catalog.catalog.services.excludeBrokerNamesRegexp=".*cmdb.*" \
+ -Dosbcmdb.broker.propagateMetadataAsCustomParam=true \
+ -Dosbcmdb.broker.hideMetadataCustomParamInGetServiceInstanceEndpoint=true \
  -Dlogging.level.cloudfoundry-client=DEBUG \
  -Dlogging.level.cloudfoundry-client.operations=DEBUG \
  -Dlogging.level.org.springframework.cloud.appbroker=debug \
@@ -367,7 +372,7 @@ This section lists the requirements that osb clients need to comply with in orde
 - The client MUST support asynchronous service instance provisionning (see https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#asynchronous-operations), i.e. provide the query parameter accepts_incomplete=true
    - Service binding MAY only support blocking operation and specify the query parameter accepts_incomplete=false
 
-#### Future support for additional meta-data
+##### Future support for additional meta-data
 
 Once OSB 2.16 version gets released and supported by osb-cmdb, the following additional fields MAY be used by clients to fill in arbitrary meta-data associated with service instances, see https://github.com/openservicebrokerapi/servicebroker/pull/658 for background:
 - instance_annotations
@@ -375,6 +380,30 @@ Once OSB 2.16 version gets released and supported by osb-cmdb, the following add
 - organization_annotations
 
 These annotations get propagated into service monitoring/alerts.
+
+#### OSB-api extension used with backing service brokers   
+
+By default, when propagating OSB calls to backing service brokers, osb-cmdb adds an extra `x-osb-cmdb` param to the [service instance provisionning call](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#provisioning) containing additional metadata matching the [inventory metadata]((#metadata-attached-to-backing-services)). This can be opted-out with the `osbcmdb.broker.propagateMetadataAsCustomParam=false` flag
+
+```json
+{
+  "labels": {
+    "brokered_service_instance_guid": "b6a7a748-6fa5-497c-b111-a3a727ec88db",
+    "brokered_service_originating_identity_uid": "",
+    "brokered_service_context_namespace": "cloudfoundry-service-instances",
+    "backing_service_instance_guid": "6ea3cf73-cbb6-46be-b9c5-dbcf7b04064f"
+  },
+  "annotations": {
+    "brokered_service_originating_identity_extra": "{\"scopes.authorization.openshift.io\":[\"user:full\"]}",
+    "brokered_service_originating_identity_username": "a-user-name",
+    "brokered_service_originating_identity_groups": "[\"system:authenticated:oauth\",\"system:authenticated\"]"
+  }
+}
+```
+
+Note that by default, this `x-osb-cmdb` param isn't returned by the [service instance fetch endpoint](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#fetching-a-service-instance). This can be opted-out with `osbcmdb.broker.hideMetadataCustomParamInGetServiceInstanceEndpoint=false` flag
+
+
 
 #### Dashboard AuthN and AuthZ support (WIP)
 

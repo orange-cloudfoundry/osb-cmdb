@@ -1,5 +1,7 @@
 package com.orange.oss.osbcmdb.testfixtures;
 
+import java.util.Map;
+
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import reactor.core.publisher.Mono;
 
@@ -41,6 +43,11 @@ public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBack
 	}
 
 	@Override
+	public boolean accept(GetServiceInstanceRequest request) {
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+	}
+
+	@Override
 	public boolean accept(DeleteServiceInstanceRequest request) {
 		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
 	}
@@ -53,6 +60,7 @@ public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBack
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
 		provisionnedInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceParams.put(request.getServiceInstanceId(), request.getParameters());
 		return Mono.just(CreateServiceInstanceResponse.builder()
 			.async(false)
 			.dashboardUrl(DASHBOARD_URL)
@@ -77,15 +85,24 @@ public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBack
 
 	@Override
 	public Mono<GetServiceInstanceResponse> getServiceInstance(GetServiceInstanceRequest request) {
-		return Mono.error(new UnsupportedOperationException(
-			"This service broker does not support retrieving service instances. " +
-				"The service broker should set 'instances_retrievable:false' in the service catalog, " +
-				"or provide an implementation of the fetch instance API."));
+		GetServiceInstanceResponse.GetServiceInstanceResponseBuilder builder = GetServiceInstanceResponse.builder();
+
+		Map<String, Object> parameters = provisionnedInstanceParams.get(request.getServiceInstanceId());
+		if (parameters != null) {
+			builder.parameters(parameters);
+		}
+		return Mono.just(builder
+			.dashboardUrl(DASHBOARD_URL)
+			//	wait until sc-osb support for request hints, see https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/287
+			//			.planId()
+			//			.serviceDefinitionId()
+			.build());
 	}
 
 	@Override
 	public Mono<UpdateServiceInstanceResponse> updateServiceInstance(UpdateServiceInstanceRequest request) {
 		provisionnedInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceParams.put(request.getServiceInstanceId(), request.getParameters());
 		return Mono.just(UpdateServiceInstanceResponse.builder()
 			.async(false)
 			.build());

@@ -28,6 +28,7 @@ import org.springframework.http.HttpStatus;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Tag("cmdb")
 class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
@@ -70,11 +71,15 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
 	void deployAppsAndCreateServiceKeysOnBindService() throws InterruptedException {
-		// given a brokered service instance is created
-		createServiceInstance(brokeredServiceInstanceName());
+		// given a brokered service instance is created with some params
+		Map<String, Object> parameters = Collections.singletonMap("a-key", "a-value");
+		createServiceInstance(brokeredServiceInstanceName(), parameters);
 		// then the brokered service instance is indeed successfully created
 		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
+		//And the brokered service instance returns the same params provisionned
+		Map<String, Object> brokeredServiceInstanceParams = getServiceInstanceParams(brokeredServiceInstance.getId());
+		assertThat(brokeredServiceInstanceParams).containsExactlyInAnyOrderEntriesOf(parameters);
 
 		// and a backing service instance is created in the backing service with the id as service name
 		String backingServiceName = brokeredServiceInstance.getId();
@@ -84,11 +89,19 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		//and the backing service has metadata associated
 		String backingServiceInstanceId = backingServiceInstance.getId();
 		assertServiceInstanceHasAttachedNonEmptyMetadata(backingServiceInstanceId);
+		//and the backing service has params plus custom param
+		Map<String, Object> backingServiceParams = getServiceInstanceParams(backingServiceInstance.getId());
+		assertThat(backingServiceParams).containsAllEntriesOf(parameters);
+		CreateInstanceCustomParamAcceptanceTest.assertCustomParams(backingServiceParams);
+
 
 		//and the brokered service dashboard url, is the same as the backing service's one
 		assertThat(brokeredServiceInstance.getDashboardUrl())
 			.isNotEmpty()
 			.isEqualTo(backingServiceInstance.getDashboardUrl());
+
+		//and invalid get service instance requests are rejected
+		assertInvalidGetServiceInstanceAreRejected(backingServiceInstanceId);
 
 		//when concurrent requests as received, they are properly handled
 		assertDuplicateCreateServiceInstanceOsbRequestsHandling(brokeredServiceInstance);
@@ -134,6 +147,19 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 
 		//when a DSI is received while there are service keys, service keys are deleted
 		assertDeleteServiceInstanceDeletesServiceKeys();
+	}
+
+	private void assertInvalidGetServiceInstanceAreRejected(String backingServiceInstanceId) {
+		given(brokerFixture.serviceInstanceRequest())
+			.when()
+			.get(brokerFixture.createServiceInstanceUrl(), "an-invalid-id")
+			.then()
+			//Then the duplicate is ignored as expected
+			.statusCode(HttpStatus.NOT_FOUND.value());
+
+		//Backing service guid should be rejected. However, we can't assert it since the interceptor will handle the
+		// GSI OSB request in place of OSB-cmdb
+//		assertThatThrownBy(() -> getServiceInstanceParams(backingServiceInstanceId)).hasMessageContaining("CF-ServiceInstanceNotFound");
 	}
 
 	private void assertDeleteServiceInstanceDeletesServiceKeys() {
