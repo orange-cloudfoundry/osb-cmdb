@@ -156,12 +156,15 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					backingServiceInstanceParams = sanitizedParams;
 				}
 				org.springframework.cloud.servicebroker.model.instance.GetServiceInstanceResponse.GetServiceInstanceResponseBuilder builder =
-					org.springframework.cloud.servicebroker.model.instance.GetServiceInstanceResponse.builder()
-					.dashboardUrl(backingServiceInstance.getDashboardUrl())
-					.parameters(backingServiceInstanceParams);
-	//				.planId() //Waiting for OSB API 2.16 support in SC-OSB, see https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/287
-	//				.serviceDefinitionId() //Waiting for OSB API 2.16 support in SC-OSB, see https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/287
-
+					org.springframework.cloud.servicebroker.model.instance.GetServiceInstanceResponse.builder();
+				if (backingServiceInstanceParams != null) {
+					builder.parameters(backingServiceInstanceParams);
+				}
+				builder.dashboardUrl(backingServiceInstance.getDashboardUrl());
+				//Waiting for OSB API 2.16 support in SC-OSB,
+				//	see https://github .com/spring-cloud/spring-cloud-open-service-broker/issues/287
+	//				.planId(brokeredPlanId)
+	//				.serviceDefinitionId(brokeredServiceId)
 				return Mono.just(builder.build());
 			}
 		}

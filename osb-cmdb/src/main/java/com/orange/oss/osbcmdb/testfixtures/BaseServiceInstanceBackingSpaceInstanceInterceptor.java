@@ -1,5 +1,7 @@
 package com.orange.oss.osbcmdb.testfixtures;
 
+import java.util.Map;
+
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import reactor.core.publisher.Mono;
 
@@ -83,8 +85,13 @@ public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBack
 
 	@Override
 	public Mono<GetServiceInstanceResponse> getServiceInstance(GetServiceInstanceRequest request) {
-		return Mono.just(GetServiceInstanceResponse.builder()
-			.parameters(provisionnedInstanceParams.get(request.getServiceInstanceId()))
+		GetServiceInstanceResponse.GetServiceInstanceResponseBuilder builder = GetServiceInstanceResponse.builder();
+
+		Map<String, Object> parameters = provisionnedInstanceParams.get(request.getServiceInstanceId());
+		if (parameters != null) {
+			builder.parameters(parameters);
+		}
+		return Mono.just(builder
 			.dashboardUrl(DASHBOARD_URL)
 			//	wait until sc-osb support for request hints, see https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/287
 			//			.planId()
