@@ -170,7 +170,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		catch (Exception e) {
 			LOG.info("Unable to process {}, caught: {}", request, e.toString(), e);
-			throw redactExceptionAndWrapAsServiceBrokerException(e);
+			throw new ServiceInstanceDoesNotExistException(serviceInstanceId);
 		}
 		LOG.debug("No brokered service found from metadata with id {}, returning 404", serviceInstanceId);
 		throw new ServiceInstanceDoesNotExistException(serviceInstanceId);
