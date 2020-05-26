@@ -145,7 +145,13 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 	}
 
 	private void assertInvalidGetServiceInstanceAreRejected(String backingServiceInstanceId) {
-		assertThatThrownBy(() -> getServiceInstanceParams("an-invalid-id")).hasMessageContaining("CF-ServiceInstanceNotFound");
+		given(brokerFixture.serviceInstanceRequest())
+			.when()
+			.get(brokerFixture.createServiceInstanceUrl(), "an-invalid-id")
+			.then()
+			//Then the duplicate is ignored as expected
+			.statusCode(HttpStatus.NOT_FOUND.value());
+
 		//Backing service guid should be rejected. However, we can't assert it since the interceptor will handle the
 		// GSI OSB request in place of OSB-cmdb
 //		assertThatThrownBy(() -> getServiceInstanceParams(backingServiceInstanceId)).hasMessageContaining("CF-ServiceInstanceNotFound");
