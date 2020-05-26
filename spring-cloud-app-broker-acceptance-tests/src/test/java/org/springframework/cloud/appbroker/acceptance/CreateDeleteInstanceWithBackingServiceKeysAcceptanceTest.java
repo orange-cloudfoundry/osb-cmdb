@@ -89,6 +89,11 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		//and the backing service has metadata associated
 		String backingServiceInstanceId = backingServiceInstance.getId();
 		assertServiceInstanceHasAttachedNonEmptyMetadata(backingServiceInstanceId);
+		//and the backing service has params plus custom param
+		Map<String, Object> backingServiceParams = getServiceInstanceParams(backingServiceInstance.getId());
+		assertThat(backingServiceParams).containsAllEntriesOf(parameters);
+		CreateInstanceCustomParamAcceptanceTest.assertCustomParams(backingServiceParams);
+
 
 		//and the brokered service dashboard url, is the same as the backing service's one
 		assertThat(brokeredServiceInstance.getDashboardUrl())

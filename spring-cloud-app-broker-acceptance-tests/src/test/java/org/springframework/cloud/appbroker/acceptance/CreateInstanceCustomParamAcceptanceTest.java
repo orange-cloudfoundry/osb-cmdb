@@ -76,6 +76,10 @@ class CreateInstanceCustomParamAcceptanceTest extends CmdbCloudFoundryAcceptance
 		Map<String, Object> brokeredServiceInstanceParams = getServiceInstanceParams(brokeredServiceInstance.getId());
 		assertThat(brokeredServiceInstanceParams).containsAllEntriesOf(parameters);
 		//And a custom param propagates metadata to brokered service
+		assertCustomParams(brokeredServiceInstanceParams);
+	}
+
+	public static void assertCustomParams(Map<String, Object> brokeredServiceInstanceParams) {
 		assertThat(brokeredServiceInstanceParams).containsKey(X_OSB_CMDB_CUSTOM_KEY_NAME);
 		Map<String, Object> customParamValue = (Map<String, Object>) brokeredServiceInstanceParams
 			.get(X_OSB_CMDB_CUSTOM_KEY_NAME);
