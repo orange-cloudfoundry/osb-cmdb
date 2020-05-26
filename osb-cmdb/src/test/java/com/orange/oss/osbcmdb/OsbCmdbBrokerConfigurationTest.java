@@ -31,6 +31,7 @@ import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceI
 import com.orange.oss.osbcmdb.testfixtures.SyncTimeoutCreateBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -272,6 +273,36 @@ class OsbCmdbBrokerConfigurationTest {
 			)
 			.withPropertyValues(cloudFoundryDeploymentProperties())
 			.run((context) -> assertThat(context).doesNotHaveBean(ServiceInstanceInterceptor.class));
+	}
+
+	@Test
+	@DisplayName("custom metadata is enabled by default")
+	void customMetadataAsParamFlagDefaultsToTrue() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=cloud"
+			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(OsbCmdbBrokerProperties.class);
+				OsbCmdbBrokerProperties osbCmdbBrokerProperties = context.getBean(OsbCmdbBrokerProperties.class);
+				assertThat(osbCmdbBrokerProperties.isPropagateMetadataAsCustomParam()).isTrue();
+			});
+	}
+	@Test
+	@DisplayName("custom metadata option can be opted out")
+	void customMetadataAsParamFlagOptOut() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=cloud"
+			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
+			.withPropertyValues(new String[]{"osbcmdb.broker.propagateMetadataAsCustomParam=false"})
+			.run((context) -> {
+				assertThat(context).hasSingleBean(OsbCmdbBrokerProperties.class);
+				OsbCmdbBrokerProperties osbCmdbBrokerProperties = context.getBean(OsbCmdbBrokerProperties.class);
+				assertThat(osbCmdbBrokerProperties.isPropagateMetadataAsCustomParam()).isFalse();
+			});
 	}
 
 	private String[] cloudFoundryDeploymentProperties() {

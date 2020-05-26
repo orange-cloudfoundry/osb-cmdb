@@ -25,10 +25,8 @@ import org.springframework.util.CollectionUtils;
 
 public class MetaData {
 
-	@JsonIgnore // no need to expose this in backing services configuration
 	private Map<String, String> annotations;
 
-	@JsonIgnore // no need to expose this in backing services configuration
 	private Map<String, String> labels;
 
 	private MetaData() {

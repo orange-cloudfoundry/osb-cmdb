@@ -27,6 +27,7 @@ public class AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor ex
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
 		provisionnedInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceParams.put(request.getServiceInstanceId(), request.getParameters());
 		return Mono.just(CreateServiceInstanceResponse.builder()
 			.async(true)
 			.dashboardUrl(DASHBOARD_URL)

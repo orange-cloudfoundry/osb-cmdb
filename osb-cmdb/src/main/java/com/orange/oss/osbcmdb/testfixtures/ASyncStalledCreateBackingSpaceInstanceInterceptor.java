@@ -30,6 +30,7 @@ public class ASyncStalledCreateBackingSpaceInstanceInterceptor extends BaseServi
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
 		provisionnedInstanceGuids.add(request.getServiceInstanceId());
+		provisionnedInstanceParams.put(request.getServiceInstanceId(), request.getParameters());
 		return Mono.just(CreateServiceInstanceResponse.builder()
 			.async(true)
 			.build());

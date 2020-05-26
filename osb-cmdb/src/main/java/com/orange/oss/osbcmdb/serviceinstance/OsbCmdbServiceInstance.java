@@ -1,7 +1,9 @@
 package com.orange.oss.osbcmdb.serviceinstance;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -11,9 +13,15 @@ import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl
 import com.orange.oss.osbcmdb.metadata.MetaData;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
+import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
+import org.cloudfoundry.client.v2.organizations.OrganizationEntity;
+import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceParametersRequest;
+import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceParametersResponse;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceRequest;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.LastOperation;
+import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.client.v2.serviceplans.ListServicePlansRequest;
 import org.cloudfoundry.client.v2.spaces.GetSpaceRequest;
 import org.cloudfoundry.client.v2.spaces.GetSpaceResponse;
@@ -64,6 +72,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+	public static final String X_OSB_CMDB_CUSTOM_KEY_NAME = "x-osb-cmdb";
+
 	protected final Logger LOG = Loggers.getLogger(OsbCmdbServiceInstance.class);
 
 	private final CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService;
@@ -72,16 +82,98 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private final UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService;
 
+	private boolean propagateMetadataAsCustomParam;
+
+	private boolean hideMetadataCustomParamInGetServiceInstanceEndpoint;
+
 	public OsbCmdbServiceInstance(CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		String defaultOrg, String userName,
 		ServiceInstanceInterceptor osbInterceptor,
 		CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService,
-		UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService) {
+		UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService,
+		boolean propagateMetadataAsCustomParam,
+		boolean hideMetadataCustomParamInGetServiceInstanceEndpoint) {
 		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
 
 		this.osbInterceptor = osbInterceptor;
 		this.createServiceMetadataFormatterService = createServiceMetadataFormatterService;
 		this.updateServiceMetadataFormatterService = updateServiceMetadataFormatterService;
+		this.propagateMetadataAsCustomParam = propagateMetadataAsCustomParam;
+		this.hideMetadataCustomParamInGetServiceInstanceEndpoint = hideMetadataCustomParamInGetServiceInstanceEndpoint;
+	}
+
+	@Override
+	public Mono<org.springframework.cloud.servicebroker.model.instance.GetServiceInstanceResponse> getServiceInstance(
+		org.springframework.cloud.servicebroker.model.instance.GetServiceInstanceRequest request) {
+		if (osbInterceptor != null && osbInterceptor.accept(request)) {
+			return osbInterceptor.getServiceInstance(request);
+		}
+		String serviceInstanceId = request.getServiceInstanceId();
+		try {
+			List<ServiceInstanceResource> backingServicesFromBrokeredServiceGuid = lookupBackingServicesFromBrokeredServiceGuid(
+				serviceInstanceId);
+
+			for (ServiceInstanceResource backingServiceInstanceResource : backingServicesFromBrokeredServiceGuid) {
+				String backingSpaceId = backingServiceInstanceResource.getRelationships().getSpace().getData().getId();
+				SpaceEntity backingSpace = client.spaces().get(GetSpaceRequest.builder()
+					.spaceId(backingSpaceId)
+					.build())
+					.map(GetSpaceResponse::getEntity)
+					.block();
+				assert backingSpace != null;
+				String backingOrganizationId = backingSpace.getOrganizationId();
+				OrganizationEntity backingOrganization = client.organizations().get(GetOrganizationRequest.builder()
+					.organizationId(backingOrganizationId)
+					.build())
+					.map(GetOrganizationResponse::getEntity)
+					.block();
+				String backingOrganizationName = backingOrganization.getName();
+				if (! this.defaultOrg.equals(backingOrganizationName)) {
+					LOG.warn("Suspicious request to look up service instance guid {} from another tenant with guid {} and" +
+						" name {} whereas tenant org name is {}. Skipping candidate backing service.",
+						serviceInstanceId,
+						backingOrganizationId,
+						backingOrganizationName, this.defaultOrg);
+					continue;
+				}
+				String backingServiceInstanceId = backingServiceInstanceResource.getId();
+				ServiceInstanceEntity backingServiceInstance = client.serviceInstances().get(GetServiceInstanceRequest.builder()
+					.serviceInstanceId(backingServiceInstanceId)
+					.build())
+					.map(GetServiceInstanceResponse::getEntity)
+					.block();
+				Map<String, Object> backingServiceInstanceParams = client.serviceInstances()
+					.getParameters(GetServiceInstanceParametersRequest.builder()
+						.serviceInstanceId(backingServiceInstanceId)
+						.build())
+					.map(GetServiceInstanceParametersResponse::getParameters)
+					.block();
+				if (hideMetadataCustomParamInGetServiceInstanceEndpoint) {
+					Map<String, Object>  sanitizedParams = new HashMap<>(); //Original map is immutable.
+					sanitizedParams.putAll(backingServiceInstanceParams);
+					Object customParams = sanitizedParams.remove(X_OSB_CMDB_CUSTOM_KEY_NAME);
+					LOG.debug("Hiding param with key {} and value {} from GSI response", X_OSB_CMDB_CUSTOM_KEY_NAME, customParams);
+					backingServiceInstanceParams = sanitizedParams;
+				}
+				org.springframework.cloud.servicebroker.model.instance.GetServiceInstanceResponse.GetServiceInstanceResponseBuilder builder =
+					org.springframework.cloud.servicebroker.model.instance.GetServiceInstanceResponse.builder();
+				if (backingServiceInstanceParams != null) {
+					builder.parameters(backingServiceInstanceParams);
+				}
+				builder.dashboardUrl(backingServiceInstance.getDashboardUrl());
+				//Waiting for OSB API 2.16 support in SC-OSB,
+				//	see https://github .com/spring-cloud/spring-cloud-open-service-broker/issues/287
+	//				.planId(brokeredPlanId)
+	//				.serviceDefinitionId(brokeredServiceId)
+				return Mono.just(builder.build());
+			}
+		}
+		catch (Exception e) {
+			LOG.info("Unable to process {}, caught: {}", request, e.toString(), e);
+			throw new ServiceInstanceDoesNotExistException(serviceInstanceId);
+		}
+		LOG.debug("No brokered service found from metadata with id {}, returning 404", serviceInstanceId);
+		throw new ServiceInstanceDoesNotExistException(serviceInstanceId);
 	}
 
 	@Override
@@ -105,6 +197,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 			CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
 			String backingServiceInstanceInstanceId = null;
+			MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
 			try {
 				rejectDuplicateServiceInstanceGuid(request, spacedTargetedOperations);
 
@@ -113,7 +206,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
 						.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()))
 						.servicePlanId(backingServicePlanId)
-						.parameters(request.getParameters())
+						.parameters(formatParameters(metaData, request.getParameters()))
 						.spaceId(spaceId)
 						.build())
 					.block();
@@ -153,7 +246,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			}
 			finally {
 				if (backingServiceInstanceInstanceId != null) {
-					updateServiceInstanceMetadata(request, backingServiceInstanceInstanceId);
+					updateServiceInstanceMetadata(backingServiceInstanceInstanceId, metaData);
 				}
 			}
 
@@ -168,6 +261,15 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			// globally by inspecting the backing service instance state instead.
 			return handleCreateException(e, backingServiceName, spacedTargetedOperations, request);
 		}
+	}
+
+	private Map<String, Object> formatParameters(MetaData metaData, Map<String, Object> requestParams) {
+		Map<String, Object> parameters = new HashMap<>();
+		parameters.putAll(requestParams);
+		if (propagateMetadataAsCustomParam) {
+			parameters.put(X_OSB_CMDB_CUSTOM_KEY_NAME, metaData);
+		}
+		return parameters;
 	}
 
 	@Override
@@ -361,6 +463,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
 
 		UpdateServiceInstanceResponseBuilder responseBuilder = UpdateServiceInstanceResponse.builder();
+		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
 
 		try {
 			org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceResponse updateServiceInstanceResponse;
@@ -368,7 +471,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				.update(org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceRequest.builder()
 					.serviceInstanceId(existingBackingServiceInstance.getId())
 					.servicePlanId(backingServicePlanId)
-					.parameters(request.getParameters())
+					.parameters(formatParameters(metaData, request.getParameters()))
 					.build())
 				.block();
 
@@ -409,7 +512,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		finally {
 			//systematically try to update metadata (e.g. service instance rename) even if update failed
-			updateServiceInstanceMetadata(request, existingBackingServiceInstance.getId());
+			updateServiceInstanceMetadata(existingBackingServiceInstance.getId(), metaData);
 		}
 		return Mono.just(responseBuilder.build());
 	}
@@ -718,25 +821,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	private void rejectDuplicateServiceInstanceGuid(CreateServiceInstanceRequest request,
 		CloudFoundryOperations spacedTargetedOperations) {
 		List<ServiceInstanceResource> existingBackingServicesWithSameInstanceGuid;
-		String labelSelector = BROKERED_SERVICE_INSTANCE_GUID + "=" + request.getServiceInstanceId();
-		try {
-			existingBackingServicesWithSameInstanceGuid = client.serviceInstancesV3()
-				.list(ListServiceInstancesRequest.builder()
-					.labelSelector(labelSelector)
-					.build())
-				.map(ListServiceInstancesResponse::getResources)
-				.flatMapMany(Flux::fromIterable)
-				.collectList()
-				.block();
-		}
-		catch (Exception e) {
-			LOG.error("Unable to lookup potential duplicates with label {}, caught {}", labelSelector, e);
-			throw new OsbCmdbInternalErrorException("Internal CF protocol error");
-		}
-		assert existingBackingServicesWithSameInstanceGuid != null;
+		String serviceInstanceId = request.getServiceInstanceId();
+		existingBackingServicesWithSameInstanceGuid = lookupBackingServicesFromBrokeredServiceGuid(serviceInstanceId);
 		if (!existingBackingServicesWithSameInstanceGuid.isEmpty()) {
 			LOG.info("Service instance guid {} already exists and is backed by services: {}",
-				request.getServiceInstanceId(), existingBackingServicesWithSameInstanceGuid);
+				serviceInstanceId, existingBackingServicesWithSameInstanceGuid);
 		}
 
 		for (ServiceInstanceResource serviceInstanceResource : existingBackingServicesWithSameInstanceGuid) {
@@ -753,7 +842,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				LOG.warn("Suspicious service instance id={} reused across tenants. Requested in current tenant " +
 						"with orgId {} while SI id exists in other tenant with orgId {}. Still accepting the request," +
 						" but statistically unlikely",
-					request.getServiceInstanceId(), currentTenantOrgId, backingOrganizationId);
+					serviceInstanceId, currentTenantOrgId, backingOrganizationId);
 				continue;
 			}
 			String backingSpaceName = backingSpace.getName();
@@ -764,9 +853,31 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					+ " additional metadata: " + serviceInstanceResource.getMetadata();
 				LOG.info(msg);
 				throw new ServiceInstanceExistsException(msg,
-					request.getServiceInstanceId(), request.getServiceDefinitionId()); //409
+					serviceInstanceId, request.getServiceDefinitionId()); //409
 			}
 		}
+	}
+
+	private List<ServiceInstanceResource> lookupBackingServicesFromBrokeredServiceGuid(
+		String brokeredServiceInstanceId) {
+		List<ServiceInstanceResource> existingBackingServicesWithSameInstanceGuid;
+		String labelSelector = BROKERED_SERVICE_INSTANCE_GUID + "=" + brokeredServiceInstanceId;
+		try {
+			existingBackingServicesWithSameInstanceGuid = client.serviceInstancesV3()
+				.list(ListServiceInstancesRequest.builder()
+					.labelSelector(labelSelector)
+					.build())
+				.map(ListServiceInstancesResponse::getResources)
+				.flatMapMany(Flux::fromIterable)
+				.collectList()
+				.block();
+		}
+		catch (Exception e) {
+			LOG.error("Unable to lookup potential duplicates with label {}, caught {}", labelSelector, e);
+			throw new OsbCmdbInternalErrorException("Internal CF protocol error");
+		}
+		assert existingBackingServicesWithSameInstanceGuid != null;
+		return existingBackingServicesWithSameInstanceGuid;
 	}
 
 	private void updateMetadata(MetaData metaData, String serviceInstanceId) {
@@ -787,13 +898,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			.block();
 	}
 
-	private void updateServiceInstanceMetadata(CreateServiceInstanceRequest request, String serviceInstanceId) {
-		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
-		updateMetadata(metaData, serviceInstanceId);
-	}
-
-	private void updateServiceInstanceMetadata(UpdateServiceInstanceRequest request, String serviceInstanceId) {
-		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
+	private void updateServiceInstanceMetadata(String serviceInstanceId, MetaData metaData) {
 		updateMetadata(metaData, serviceInstanceId);
 	}
 

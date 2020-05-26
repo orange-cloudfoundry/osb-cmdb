@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.appbroker.acceptance;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -64,7 +67,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 
 		for (int i=0; i<2; i++) { //Performing the update twice, to ensure idempotency, and support for K8S
 			// duplicated concurrent requests
-			LOG.info("Update #{}", i);
+			LOG.info("Plan update #{}", i);
 			//given a backend service is configured to accept any update
 			//when a brokered service update plan is requested
 			updateServiceInstance(brokeredServiceInstanceName(), PLAN2_NAME);
@@ -82,6 +85,32 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 			assertThat(backingServiceInstance.getLastOperation()).isEqualTo("update");
 			assertThat(backingServiceInstance.getStatus()).isEqualTo("succeeded");
 			assertThat(backingServiceInstance.getPlan()).isEqualTo(PLAN2_NAME);
+		}
+
+		for (int i=0; i<2; i++) { //Performing the update twice, to ensure idempotency, and support for K8S
+			// duplicated concurrent requests
+			LOG.info("Param update #{}", i);
+			//given a backend service is configured to accept any update
+			//when a brokered service update plan is requested
+			Map<String, Object> parameters = Collections.singletonMap("a-key", "a-value");
+			updateServiceInstance(brokeredServiceInstanceName(), parameters);
+
+			//then a brokered service is updated
+			ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
+			// then the brokered service instance once completes, is expected to be failed
+			assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("update");
+			assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
+			assertThat(getServiceInstanceParams(brokeredServiceInstance.getId())).containsExactlyInAnyOrderEntriesOf(parameters);
+
+			//and backing service was indeed updated
+			backingServiceName = brokeredServiceInstance.getId();
+			ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
+			//was indeed updated, and has still its last operation as failed
+			assertThat(backingServiceInstance.getLastOperation()).isEqualTo("update");
+			assertThat(backingServiceInstance.getStatus()).isEqualTo("succeeded");
+			Map<String, Object> backingServiceParams = getServiceInstanceParams(backingServiceInstance.getId());
+			assertThat(backingServiceParams).containsAllEntriesOf(parameters);
+			CreateInstanceCustomParamAcceptanceTest.assertCustomParams(backingServiceParams);
 		}
 
 		// when the service instance is deleted
