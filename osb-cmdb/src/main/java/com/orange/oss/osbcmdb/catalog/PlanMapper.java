@@ -13,6 +13,7 @@ import org.cloudfoundry.util.ResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo;
 import org.springframework.cloud.servicebroker.model.catalog.MethodSchema;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.Schemas;
@@ -50,13 +51,24 @@ public class PlanMapper extends BaseMapper {
 			.free(entity.getFree())
 			.bindable(entity.getBindable())
 			.description(entity.getDescription())
-			.metadata(toServiceMetaData(entity.getExtra()));
+			.metadata(toServiceMetaData(entity.getExtra()))
+			.maintenanceInfo(toMaintenanceInfo(entity.getMaintenanceInfo()));
 		planBuilder = toSchemas(planBuilder, entity.getSchemas());
 
 		Plan plan = planBuilder.build();
 
 		logger.debug("plan entity {}", plan);
 		return plan;
+	}
+
+	private MaintenanceInfo toMaintenanceInfo(org.cloudfoundry.client.v2.MaintenanceInfo maintenanceInfo) {
+		if (maintenanceInfo == null) {
+			return null;
+		}
+		return MaintenanceInfo.builder()
+			.version(maintenanceInfo.getVersion())
+			.description(maintenanceInfo.getDescription())
+			.build();
 	}
 
 	private Plan.PlanBuilder toSchemas(Plan.PlanBuilder planBuilder, org.cloudfoundry.client.v2.serviceplans.Schemas entitySchemas) {

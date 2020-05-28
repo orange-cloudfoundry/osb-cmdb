@@ -7,6 +7,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.cloudfoundry.client.v2.MaintenanceInfo;
 import org.cloudfoundry.client.v2.Metadata;
 import org.cloudfoundry.client.v2.serviceplans.Schema;
 import org.cloudfoundry.client.v2.serviceplans.Schemas;
@@ -28,7 +29,7 @@ class PlanMapperTest {
 	private static final Logger logger = LoggerFactory.getLogger(PlanMapperTest.class);
 
 	@Test
-	void mapsPlanResourcesIntoPlan() throws JsonProcessingException {
+	void mapsPlanResourcesIntoPlan() {
 		List<ServicePlanResource> servicePlans = asList(
 		ServicePlanResource.builder()
 			.entity(ServicePlanEntity.builder()
@@ -38,6 +39,10 @@ class PlanMapperTest {
 				.description("description")
 				.extra("{\"displayName\":\"Big Bunny\"}")
 				.free(false)
+				.maintenanceInfo(MaintenanceInfo.builder()
+					.version("2.1.0+coab-mysql-v48")
+					.description("mariadb version update to y")
+					.build())
 				.build())
 			.metadata(Metadata.builder()
 				.id("plan-id")
@@ -59,10 +64,14 @@ class PlanMapperTest {
 		assertThat(plan1.getDescription()).isEqualTo("description");
 		assertThat(plan1.isBindable()).isTrue();
 		assertThat(plan1.isFree()).isFalse();
+		assertThat(plan1.getMaintenanceInfo()).isNotNull();
+		assertThat(plan1.getMaintenanceInfo().getVersion()).isEqualTo("2.1.0+coab-mysql-v48");
+		assertThat(plan1.getMaintenanceInfo().getDescription()).isEqualTo("mariadb version update to y");
 		assertThat(plan1.getId()).isEqualTo("plan-id");
 		assertPlanSerializesWithoutPollutingWithNulls(plan1);
 		Plan plan2 = plans.get(1);
 		assertThat(plan2.getName()).isEqualTo("plan2");
+		assertThat(plan2.getMaintenanceInfo()).isNull();
 		assertPlanSerializesWithoutPollutingWithNulls(plan2);
 	}
 

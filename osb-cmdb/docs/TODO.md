@@ -1,3 +1,21 @@
+Implement maintenance info
+* [x] DynamicCatalog
+   * [x] configuration properties
+   * [x] set maintenance info to broker value
+   * [ ] merge maintenance info
+   * [x] test
+      * [x] unit test
+      * [ ] component test ?
+      * [ ] integration test ?
+* [ ] USI
+   * [ ] backing broker has no maintenance info in its catalog 
+      * [ ] assert backing broker does not receive USI:
+         * use an async stalled update interceptor ?
+         * use CF GSI endpoint https://apidocs.cloudfoundry.org/13.2.0/service_instances/retrieve_a_particular_service_instance.html ?
+   * [ ] backing broker has maintenance info 
+      * [ ] assert backing broker does receive USI with proper maintenance info
+         * use an async stalled update interceptor ?
+         * use CF GSI endpoint https://apidocs.cloudfoundry.org/13.2.0/service_instances/retrieve_a_particular_service_instance.html ?
 
 
 Polish before 1.0 release
