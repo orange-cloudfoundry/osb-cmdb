@@ -3,6 +3,8 @@ Implement maintenance info
    * [x] configuration properties
    * [x] set maintenance info to broker value
    * [ ] merge maintenance info
+      * [ ] add a new collaborator to OsbCmdbServiceInstance that can unit-tested: MaintenanceInfoFormatterService 
+         * [ ] inject PlanMapperProperties 
    * [x] test
       * [x] unit test
       * [ ] component test ?
