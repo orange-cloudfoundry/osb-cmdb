@@ -12,7 +12,7 @@ cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc -
  * [Getting started](#getting-started)
     * [Deploying](#deploying)
     * [Increasing log levels dynamically](#increasing-log-levels-dynamically)
-    * [Catalog management](#catalog-management)
+    * [Catalog management (aka backing service registration)](#catalog-management-aka-backing-service-registration)
        * [Dynamic catalog](#dynamic-catalog)
        * [Static catalog](#static-catalog)
     * [Typical CMDB content](#typical-cmdb-content)
@@ -118,7 +118,11 @@ In production like in acceptance tests, use spring boot actuator logger to dynam
 curl -kv https://admin:password@test-broker-app-create-instance-with-service-keys.redacted-domain/actuator/loggers/cloudfoundry-client.wire -X POST -H 'Content-Type: application/json' -d '{"configuredLevel": "TRACE"}'
 ```
 
-#### Catalog management
+#### Catalog management (aka backing service registration)
+
+Backing services register with osb-cmdb using the CF CLI commands for [managing service brokers](https://docs.cloudfoundry.org/services/managing-service-brokers.html), i.e `cf create-service-broker SERVICE_BROKER USERNAME PASSWORD URL` and then enabling the plans on the backing service organization (configured with the `spring.cloud.appbroker.deployer.cloudfoundry.default-org` property) associated with each osb-cmdb deployment `cf enable-service-access SERVICE [-b BROKER] [-p PLAN] [-o ORG]`.
+
+Osb-cmdb operators might consider using terraform with the [cloudfoundry-community/terraform-provider-cf](https://github.com/cloudfoundry-community/terraform-provider-cf) for using a declarative approach, see [cloudfoundry_service_broker](https://github.com/cloudfoundry-community/terraform-provider-cf/blob/master/docs/resources/service_broker.md) and [cloudfoundry_service_access](https://github.com/cloudfoundry-community/terraform-provider-cf/blob/master/docs/resources/service_plan_access.md) resources
 
 ##### Dynamic catalog
 
