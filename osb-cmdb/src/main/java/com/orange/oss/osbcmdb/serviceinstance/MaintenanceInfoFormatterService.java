@@ -1,6 +1,7 @@
 package com.orange.oss.osbcmdb.serviceinstance;
 
 import de.skuzzle.semantic.Version;
+import org.apache.commons.lang3.StringUtils;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
@@ -53,18 +54,50 @@ public class MaintenanceInfoFormatterService {
 		if (! backendBuildMetaData.isEmpty()) {
 			buildMetaData = buildMetaData+ backendBuildMetaData + ".";
 		}
-		buildMetaData = buildMetaData + "osb-cmdb."
-			+ cmdbVersion.getMajor() + "."
-			+ cmdbVersion.getMinor() + "."
-			+ cmdbVersion.getPatch()
-			+ (cmdbVersion.getBuildMetaData().isEmpty() ? "" : "." + cmdbVersion.getBuildMetaData());
+		buildMetaData = buildMetaData + formatBuildMetadataSuffix(cmdbVersion);
 		String description = defaultString(backendMaintenanceInfo.getDescription());
 		if (osbCmdbMaintenanceInfo.getDescription() != null) {
 			description = description + "\n" + osbCmdbMaintenanceInfo.getDescription();
 		}
 		return MaintenanceInfo.builder()
-			.version(backendVersion.getMajor(), backendVersion.getMinor(), backendVersion.getPatch(),
+			.version(backendVersion.getMajor() + cmdbVersion.getMajor(),
+				backendVersion.getMinor() + cmdbVersion.getMinor(),
+				backendVersion.getPatch() + cmdbVersion.getPatch(),
 				buildMetaData)
+			.description(description)
+			.build();
+	}
+
+	private String formatBuildMetadataSuffix(Version cmdbVersion) {
+		return "osb-cmdb."
+			+ cmdbVersion.getMajor() + "."
+			+ cmdbVersion.getMinor() + "."
+			+ cmdbVersion.getPatch()
+			+ (cmdbVersion.getBuildMetaData().isEmpty() ? "" : "." + cmdbVersion.getBuildMetaData());
+	}
+
+	public MaintenanceInfo unmergeInfos(MaintenanceInfo brokeredMaintenanceInfo) {
+		Version backendVersion = Version.parseVersion(brokeredMaintenanceInfo.getVersion());
+		Version cmdbVersion = Version.parseVersion(osbCmdbMaintenanceInfo.getVersion());
+
+		String extension = StringUtils.removeEnd(backendVersion.getBuildMetaData(),
+			formatBuildMetadataSuffix(cmdbVersion));
+		extension = StringUtils.removeEnd(extension, ".");
+		extension = StringUtils.removeEnd(extension, cmdbVersion.getBuildMetaData());
+		if (! extension.isEmpty()) {
+			extension = "+" + extension;
+		}
+		String description = StringUtils.removeEnd(brokeredMaintenanceInfo.getDescription(),
+			"\n" + osbCmdbMaintenanceInfo.getDescription());
+		description = StringUtils.removeEnd(description, osbCmdbMaintenanceInfo.getDescription());
+		int major = backendVersion.getMajor() - cmdbVersion.getMajor();
+		int minor = backendVersion.getMinor() - cmdbVersion.getMinor();
+		int patch = backendVersion.getPatch() - cmdbVersion.getPatch();
+		return MaintenanceInfo.builder()
+			.version(major,
+				minor,
+				patch,
+				extension)
 			.description(description)
 			.build();
 	}

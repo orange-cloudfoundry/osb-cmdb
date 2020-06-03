@@ -1,14 +1,66 @@
+Design maintenance info
+* [x] Decide which version format to use when merging/unmerging osb-cmdb and backing service versions
+   * [x] List use-cases
+      * Osb-cmdb version bump 0.12.0 to 1.0.0: includes a non-breaking change by passing backing service dashboards
+         * bump by a minor version.
+      * cf-Mysql bump from 36.19.0 to 37.1.0: includes a non breaking change: dashboard authN,authZ is removed, mysql version change (likely )    
+      * Osb-cmdb version bump 1.0.0 to 1.2.0: includes a non-breaking change: dashboard url format change (dashboard aggregator)  
+      * Osb-cmdb version bump 1.2.0 to 2.0.0: includes a breaking change: dashboard aggregator format change
+   * [x] Explicit requirements
+      * Backend SI update need to match backend catalog see https://www.pivotaltracker.com/story/show/171702179
+         * Osb-cmdb fetched backing brokers catalog is always in sync with CC since their fetch it from eq `cf marketplace` api calls
+         * Osb-cmdb eq `cf update-service --upgrade` need to pass in the MI present in the backing service catalog, i.e. without the osb-cmdb merged MI.
+            * **SC-OSB UpdateServiceInstanceRequest includes a Plan object with the brokered service MI. Unmerge it** 
+            * Fetch the original backing service catalog in UPSI, or a cached version. 
+      * Brokered catalog and SI update need to include osb-cmdb bumps to enable brokered si client cache refresh.  
+   * [x] List alternatives merge and associated unmerge strategies
+      * a) **Just add version numbers to both components + document osb-cmdb as build info**
+         * Pros:
+            * Conveys properly semver2.0 semantics, reduce risks that CC would refuse upgrade, see https://www.pivotaltracker.com/story/show/171702179
+            * Simpler and more systematic algorithm. Easier to reason about
+         * Cons:
+            * Somewhat confusing for end-users and backend service authors
+         * Unmerge: Just substract version numbers
+      * b) ~~Only suffix osb-cmdb as build info.~~ Pb build info is ignored from semver precedence, and possibly from CAPI, would lead to upgrade requests ending up as noop
+      * c) Just add osb-cmdb bumps 
+         * Merge:
+            * If backing service has MI: 
+               * add osb-cmdb version bump (possibly 0.0.0, but initially 0.1.0 to trigger dashboard refresh)
+               * set osb-cmdb version bump as build info 
+            * If backing service has no MI: 
+               * set default version (1.0.0)
+               * set osb-cmdb "osb-cmdb defaulting" flag as build info 
+         * UnMerge:
+            * Extract osb-cmdb version bump from build info
+               * If "osb-cmdb defaulting" flag, then backing service catalog has no MI. Don't pass upgrade to backing service
+               * Otherwise, substract extracted osb-cmdb version bump from brokered service plan MI
+         * Pros: robust and semver compliant
+         * Cons: 
+            * more complex
+            * likely fragile: relies on build-info to be properly propagated 
+            * Not much more intuitive to authors or users: still differences with backing service versions
+               * E.g. https://github.com/orange-cloudfoundry/cf-mysql-release/releases includes both minor and major bumps, osb-cmdb minor bumps might as well be confusing  
+* [x] Validate CF CC propagates the `maintenance_info` in its api serving `cf marketplace` 
+
+
 Implement maintenance info
+* Naming
+   * MaintenanceInfoController(osbcmdb)
+      * formatForCatalog(backing service mi)
+         * merge(backing service mi, osb-cmdb mi)
+      * shouldUpgradeBackingService(requested osb-cmdb-mi): 
+         * unmerge(backing service mi, osb-cmdb mi))
+         * true if unmerged != 0.0.0
 * [x] DynamicCatalog
    * [x] configuration properties
    * [x] set maintenance info to broker value
-   * [ ] merge maintenance info
-      * [ ] add a new collaborator to OsbCmdbServiceInstance that can unit-tested: MaintenanceInfoFormatterService 
-         * [ ] inject PlanMapperProperties 
+   * [x] merge maintenance info
+      * [x] add a new collaborator to OsbCmdbServiceInstance that can unit-tested: MaintenanceInfoFormatterService 
+         * [x] inject PlanMapperProperties 
    * [x] test
       * [x] unit test
       * [ ] component test ?
-      * [ ] integration test ?
+      * [ ] acceptance test ?
 * [ ] USI
    * [ ] backing broker has no maintenance info in its catalog 
       * [ ] assert backing broker does not receive USI:
@@ -20,9 +72,10 @@ Implement maintenance info
          * use CF GSI endpoint https://apidocs.cloudfoundry.org/13.2.0/service_instances/retrieve_a_particular_service_instance.html ?
 
 
+
 Polish before 1.0 release
 * [x] Manage git repo history. 
-   * 0.x are based on scab code base
+   * 0.x are based on scab code basem
    * `redesign-cmdb` branch rewritten spike history in a single squashed commit, and added incremental redesign and cleanup
    * Goals
       * make repo smaller
