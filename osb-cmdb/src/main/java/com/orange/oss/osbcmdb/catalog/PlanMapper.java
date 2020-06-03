@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import org.cloudfoundry.client.v2.Metadata;
 import org.cloudfoundry.client.v2.serviceplans.Parameters;
 import org.cloudfoundry.client.v2.serviceplans.Schema;
@@ -27,8 +28,12 @@ public class PlanMapper extends BaseMapper {
 
 	private final PlanMapperProperties properties;
 
-	public PlanMapper(PlanMapperProperties properties) {
+	private MaintenanceInfoFormatterService maintenanceInfoFormatterService;
+
+	public PlanMapper(PlanMapperProperties properties,
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
 		this.properties = properties;
+		this.maintenanceInfoFormatterService = maintenanceInfoFormatterService;
 	}
 
 	public List<Plan> toPlans(List<ServicePlanResource> servicePlans) {
@@ -65,10 +70,10 @@ public class PlanMapper extends BaseMapper {
 		if (maintenanceInfo == null) {
 			return null;
 		}
-		return MaintenanceInfo.builder()
+		return maintenanceInfoFormatterService.formatForCatalog(MaintenanceInfo.builder()
 			.version(maintenanceInfo.getVersion())
 			.description(maintenanceInfo.getDescription())
-			.build();
+			.build());
 	}
 
 	private Plan.PlanBuilder toSchemas(Plan.PlanBuilder planBuilder, org.cloudfoundry.client.v2.serviceplans.Schemas entitySchemas) {

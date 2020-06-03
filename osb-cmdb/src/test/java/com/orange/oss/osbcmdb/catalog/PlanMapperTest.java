@@ -7,6 +7,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import org.cloudfoundry.client.v2.MaintenanceInfo;
 import org.cloudfoundry.client.v2.Metadata;
 import org.cloudfoundry.client.v2.serviceplans.Schema;
@@ -16,6 +17,7 @@ import org.cloudfoundry.client.v2.serviceplans.ServiceInstanceSchema;
 import org.cloudfoundry.client.v2.serviceplans.ServicePlanEntity;
 import org.cloudfoundry.client.v2.serviceplans.ServicePlanResource;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +25,9 @@ import org.springframework.cloud.servicebroker.model.catalog.Plan;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class PlanMapperTest {
 
@@ -54,19 +59,33 @@ class PlanMapperTest {
 				.build())
 			.build());
 
+			MaintenanceInfoFormatterService maintenanceInfoFormatterService =
+			Mockito.mock(MaintenanceInfoFormatterService.class,Mockito.RETURNS_SMART_NULLS);
+		org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo backingServiceMI =
+			org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
+				.version(2,1,0,"+coab-mysql-v48")
+				.description("mariadb version update to y")
+				.build();
+		org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo mergedMI =
+			org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
+				.version(3,2,0,"+coab-mysql-v48.osb-cmdb.1.1.0")
+				.description("mariadb version update to y\ndisplays dashboard urls")
+				.build();
+		when(maintenanceInfoFormatterService.formatForCatalog(backingServiceMI)).thenReturn(mergedMI);
+		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties(), maintenanceInfoFormatterService);
 
-		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties());
-
+		//when
 		List<Plan> plans = planMapper.toPlans(servicePlans);
+		//then
+		verify(maintenanceInfoFormatterService, times(1)).formatForCatalog(backingServiceMI);
+
 		assertThat(plans).hasSize(2);
 		Plan plan1 = plans.get(0);
 		assertThat(plan1.getName()).isEqualTo("plan1");
 		assertThat(plan1.getDescription()).isEqualTo("description");
 		assertThat(plan1.isBindable()).isTrue();
 		assertThat(plan1.isFree()).isFalse();
-		assertThat(plan1.getMaintenanceInfo()).isNotNull();
-		assertThat(plan1.getMaintenanceInfo().getVersion()).isEqualTo("2.1.0+coab-mysql-v48");
-		assertThat(plan1.getMaintenanceInfo().getDescription()).isEqualTo("mariadb version update to y");
+		assertThat(plan1.getMaintenanceInfo()).isEqualTo(mergedMI);
 		assertThat(plan1.getId()).isEqualTo("plan-id");
 		assertPlanSerializesWithoutPollutingWithNulls(plan1);
 		Plan plan2 = plans.get(1);
@@ -90,7 +109,7 @@ class PlanMapperTest {
 				.build());
 
 
-		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties());
+		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties(), new MaintenanceInfoFormatterService(null));
 
 		List<Plan> plans = planMapper.toPlans(servicePlans);
 		assertThat(plans).hasSize(1);
@@ -128,7 +147,7 @@ class PlanMapperTest {
 					.build())
 				.build());
 
-		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties());
+		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties(), new MaintenanceInfoFormatterService(null));
 
 		//when
 		List<Plan> plans = planMapper.toPlans(servicePlans);
@@ -171,7 +190,7 @@ class PlanMapperTest {
 				.build());
 
 
-		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties());
+		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties(), new MaintenanceInfoFormatterService(null));
 
 		//when
 		List<Plan> plans = planMapper.toPlans(servicePlans);
