@@ -70,6 +70,7 @@ public class PlanMapper extends BaseMapper {
 		if (maintenanceInfo == null) {
 			return null;
 		}
+		logger.debug("mapping maintenance_info {}", maintenanceInfo);
 		return maintenanceInfoFormatterService.formatForCatalog(MaintenanceInfo.builder()
 			.version(maintenanceInfo.getVersion())
 			.description(maintenanceInfo.getDescription())
