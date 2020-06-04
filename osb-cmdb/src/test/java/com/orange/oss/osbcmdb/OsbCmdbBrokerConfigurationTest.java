@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb;
 
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledCreateBackingSpaceInstanceInterceptor;
@@ -28,6 +29,8 @@ import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulUpdateBackingSpaceInst
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncTimeoutCreateBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
@@ -72,7 +75,6 @@ class OsbCmdbBrokerConfigurationTest {
 		public CloudFoundryTargetProperties targetProperties() {
 			return Mockito.mock(CloudFoundryTargetProperties.class, Mockito.RETURNS_SMART_NULLS);
 		}
-
 	}
 
 	@Test
@@ -97,6 +99,36 @@ class OsbCmdbBrokerConfigurationTest {
 				assertThat(context)
 					.getBean(ServiceInstanceInterceptor.class)
 					.isInstanceOf(SyncFailedCreateBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void syncSuccessfulBackingSpaceInstanceInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,SyncSuccessfulBackingSpaceInstanceInterceptor"
+			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(SyncSuccessfulBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void syncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor"
+			)
+			.withPropertyValues(cloudFoundryDeploymentProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor.class);
 			});
 	}
 
