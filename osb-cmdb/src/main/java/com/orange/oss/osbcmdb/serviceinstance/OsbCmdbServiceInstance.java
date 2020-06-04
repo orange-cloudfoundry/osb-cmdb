@@ -86,13 +86,16 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private boolean hideMetadataCustomParamInGetServiceInstanceEndpoint;
 
+	private MaintenanceInfoFormatterService maintenanceInfoFormatterService;
+
 	public OsbCmdbServiceInstance(CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		String defaultOrg, String userName,
 		ServiceInstanceInterceptor osbInterceptor,
 		CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService,
 		UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService,
 		boolean propagateMetadataAsCustomParam,
-		boolean hideMetadataCustomParamInGetServiceInstanceEndpoint) {
+		boolean hideMetadataCustomParamInGetServiceInstanceEndpoint,
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
 		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
 
 		this.osbInterceptor = osbInterceptor;
@@ -100,6 +103,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		this.updateServiceMetadataFormatterService = updateServiceMetadataFormatterService;
 		this.propagateMetadataAsCustomParam = propagateMetadataAsCustomParam;
 		this.hideMetadataCustomParamInGetServiceInstanceEndpoint = hideMetadataCustomParamInGetServiceInstanceEndpoint;
+		this.maintenanceInfoFormatterService = maintenanceInfoFormatterService;
 	}
 
 	@Override
@@ -183,6 +187,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
 			request.getServiceDefinitionId(), request.getPlanId());
+		maintenanceInfoFormatterService.validateAnyCreateRequest(request);
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
 		CloudFoundryOperations spacedTargetedOperations = null;
@@ -449,6 +454,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
 			request.getServiceDefinitionId(), request.getPlanId());
+		maintenanceInfoFormatterService.validateAnyUpgradeRequest(request);
+
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
 		String backingServiceInstanceName = ServiceInstanceNameHelper
@@ -461,6 +468,14 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
+
+		if (maintenanceInfoFormatterService.isNoOpUpgradeBackingService(request)) {
+			LOG.info("NoOp upgrade detected, returning early 200 OK");
+			return Mono.just(UpdateServiceInstanceResponse.builder()
+				.dashboardUrl(existingBackingServiceInstance.getDashboardUrl())
+				.async(false)
+				.build());
+		}
 
 		UpdateServiceInstanceResponseBuilder responseBuilder = UpdateServiceInstanceResponse.builder();
 		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
@@ -505,6 +520,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					throw new ServiceBrokerException("Internal CF protocol error");
 			}
 			responseBuilder.async(asyncProvisioning);
+			responseBuilder.dashboardUrl(updateServiceInstanceResponse.getEntity().getDashboardUrl());
 		}
 		catch (Exception e) {
 			LOG.info("Unable to update service, caught:" + e, e);

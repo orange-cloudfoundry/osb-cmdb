@@ -41,7 +41,9 @@ ext {
 apply plugin: 'org.springframework.boot'
 
 dependencies {
-	compile("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}")
+//	compile("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}")
+	//transiently use fork built by jitpack, see https://jitpack.io/docs/BUILDING/#multi-module-projects
+	compile("com.github.orange-cloudfoundry.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
 	implementation ("org.springframework.boot:spring-boot-starter-actuator")
 	compile("org.springframework.boot:spring-boot-starter-webflux")
 	compile("org.springframework.boot:spring-boot-starter-security")

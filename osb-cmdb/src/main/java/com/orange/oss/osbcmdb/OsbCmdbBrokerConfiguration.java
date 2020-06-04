@@ -4,6 +4,7 @@ import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import com.orange.oss.osbcmdb.servicebinding.OsbCmdbServiceBinding;
 import com.orange.oss.osbcmdb.servicebinding.ServiceBindingInterceptor;
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstance;
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
@@ -182,7 +183,8 @@ public class OsbCmdbBrokerConfiguration {
 		@Autowired(required = false)
 			ServiceInstanceInterceptor serviceInstanceInterceptor,
 		Environment environment,
-		OsbCmdbBrokerProperties osbCmdbBrokerProperties) {
+		OsbCmdbBrokerProperties osbCmdbBrokerProperties,
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
 		String acceptanceTestsProfile = "acceptanceTests";
 		if (serviceInstanceInterceptor == null && environment.acceptsProfiles(Profiles.of(acceptanceTestsProfile))) {
 			throw new IllegalArgumentException("With " + acceptanceTestsProfile + " profile, at least one interceptor" +
@@ -192,7 +194,8 @@ public class OsbCmdbBrokerConfiguration {
 			targetProperties.getDefaultOrg(), targetProperties.getUsername(),
 			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(),
 			new UpdateServiceMetadataFormatterService(), osbCmdbBrokerProperties.isPropagateMetadataAsCustomParam(),
-			osbCmdbBrokerProperties.isHideMetadataCustomParamInGetServiceInstanceEndpoint());
+			osbCmdbBrokerProperties.isHideMetadataCustomParamInGetServiceInstanceEndpoint(),
+			maintenanceInfoFormatterService);
 	}
 
 }

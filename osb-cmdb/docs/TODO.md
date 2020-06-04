@@ -51,26 +51,42 @@ Implement maintenance info
       * shouldUpgradeBackingService(requested osb-cmdb-mi): 
          * unmerge(backing service mi, osb-cmdb mi))
          * true if unmerged != 0.0.0
-* [x] DynamicCatalog
+* [ ] DynamicCatalog
    * [x] configuration properties
    * [x] set maintenance info to broker value
    * [x] merge maintenance info
       * [x] add a new collaborator to OsbCmdbServiceInstance that can unit-tested: MaintenanceInfoFormatterService 
-         * [x] inject PlanMapperProperties 
+         * [x] inject PlanMapperProperties
+   * [ ] Make sure to set "plan_updateable": true when defaulting MI beyond no backing service MI 
    * [x] test
       * [x] unit test
-      * [ ] component test ?
-      * [ ] acceptance test ?
+      * [x] ~~component test~~
+      * [x] ~~acceptance test~~ 
+         * which minimal case to cover ? which risk not covered by UT ?
+            * no specific code in ServiceInstanceService, only in DynamicCatalog which is covered by UT
+         
+* [ ] CSI
+   * [x] MI is not matching brokered service MI: reject
+      * Pb: missing MI from CSIReq https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/290 
+      * [x] contribute SC-OSB PR (+ bump dependency using jit pack)
 * [ ] USI
-   * [ ] backing broker has no maintenance info in its catalog 
-      * [ ] assert backing broker does not receive USI:
-         * use an async stalled update interceptor ?
-         * use CF GSI endpoint https://apidocs.cloudfoundry.org/13.2.0/service_instances/retrieve_a_particular_service_instance.html ?
-   * [ ] backing broker has maintenance info 
-      * [ ] assert backing broker does receive USI with proper maintenance info
-         * use an async stalled update interceptor ?
-         * use CF GSI endpoint https://apidocs.cloudfoundry.org/13.2.0/service_instances/retrieve_a_particular_service_instance.html ?
-
+   * [x] MI is not matching brokered service MI: reject
+      * Pb: missing MI from USIReq https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/290 
+      * [x] contribute SC-OSB PR (+ bump dependency using jit pack)
+   * [x] backing broker has no maintenance info in its catalog (following unmerge) (case of cf-mysql already returning dashboard) 
+      * [x] backing broker does not receive USI
+         * [ ] UT
+         * [ ] AT
+             * use an async stalled update interceptor ?
+             * use CF GSI endpoint https://apidocs.cloudfoundry.org/13.2.0/service_instances/retrieve_a_particular_service_instance.html ?
+   * [ ] backing broker has maintenance info (case of coab to start returning dashboard)
+      * [x] backing broker does receive USI 
+         * [x] UT
+      * [ ] backing broker does receive USI with proper maintenance info
+         * [ ] AT
+             * use an async stalled update interceptor ?
+             * use CF GSI endpoint https://apidocs.cloudfoundry.org/13.2.0/service_instances/retrieve_a_particular_service_instance.html ?
+    
 
 
 Polish before 1.0 release
