@@ -31,6 +31,7 @@ ext {
 	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.5.RELEASE"
 	reactorVersion = project.findProperty("reactorVersion") ?: "Dysprosium-SR6"
 	openServiceBrokerVersion = "3.1.1.RELEASE"
+	openServiceBrokerForkVersion = "f0bf7312fcc2cc41fadc0850a8c74328886b0369"
 	springCredhubVersion = "2.1.0.RELEASE"
 	cfJavaClientVersion = "4.6.0.RELEASE"
 	blockHoundVersion = "1.0.3.RELEASE"
@@ -75,6 +76,13 @@ configure(allprojects) {
 		if (version.endsWith('BUILD-SNAPSHOT')) {
 			maven { url "https://repo.spring.io/snapshot" }
 		}
+		maven {
+			url 'https://jitpack.io'
+			content {
+				// this repository *only* contains artifacts with group "my.company"
+				includeGroup "com.github.orange-cloudfoundry.spring-cloud-open-service-broker"
+			}
+		}
 	}
 
 	dependencies {
@@ -83,7 +91,14 @@ configure(allprojects) {
 
 	if (project.hasProperty("springFrameworkVersion") || project.hasProperty("springBootVersion") || project.hasProperty("reactorVersion")) {
 		repositories {
-			maven { url "https://repo.spring.io/libs-snapshot" }
+//			maven { url "https://repo.spring.io/libs-snapshot" }
+			maven {
+				url 'https://jitpack.io'
+				content {
+					// this repository *only* contains artifacts with group "my.company"
+					includeGroup "com.github.orange-cloudfoundry.spring-cloud-open-service-broker"
+				}
+			}
 		}
 	}
 }
