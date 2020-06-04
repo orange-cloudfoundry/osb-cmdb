@@ -20,6 +20,7 @@ import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceI
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncTimeoutCreateBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
@@ -59,6 +60,13 @@ public class OsbCmdbBrokerConfiguration {
 	public ServiceInstanceInterceptor acceptanceTestBackingServiceInstanceInterceptor(
 		CloudFoundryTargetProperties targetProperties) {
 		return new SyncSuccessfulBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestSyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean
@@ -184,7 +192,15 @@ public class OsbCmdbBrokerConfiguration {
 			ServiceInstanceInterceptor serviceInstanceInterceptor,
 		Environment environment,
 		OsbCmdbBrokerProperties osbCmdbBrokerProperties,
+		@Autowired(required = false)
 		MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
+
+		if (maintenanceInfoFormatterService == null) {
+			//When dynamic catalog is disabled, the MI can't be bumped in catalog, therefore using a default version
+			// instead
+			maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(null);
+		}
+
 		String acceptanceTestsProfile = "acceptanceTests";
 		if (serviceInstanceInterceptor == null && environment.acceptsProfiles(Profiles.of(acceptanceTestsProfile))) {
 			throw new IllegalArgumentException("With " + acceptanceTestsProfile + " profile, at least one interceptor" +

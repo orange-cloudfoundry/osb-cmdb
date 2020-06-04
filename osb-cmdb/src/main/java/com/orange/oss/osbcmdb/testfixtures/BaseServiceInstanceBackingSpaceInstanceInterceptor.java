@@ -105,6 +105,7 @@ public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBack
 		provisionnedInstanceParams.put(request.getServiceInstanceId(), request.getParameters());
 		return Mono.just(UpdateServiceInstanceResponse.builder()
 			.async(false)
+			.dashboardUrl(DASHBOARD_URL)
 			.build());
 	}
 

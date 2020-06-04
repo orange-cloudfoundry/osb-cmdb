@@ -9,6 +9,7 @@ import org.springframework.cloud.servicebroker.exception.ServiceBrokerMaintenanc
 import org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceRequest;
+import org.springframework.lang.Nullable;
 
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
@@ -20,6 +21,7 @@ public class MaintenanceInfoFormatterService {
 		.description("")
 		.build();
 
+	@Nullable
 	private MaintenanceInfo osbCmdbMaintenanceInfo;
 
 	public MaintenanceInfoFormatterService(MaintenanceInfo osbCmdbMaintenanceInfo) {
