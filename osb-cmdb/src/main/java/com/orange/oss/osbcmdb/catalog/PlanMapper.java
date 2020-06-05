@@ -67,10 +67,13 @@ public class PlanMapper extends BaseMapper {
 	}
 
 	private MaintenanceInfo toMaintenanceInfo(org.cloudfoundry.client.v2.MaintenanceInfo maintenanceInfo) {
+		logger.debug("mapping maintenance_info {}", maintenanceInfo);
 		if (maintenanceInfo == null) {
 			return null;
 		}
-		logger.debug("mapping maintenance_info {}", maintenanceInfo);
+		if (maintenanceInfo.getVersion() == null && maintenanceInfo.getDescription()==null) {
+			return null;
+		}
 		return maintenanceInfoFormatterService.formatForCatalog(MaintenanceInfo.builder()
 			.version(maintenanceInfo.getVersion())
 			.description(maintenanceInfo.getDescription())

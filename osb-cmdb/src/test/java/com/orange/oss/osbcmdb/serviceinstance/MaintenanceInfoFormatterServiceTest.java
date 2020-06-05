@@ -120,13 +120,34 @@ class MaintenanceInfoFormatterServiceTest {
 		//Given
 		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
 			anOsbCmdbInfoV1());
-		MaintenanceInfo mergedCmdbBackendMI = maintenanceInfoFormatterService.formatForCatalog(aBackendInfoV1());
+		MaintenanceInfo brokeredServiceMi = maintenanceInfoFormatterService.formatForCatalog(aBackendInfoV1());
 		UpdateServiceInstanceRequest updateServiceInstanceRequest = UpdateServiceInstanceRequest.builder()
 			.planId("a-plan")
-			.maintenanceInfo(mergedCmdbBackendMI)
+			.maintenanceInfo(brokeredServiceMi)
 			.previousValues(new UpdateServiceInstanceRequest.PreviousValues("a-plan", null))
 			.plan(Plan.builder()
-				.maintenanceInfo(mergedCmdbBackendMI)
+				.maintenanceInfo(brokeredServiceMi)
+				.build())
+			.build();
+		//when
+		boolean isNoOpUpgradeBackingService = maintenanceInfoFormatterService
+			.isNoOpUpgradeBackingService(updateServiceInstanceRequest);
+		assertThat(isNoOpUpgradeBackingService).isFalse();
+	}
+
+	@DisplayName("an upgrade request should NOT be a noop, when backing service has some older MI")
+	@Test
+	void test_isNoOpUpgradeBackingService_with_older_specific_backend() {
+		//Given
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			anOsbCmdbInfoV1());
+		MaintenanceInfo brokeredServiceMi = maintenanceInfoFormatterService.formatForCatalog(aBackendInfoV2());
+		UpdateServiceInstanceRequest updateServiceInstanceRequest = UpdateServiceInstanceRequest.builder()
+			.planId("a-plan")
+			.maintenanceInfo(brokeredServiceMi)
+			.previousValues(new UpdateServiceInstanceRequest.PreviousValues("a-plan", aBackendInfoV1()))
+			.plan(Plan.builder()
+				.maintenanceInfo(brokeredServiceMi)
 				.build())
 			.build();
 		//when
@@ -173,6 +194,72 @@ class MaintenanceInfoFormatterServiceTest {
 		boolean isNoOpUpgradeBackingService = maintenanceInfoFormatterService
 			.isNoOpUpgradeBackingService(updateServiceInstanceRequest);
 		assertThat(isNoOpUpgradeBackingService).isFalse();
+	}
+
+	@DisplayName("Formats the request to send to backend service : case of backend service has no Mi and osb-cmdb " +
+		"bump " +
+		"(e.g. cf-mysql")
+	@Test
+	void test_formatForBackendInstance_case1() {
+		//given an osb-cmdb configured with a bump
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			anOsbCmdbInfoV1());
+		//when receiving a request made by a client from catalog
+		MaintenanceInfo brokeredServiceMi = anOsbCmdbInfoV1();
+		org.cloudfoundry.client.v2.MaintenanceInfo requestBackendServiceMi = maintenanceInfoFormatterService
+			.formatForBackendInstance(UpdateServiceInstanceRequest.builder()
+				.maintenanceInfo(brokeredServiceMi)
+				.plan(Plan.builder()
+					.maintenanceInfo(brokeredServiceMi)
+					.build())
+				.previousValues(new UpdateServiceInstanceRequest.PreviousValues("a-plan-id", null))
+				.build());
+		//then no MI is passed to backend
+		assertThat(requestBackendServiceMi).isNull();
+		//actually this should previously be detected as a noop and update should not be requested to backend
+	}
+
+	@DisplayName("Formats the request to send to backend service : case of backend service has Mi and osb-cmdb bump " +
+		"(e.g. coab mysql)")
+	@Test
+	void test_formatForBackendInstance_case2() {
+		//given an osb-cmdb configured with a bump
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			anOsbCmdbInfoV1());
+		//when receiving a request made by a client from catalog
+		MaintenanceInfo brokeredServiceMi = aMergedBackendV1AndOsbCmdbV1();
+		org.cloudfoundry.client.v2.MaintenanceInfo requestBackendServiceMi = maintenanceInfoFormatterService
+			.formatForBackendInstance(UpdateServiceInstanceRequest.builder()
+				.maintenanceInfo(brokeredServiceMi)
+				.plan(Plan.builder()
+					.maintenanceInfo(brokeredServiceMi)
+					.build())
+				.previousValues(new UpdateServiceInstanceRequest.PreviousValues("a-plan-id", null))
+				.build());
+		//then request to pass to backend
+		assertThat(requestBackendServiceMi.getVersion()).isEqualTo(aBackendInfoV1().getVersion());
+		assertThat(requestBackendServiceMi.getDescription()).isEqualTo(aBackendInfoV1().getDescription());
+	}
+
+	@DisplayName("Formats the request to send to backend service : case of backend service has outdated Mi and osb-cmdb bump (e.g. coab mysql)")
+	@Test
+	void test_formatForBackendInstance_case3() {
+		//given an osb-cmdb configured with a bump
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			anOsbCmdbInfoV1());
+		//when receiving a request made by a client from catalog
+		MaintenanceInfo brokeredServiceMi = aMergedBackendV2AndOsbCmdbV1();
+		org.cloudfoundry.client.v2.MaintenanceInfo requestBackendServiceMi = maintenanceInfoFormatterService
+			.formatForBackendInstance(UpdateServiceInstanceRequest.builder()
+				.maintenanceInfo(brokeredServiceMi)
+				.plan(Plan.builder()
+					.maintenanceInfo(brokeredServiceMi)
+					.build())
+				.previousValues(new UpdateServiceInstanceRequest.PreviousValues("a-plan-id", null))
+				.build());
+		//then request to pass to backend
+		assertThat(requestBackendServiceMi.getVersion()).isEqualTo(aBackendInfoV2().getVersion());
+		assertThat(requestBackendServiceMi.getDescription()).isEqualTo(aBackendInfoV2().getDescription());
 	}
 
 	@DisplayName("Merges info with backend build")
@@ -321,6 +408,13 @@ class MaintenanceInfoFormatterServiceTest {
 		return MaintenanceInfo.builder()
 			.version("3.1.0+coab-mysql-v47.osb-cmdb.1.1.0")
 			.description("mariadb version update to x\nProvides access to metrics")
+			.build();
+	}
+
+	private MaintenanceInfo aMergedBackendV2AndOsbCmdbV1() {
+		return MaintenanceInfo.builder()
+			.version("3.2.0+coab-mysql-v48.osb-cmdb.1.1.0")
+			.description("mariadb version update to y\nProvides access to metrics")
 			.build();
 	}
 

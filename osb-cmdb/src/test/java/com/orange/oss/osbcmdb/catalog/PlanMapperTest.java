@@ -57,6 +57,15 @@ class PlanMapperTest {
 			.entity(ServicePlanEntity.builder()
 				.name("plan2")
 				.build())
+			.build(),
+		ServicePlanResource.builder()
+			.entity(ServicePlanEntity.builder()
+				.name("plan3")
+				.maintenanceInfo(MaintenanceInfo.builder()
+					.version(null)
+					.description(null)
+					.build())
+				.build())
 			.build());
 
 			MaintenanceInfoFormatterService maintenanceInfoFormatterService =
@@ -79,7 +88,7 @@ class PlanMapperTest {
 		//then
 		verify(maintenanceInfoFormatterService, times(1)).formatForCatalog(backingServiceMI);
 
-		assertThat(plans).hasSize(2);
+		assertThat(plans).hasSize(3);
 		Plan plan1 = plans.get(0);
 		assertThat(plan1.getName()).isEqualTo("plan1");
 		assertThat(plan1.getDescription()).isEqualTo("description");
@@ -92,6 +101,10 @@ class PlanMapperTest {
 		assertThat(plan2.getName()).isEqualTo("plan2");
 		assertThat(plan2.getMaintenanceInfo()).isNull();
 		assertPlanSerializesWithoutPollutingWithNulls(plan2);
+		Plan plan3 = plans.get(2);
+		assertThat(plan3.getName()).isEqualTo("plan3");
+		assertThat(plan3.getMaintenanceInfo()).isNull();
+		assertPlanSerializesWithoutPollutingWithNulls(plan3);
 	}
 
 	@Test

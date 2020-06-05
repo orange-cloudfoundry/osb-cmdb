@@ -77,15 +77,17 @@ Implement maintenance info
       * [x] backing broker does not receive USI
          * [ ] UT
          * [ ] AT
-             * use an async stalled update interceptor ?
-             * use CF GSI endpoint https://apidocs.cloudfoundry.org/13.2.0/service_instances/retrieve_a_particular_service_instance.html ?
+             * AsyncUgradeInstanceWithBackingServiceAcceptanceTest
+                * Simulates backend broker upgrade with SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor that only differ in returned dashboard depending on presence of maintenance info
    * [ ] backing broker has maintenance info (case of coab to start returning dashboard)
-      * [x] backing broker does receive USI 
+      * [x] backing broker does NOT receive USI if already in same version (relying on UPSI.PreviousValues.MaintenanceInfo) 
          * [x] UT
-      * [ ] backing broker does receive USI with proper maintenance info
          * [ ] AT
-             * use an async stalled update interceptor ?
-             * use CF GSI endpoint https://apidocs.cloudfoundry.org/13.2.0/service_instances/retrieve_a_particular_service_instance.html ?
+      * [x] backing broker does receive USI with proper maintenance info
+         * [x] UT
+         * [ ] AT
+             * AsyncUgradeInstanceWithBackingServiceAcceptanceTest
+                * Simulates backend broker upgrade with SyncSuccessfulBackingSpaceInstanceWithoutDashboardUntilV2VersionInterceptor that only differ in returned dashboard depending on presence of maintenance info
     
 
 
