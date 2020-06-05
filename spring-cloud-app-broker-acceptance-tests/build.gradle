@@ -43,7 +43,8 @@ dependencies {
 	testImplementation("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
 	testImplementation("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
 //	testImplementation("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}") //Just for OSB API constants
-	testImplementation("com.github.orange-cloudfoundry.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
+	testImplementation("com.github.spring-cloud.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
+//	testImplementation("com.github.orange-cloudfoundry.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
 
 }
 

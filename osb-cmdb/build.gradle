@@ -43,15 +43,19 @@ apply plugin: 'org.springframework.boot'
 dependencies {
 //	compile("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}")
 	//transiently use fork built by jitpack, see https://jitpack.io/docs/BUILDING/#multi-module-projects
-	compile("com.github.orange-cloudfoundry.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
+//	compile("com.github.orange-cloudfoundry.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
+	compile("com.github.spring-cloud.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
 	implementation ("org.springframework.boot:spring-boot-starter-actuator")
 	compile("org.springframework.boot:spring-boot-starter-webflux")
 	compile("org.springframework.boot:spring-boot-starter-security")
 	compile("org.springframework.boot:spring-boot-starter-web")
     compile("org.springframework.boot:spring-boot-starter-actuator")
 	compile("org.apache.commons:commons-text:1.8")
-	compile("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
-	compile("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
+	//transiently until updated cf-java-client gets released
+	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-client-reactor:${cfJavaClientForkedVersion}")
+	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-operations:${cfJavaClientForkedVersion}")
+//	compile("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
+//	compile("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
 	compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9")
 	compile("de.skuzzle:semantic-version:2.1.0")
 

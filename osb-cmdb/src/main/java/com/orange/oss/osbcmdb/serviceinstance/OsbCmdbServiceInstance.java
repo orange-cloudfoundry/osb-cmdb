@@ -477,6 +477,20 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				.build());
 		}
 
+		// Lets assume for now that OSB client properly fill in the PreviousValue.maintenance_info, and that we don't
+		//		 need to fetch it from the existing backing instance
+		/*
+		MaintenanceInfo existingBackingServiceInstanceEntityMaintenanceInfo = null;
+		if (existingBackingServiceInstance != null && maintenanceInfoFormatterService.hasMaintenanceInfoChangeRequest(request)) {
+			existingBackingServiceInstanceEntityMaintenanceInfo = client.serviceInstances().get(GetServiceInstanceRequest.builder()
+				.serviceInstanceId(existingBackingServiceInstance.getId())
+				.build())
+				.map(GetServiceInstanceResponse::getEntity)
+				.map(ServiceInstanceEntity::getMaintenanceInfo)
+				.block();
+		}
+		 */
+
 		UpdateServiceInstanceResponseBuilder responseBuilder = UpdateServiceInstanceResponse.builder();
 		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
 
@@ -487,6 +501,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.serviceInstanceId(existingBackingServiceInstance.getId())
 					.servicePlanId(backingServicePlanId)
 					.parameters(formatParameters(metaData, request.getParameters()))
+					.maintenanceInfo(maintenanceInfoFormatterService.formatForBackendInstance(request))
 					.build())
 				.block();
 

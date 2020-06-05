@@ -36,8 +36,8 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests that scenario of `cf update-service --upgrade` upgrades a service instance v1 without dashboard into a
- * service instance v2 with a dashboard
+ * Tests that scenario of `cf update-service --upgrade` upgrades a service instance v1 without dashboard (and without
+ * MI) into a service instance v2 with a dashboard
  *
  * Inspired from SCAB UpdateInstanceWithNewServiceAcceptanceTest
  */
@@ -102,12 +102,13 @@ class AsyncUgradeInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFound
 		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
 
 
-		//When requesting to upgrade the existing service instance
+		//When requesting to upgrade the existing service instance, with the merged maintenance info
 		//Can't yet do it with cf-java-client, see https://github.com/cloudfoundry/cf-java-client/issues/1048
 		given(brokerFixture.serviceInstanceUpgradeRequest(SERVICE_ID, PLAN_ID, "2.1.1"))
 			.when()
 			.patch(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()
+			//update request is accepted as a noop
 			.statusCode(HttpStatus.OK.value());
 
 		//then the brokered service instance now includes a dashboard url
@@ -164,6 +165,7 @@ class AsyncUgradeInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFound
 			super.setUp(testInfo, brokerProperties);
 		}
 		else {
+			initializeBrokerFixture();
 			setUpForBrokerUpdate(brokerProperties);
 		}
 	}

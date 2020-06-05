@@ -28,6 +28,21 @@ public class MaintenanceInfoFormatterService {
 		this.osbCmdbMaintenanceInfo = osbCmdbMaintenanceInfo;
 	}
 
+	public org.cloudfoundry.client.v2.MaintenanceInfo formatForBackendInstance(UpdateServiceInstanceRequest request) {
+		if (!hasMaintenanceInfoChangeRequest(request)) {
+			return null;
+		}
+		MaintenanceInfo brokeredServiceMI = request.getPlan().getMaintenanceInfo();
+		MaintenanceInfo inferredBackendMI = unmergeInfos(brokeredServiceMI);
+		if (DEFAULT_MISSING_BACKEND_MI.equals(inferredBackendMI)) {
+			return null;
+		}
+		return org.cloudfoundry.client.v2.MaintenanceInfo.builder()
+			.version(inferredBackendMI.getVersion())
+			.description(inferredBackendMI.getDescription())
+			.build();
+	}
+
 	/**
 	 * Formats for brokered service catalog
 	 */
@@ -41,24 +56,6 @@ public class MaintenanceInfoFormatterService {
 		return osbCmdbMaintenanceInfo;
 	}
 
-	public MaintenanceInfo formatForBackendInstance(MaintenanceInfo backendCatalogMaintenanceInfo,
-		MaintenanceInfo existingInstanceCatalogMaintenanceInfo) {
-		if (osbCmdbMaintenanceInfo == null) {
-			if (backendCatalogMaintenanceInfo == null) {
-				if (existingInstanceCatalogMaintenanceInfo == null) {
-					LOG.warn("Service instance has maintenance info while catalog has none, suspecting catalog " +
-						"rollback");
-				}
-			}
-			return existingInstanceCatalogMaintenanceInfo;
-		} else {
-			if (backendCatalogMaintenanceInfo != null) {
-				return mergeInfos(backendCatalogMaintenanceInfo);
-			}
-			return osbCmdbMaintenanceInfo;
-		}
-	}
-
 	/**
 	 * Indicates whether the request is a pure upgrade request `cf update-service --upgrade` resulting from a version
 	 * bump introduced by osb-cmdb, and no backend version bump.
@@ -66,6 +63,15 @@ public class MaintenanceInfoFormatterService {
 	 * @return
 	 */
 	public boolean isNoOpUpgradeBackingService(UpdateServiceInstanceRequest request) {
+		if (!hasMaintenanceInfoChangeRequest(request)) {
+			return false;
+		}
+		MaintenanceInfo brokeredServiceMI = request.getPlan().getMaintenanceInfo();
+		MaintenanceInfo inferredBackendMI = unmergeInfos(brokeredServiceMI);
+		return inferredBackendMI.equals(DEFAULT_MISSING_BACKEND_MI);
+	}
+
+	public boolean hasMaintenanceInfoChangeRequest(UpdateServiceInstanceRequest request) {
 		boolean hasMaintenanceInfoChangeRequest = false;
 		if (request.getPreviousValues() == null) {
 			LOG.warn("Received an USI without previous value, assuming not an upgrade request (likely not a CF " +
@@ -76,12 +82,7 @@ public class MaintenanceInfoFormatterService {
 			hasMaintenanceInfoChangeRequest =
 				! request.getMaintenanceInfo().equals(request.getPreviousValues().getMaintenanceInfo());
 		}
-		if (! hasMaintenanceInfoChangeRequest) {
-			return false;
-		}
-		MaintenanceInfo brokeredServiceMI = request.getPlan().getMaintenanceInfo();
-		MaintenanceInfo inferredBackendMI = unmergeInfos(brokeredServiceMI);
-		return inferredBackendMI.equals(DEFAULT_MISSING_BACKEND_MI);
+		return hasMaintenanceInfoChangeRequest;
 	}
 
 	public MaintenanceInfo mergeInfos(MaintenanceInfo backendMaintenanceInfo) {

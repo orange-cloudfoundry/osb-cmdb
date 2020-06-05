@@ -31,9 +31,10 @@ ext {
 	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.5.RELEASE"
 	reactorVersion = project.findProperty("reactorVersion") ?: "Dysprosium-SR6"
 	openServiceBrokerVersion = "3.1.1.RELEASE"
-	openServiceBrokerForkVersion = "f0bf7312fcc2cc41fadc0850a8c74328886b0369"
+	openServiceBrokerForkVersion = "576b86f31b89f1c0884d12f65947e01d401388f6"
 	springCredhubVersion = "2.1.0.RELEASE"
-	cfJavaClientVersion = "4.6.0.RELEASE"
+	cfJavaClientVersion = "4.7.0.RELEASE"
+	cfJavaClientForkedVersion = "0d134c06d7527ef028639edcc187eddeec457449"
 	blockHoundVersion = "1.0.3.RELEASE"
 	junitPlatformLauncherVersion = "1.6.1"
 	checkstyleVersion = "8.29"
@@ -79,8 +80,8 @@ configure(allprojects) {
 		maven {
 			url 'https://jitpack.io'
 			content {
-				// this repository *only* contains artifacts with group "my.company"
-				includeGroup "com.github.orange-cloudfoundry.spring-cloud-open-service-broker"
+				// this repository *only* contains artifacts with group (e.g. "my.company")
+				includeGroupByRegex "com\\.github\\..*"
 			}
 		}
 	}
@@ -95,8 +96,8 @@ configure(allprojects) {
 			maven {
 				url 'https://jitpack.io'
 				content {
-					// this repository *only* contains artifacts with group "my.company"
-					includeGroup "com.github.orange-cloudfoundry.spring-cloud-open-service-broker"
+					// this repository *only* contains artifacts with group (e.g. "my.company")
+					includeGroupByRegex "com\\.github\\..*"
 				}
 			}
 		}
