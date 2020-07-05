@@ -58,6 +58,16 @@ public class MaintenanceInfoFormatterService {
 		if (!hasMaintenanceInfoChangeRequest(request)) {
 			return null;
 		}
+		if (osbCmdbMaintenanceInfo == null) {
+			MaintenanceInfo requestMaintenanceInfo = request.getMaintenanceInfo();
+			if (requestMaintenanceInfo == null) { //overkill as already tested above ?
+				return null;
+			}
+			return org.cloudfoundry.client.v2.MaintenanceInfo.builder()
+				.version(requestMaintenanceInfo.getVersion())
+				.description(requestMaintenanceInfo.getDescription())
+				.build();
+		}
 		MaintenanceInfo brokeredServiceMI = request.getPlan().getMaintenanceInfo();
 		MaintenanceInfo inferredBackendMI = unmergeInfos(brokeredServiceMI);
 		if (DEFAULT_MISSING_BACKEND_MI.equals(inferredBackendMI)) {
@@ -83,11 +93,11 @@ public class MaintenanceInfoFormatterService {
 	}
 
 	/**
-	 * Supports tests only
+	 * Only used in tests
+	 * @return
 	 */
-	@Nullable
 	public MaintenanceInfo getOsbCmdbMaintenanceInfo() {
-		return osbCmdbMaintenanceInfo;
+		return this.osbCmdbMaintenanceInfo;
 	}
 
 	/**
@@ -99,7 +109,7 @@ public class MaintenanceInfoFormatterService {
 	 * 	skipped (i.e. noop)
 	 */
 	public boolean isNoOpUpgradeBackingService(UpdateServiceInstanceRequest request) {
-		if (this.osbCmdbMaintenanceInfo == null) {
+		if (osbCmdbMaintenanceInfo == null) {
 			return false; //act as a pass-through, i.e. rely on osb-client to prevent/optimize noop-upgrade requests
 		}
 		if (!hasMaintenanceInfoChangeRequest(request)) {
