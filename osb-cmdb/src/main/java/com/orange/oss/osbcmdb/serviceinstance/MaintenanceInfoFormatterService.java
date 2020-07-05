@@ -99,6 +99,9 @@ public class MaintenanceInfoFormatterService {
 	 * 	skipped (i.e. noop)
 	 */
 	public boolean isNoOpUpgradeBackingService(UpdateServiceInstanceRequest request) {
+		if (this.osbCmdbMaintenanceInfo == null) {
+			return false; //act as a pass-through, i.e. rely on osb-client to prevent/optimize noop-upgrade requests
+		}
 		if (!hasMaintenanceInfoChangeRequest(request)) {
 			return false;
 		}
