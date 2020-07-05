@@ -319,6 +319,49 @@ class MaintenanceInfoFormatterServiceTest {
 		assertThat(requestBackendServiceMi.getDescription()).isEqualTo(aBackendInfoV2().getDescription());
 	}
 
+	@DisplayName("Formats the request to send to backend service : case of backend service has Mi and NO osb-cmdb " +
+		"bump")
+	@Test
+	void test_formatForBackendInstance_case4() {
+		//given an osb-cmdb configured without a bump
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			null);
+		//when receiving a request made by a client from catalog with backend MI
+		MaintenanceInfo brokeredServiceMi = aBackendInfoV1();
+		org.cloudfoundry.client.v2.MaintenanceInfo requestBackendServiceMi = maintenanceInfoFormatterService
+			.formatForBackendInstance(UpdateServiceInstanceRequest.builder()
+				.maintenanceInfo(brokeredServiceMi)
+				.plan(Plan.builder()
+					.maintenanceInfo(brokeredServiceMi)
+					.build())
+				.previousValues(new UpdateServiceInstanceRequest.PreviousValues("a-plan-id", null))
+				.build());
+		//then request to pass to backend
+		assertThat(requestBackendServiceMi.getVersion()).isEqualTo(aBackendInfoV1().getVersion());
+		assertThat(requestBackendServiceMi.getDescription()).isEqualTo(aBackendInfoV1().getDescription());
+	}
+
+	@DisplayName("Formats the request to send to backend service : case of backend service has Mi, request has no MI, and NO osb-cmdb bump")
+	@Test
+	void test_formatForBackendInstance_case5() {
+		//given an osb-cmdb configured without a bump
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			null);
+		//when receiving a request made by a client from catalog without MI
+		MaintenanceInfo brokeredServiceMi = aMergedBackendV1AndOsbCmdbV1();
+		org.cloudfoundry.client.v2.MaintenanceInfo requestBackendServiceMi = maintenanceInfoFormatterService
+			.formatForBackendInstance(UpdateServiceInstanceRequest.builder()
+				.maintenanceInfo(null)
+				.plan(Plan.builder()
+					.maintenanceInfo(brokeredServiceMi)
+					.build())
+				.build());
+		//then request to pass to backend
+		assertThat(requestBackendServiceMi).isNull();
+	}
+
+
+
 	@DisplayName("Merges info with backend build")
 	@Test
 	void test_merge_infos_1() {
