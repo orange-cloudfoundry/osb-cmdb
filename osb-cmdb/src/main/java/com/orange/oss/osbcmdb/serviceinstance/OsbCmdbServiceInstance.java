@@ -13,6 +13,7 @@ import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl
 import com.orange.oss.osbcmdb.metadata.MetaData;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.MaintenanceInfo;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
 import org.cloudfoundry.client.v2.organizations.OrganizationEntity;
@@ -496,12 +497,14 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		try {
 			org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceResponse updateServiceInstanceResponse;
+			MaintenanceInfo formattedForBackendInstanceMI = maintenanceInfoFormatterService.formatForBackendInstance(request);
+			LOG.debug("Passing formatted maintenance info {} to backing service", formattedForBackendInstanceMI);
 			updateServiceInstanceResponse = client.serviceInstances()
 				.update(org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceRequest.builder()
 					.serviceInstanceId(existingBackingServiceInstance.getId())
 					.servicePlanId(backingServicePlanId)
 					.parameters(formatParameters(metaData, request.getParameters()))
-					.maintenanceInfo(maintenanceInfoFormatterService.formatForBackendInstance(request))
+					.maintenanceInfo(formattedForBackendInstanceMI)
 					.build())
 				.block();
 

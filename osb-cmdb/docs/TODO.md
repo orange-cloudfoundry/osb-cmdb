@@ -1,8 +1,8 @@
 finish AT: 
    * [x] bump cf-java-client and sc-osb
-   * [ ] Relaunch acceptance test, make it pass
-      * [ ] Configure maintenance info bump
-   * [ ] Commit & push, and get feedback from AT pipeline
+   * [x] Relaunch acceptance test, make it pass
+      * [x] Configure maintenance info bump
+   * [x] Commit & push, and get feedback from AT pipeline
    * [ ] Remove workarounds following cf-java-client and sc-osb bumps 
 workaround cf-java client https://github.com/cloudfoundry/cf-java-client/issues/1052 in CloudFoundryServices.upgradeServices by duplicating cf-java-client code for
  
