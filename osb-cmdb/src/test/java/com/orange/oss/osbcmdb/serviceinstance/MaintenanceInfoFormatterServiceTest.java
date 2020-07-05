@@ -40,6 +40,37 @@ class MaintenanceInfoFormatterServiceTest {
 		maintenanceInfoFormatterService.validateAnyUpgradeRequest(updateServiceInstanceRequest);
 	}
 
+	@DisplayName("validates upgrade requests include valid maintenance info with only version and no decription")
+	@Test
+	void test_validate_upgrade_request_only_version() {
+		//Given
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			anOsbCmdbInfoV1());
+		MaintenanceInfo abOsbCmdbV1Version = MaintenanceInfo.builder()
+			.version(anOsbCmdbInfoV1().getVersion())
+			.build();
+		UpdateServiceInstanceRequest updateServiceInstanceRequest = UpdateServiceInstanceRequest.builder()
+			.plan(Plan.builder()
+				.maintenanceInfo(abOsbCmdbV1Version)
+				.build())
+			.maintenanceInfo(abOsbCmdbV1Version)
+			.build();
+		maintenanceInfoFormatterService.validateAnyUpgradeRequest(updateServiceInstanceRequest);
+	}
+
+	@DisplayName("validates upgrade requests include valid maintenance info")
+	@Test
+	void test_validate_upgrade_request_no_mi() {
+		//Given
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			anOsbCmdbInfoV1());
+		UpdateServiceInstanceRequest updateServiceInstanceRequest = UpdateServiceInstanceRequest.builder()
+			.plan(Plan.builder()
+				.build())
+			.build();
+		maintenanceInfoFormatterService.validateAnyUpgradeRequest(updateServiceInstanceRequest);
+	}
+
 	@DisplayName("validates upgrade requests include valid maintenance info")
 	@Test
 	void test_validate_create_request() {

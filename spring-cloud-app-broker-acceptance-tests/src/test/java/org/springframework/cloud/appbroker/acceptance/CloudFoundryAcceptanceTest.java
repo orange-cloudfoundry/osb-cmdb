@@ -417,6 +417,11 @@ abstract class CloudFoundryAcceptanceTest {
 			})
 			.block();
 	}
+
+	protected void upgradeService(String serviceInstanceId, String version) {
+		cloudFoundryService.syncUpgradeServiceInstance(serviceInstanceId, version).block();
+	}
+
 	protected void updateServiceInstanceWithoutAsserts(String serviceInstanceName, String planName,
 		Duration completionTimeout) {
 		try {

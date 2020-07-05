@@ -1,3 +1,43 @@
+finish AT: 
+   * [x] bump cf-java-client and sc-osb
+   * [x] Relaunch acceptance test and identify NPE
+      ```
+       2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT java.lang.NullPointerException: null
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 	at com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService.unmergeInfos(MaintenanceInfoFormatterService.java:157) ~[classes/:na]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 	Suppressed: reactor.core.publisher.FluxOnAssembly$OnAssemblyException: 
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT Assembly trace from producer [reactor.core.publisher.MonoFlatMap] :
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 	reactor.core.publisher.Mono.flatMap(Mono.java:2734)
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 	org.springframework.cloud.servicebroker.controller.ServiceInstanceController.updateServiceInstance(ServiceInstanceController.java:347)
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT Error has been observed at the following site(s):
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 	|_       Mono.flatMap ⇢ at org.springframework.cloud.servicebroker.controller.ServiceInstanceController.updateServiceInstance(ServiceInstanceController.java:347)
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 	|_           Mono.map ⇢ at org.springframework.cloud.servicebroker.controller.ServiceInstanceController.updateServiceInstance(ServiceInstanceController.java:357)
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 	|_ Mono.switchIfEmpty ⇢ at org.springframework.cloud.servicebroker.controller.ServiceInstanceController.updateServiceInstance(ServiceInstanceController.java:358)
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT Stack trace:
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService.unmergeInfos(MaintenanceInfoFormatterService.java:157) ~[classes/:na]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService.isNoOpUpgradeBackingService(MaintenanceInfoFormatterService.java:87) ~[classes/:na]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstance.updateServiceInstance(OsbCmdbServiceInstance.java:472) ~[classes/:na]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at org.springframework.cloud.servicebroker.service.ServiceInstanceEventService.updateServiceInstance(ServiceInstanceEventService.java:95) ~[spring-cloud-open-service-broker-core-576b86f31b89f1c0884d12f65947e01d401388f6.jar:na]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at org.springframework.cloud.servicebroker.controller.ServiceInstanceController.lambda$updateServiceInstance$35(ServiceInstanceController.java:347) ~[spring-cloud-open-service-broker-core-576b86f31b89f1c0884d12f65947e01d401388f6.jar:na]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at reactor.core.publisher.MonoFlatMap$FlatMapMain.onNext(MonoFlatMap.java:118) ~[reactor-core-3.3.4.RELEASE.jar:3.3.4.RELEASE]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at reactor.core.publisher.FluxMapFuseable$MapFuseableSubscriber.onNext(FluxMapFuseable.java:121) ~[reactor-core-3.3.4.RELEASE.jar:3.3.4.RELEASE]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at reactor.core.publisher.Operators$MonoSubscriber.complete(Operators.java:1712) ~[reactor-core-3.3.4.RELEASE.jar:3.3.4.RELEASE]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at reactor.core.publisher.MonoFlatMap$FlatMapInner.onNext(MonoFlatMap.java:241) ~[reactor-core-3.3.4.RELEASE.jar:3.3.4.RELEASE]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at reactor.core.publisher.FluxMap$MapSubscriber.onNext(FluxMap.java:114) ~[reactor-core-3.3.4.RELEASE.jar:3.3.4.RELEASE]
+        2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at reactor.core.publisher.Operators$ScalarSubscription.request(Operators.java:2274) ~[reactor-core-3.3.4.RELEASE.jar:3.3.4.RELEASE]
+        2020 
+      ```
+   * [ ] Reproduce NPE in a unit test: 
+      * MaintenanceInfoFormatterService has no configured maintenanceInfo
+      * isNoOpUpgradeBackingService() should return false 
+   * [ ] Fix NPE
+   * [ ] Relaunch acceptance test, make it pass
+      * [ ] Configure maintenance info bump
+   * [ ] Commit & push, and get feedback from AT pipeline
+   * [ ] Remove workarounds following cf-java-client and sc-osb bumps 
+workaround cf-java client https://github.com/cloudfoundry/cf-java-client/issues/1052 in CloudFoundryServices.upgradeServices by duplicating cf-java-client code for
+ 
+
+
 Design maintenance info
 * [x] Decide which version format to use when merging/unmerging osb-cmdb and backing service versions
    * [x] List use-cases
@@ -85,9 +125,16 @@ Implement maintenance info
          * [ ] AT
       * [x] backing broker does receive USI with proper maintenance info
          * [x] UT
-         * [ ] AT
+         * [x] AT
              * AsyncUgradeInstanceWithBackingServiceAcceptanceTest
                 * Simulates backend broker upgrade with SyncSuccessfulBackingSpaceInstanceWithoutDashboardUntilV2VersionInterceptor that only differ in returned dashboard depending on presence of maintenance info
+                   * Pb: when dynamic catalog is enabled, it fetched the hosting platform catalog and not the AT one
+                   * If we don't enable dynamic catalog, then our spring instanciates a MaintenanceInfoFormatterService with no osb-cmdb bump, and therefore our logic won't be called and like all USI with MI would be rejected
+                   * Options
+                      * **modify config so that MaintenanceInfoFormatterService is instanciated regardless of dynamic catalog**
+                         * move maintenance_info out of `osbcmdb.dynamic-catalog.maintenance_info` at `osbcmdb.maintenance_info`
+                            * MaintenanceInfoFormatterService is created in main and made available for PlanMapper to use
+                         * just move PlanMapperProperties and MaintenanceInfoFormatterService into main config    
     
 
 

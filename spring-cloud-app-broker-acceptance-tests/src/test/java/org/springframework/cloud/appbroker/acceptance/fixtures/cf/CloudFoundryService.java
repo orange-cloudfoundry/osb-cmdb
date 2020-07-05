@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.MaintenanceInfo;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.client.v2.organizations.AssociateOrganizationManagerRequest;
 import org.cloudfoundry.client.v2.organizations.AssociateOrganizationManagerResponse;
@@ -356,6 +357,22 @@ public class CloudFoundryService {
 			.doOnSuccess(item -> LOG.info("Updated service instance " + serviceInstanceName))
 			.doOnError(error -> LOG.error("Error updating service instance " + serviceInstanceName + ": " + error));
 	}
+
+	//waiting for https://github.com/cloudfoundry/cf-java-client/issues/1052
+		public Mono<Void> syncUpgradeServiceInstance(final String serviceInstanceId, final String version) {
+		return cloudFoundryClient.serviceInstances().update(org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceRequest.builder()
+					.serviceInstanceId(serviceInstanceId)
+					.maintenanceInfo(MaintenanceInfo.builder()
+						.version(version)
+						.build())
+					.build())
+			.then()
+			.doOnSuccess(item -> LOG.info("Upgraded service instance " + serviceInstanceId))
+			.doOnError(error -> LOG.error("Error upgrading service instance " + serviceInstanceId + ": " + error));
+
+	}
+
+
 
 	public Mono<Void> updateServiceInstance(String serviceInstanceName, String planName, Duration completionTimeout) {
 		return cloudFoundryOperations.services()

@@ -48,11 +48,6 @@ public class DynamicCatalogServiceAutoConfiguration {
 	}
 
 	@Bean
-	public MaintenanceInfoFormatterService maintenanceInfoFormatterService(PlanMapperProperties planMapperProperties) {
-		return new MaintenanceInfoFormatterService(planMapperProperties.getMaintenanceInfo());
-	}
-
-	@Bean
 	public PlanMapper planMapper(PlanMapperProperties planMapperProperties, MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
 		return new PlanMapper(planMapperProperties, maintenanceInfoFormatterService);
 	}
