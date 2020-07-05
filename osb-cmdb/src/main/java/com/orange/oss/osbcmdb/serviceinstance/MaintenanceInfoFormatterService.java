@@ -15,6 +15,9 @@ import org.springframework.lang.Nullable;
 
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
+/**
+ * Handles the logic related to service instance upgrades.
+ */
 public class MaintenanceInfoFormatterService {
 
 	/**
@@ -22,13 +25,24 @@ public class MaintenanceInfoFormatterService {
 	 */
 	public static final String PROPERTY_PREFIX = "osbcmdb.maintenanceinfo";
 
-	protected final Logger LOG = Loggers.getLogger(MaintenanceInfoFormatterService.class);
-
+	/**
+	 * The default maintenance info when a backend has no maintenance info declared. Supports logics of detecting
+	 * backend MI changes.
+	 */
 	private static final MaintenanceInfo DEFAULT_MISSING_BACKEND_MI = MaintenanceInfo.builder()
 		.version(0, 0, 0, "")
 		.description("")
 		.build();
 
+	protected final Logger LOG = Loggers.getLogger(MaintenanceInfoFormatterService.class);
+
+	/**
+	 * When configured as non-null, proposes maintenance bumps to OSB users. This enables refresh of service
+	 * instances view from OSB client when OSB-cmdb changes SI external view (typically the returned dashboard URL
+	 * and its associated format)
+	 * <p>
+	 * When configured as null, then acts as a pass-thru to the maintenance info proposed by the backend
+	 */
 	@Nullable
 	private MaintenanceInfo osbCmdbMaintenanceInfo;
 
@@ -38,13 +52,8 @@ public class MaintenanceInfoFormatterService {
 	}
 
 	/**
-	 * Supports tests only
+	 * Formats MI passed to backend service instance upgrade requests.
 	 */
-	@Nullable
-	public MaintenanceInfo getOsbCmdbMaintenanceInfo() {
-		return osbCmdbMaintenanceInfo;
-	}
-
 	public org.cloudfoundry.client.v2.MaintenanceInfo formatForBackendInstance(UpdateServiceInstanceRequest request) {
 		if (!hasMaintenanceInfoChangeRequest(request)) {
 			return null;
@@ -61,7 +70,7 @@ public class MaintenanceInfoFormatterService {
 	}
 
 	/**
-	 * Formats for brokered service catalog
+	 * Formats for brokered service catalog returned to OSB client
 	 */
 	public MaintenanceInfo formatForCatalog(MaintenanceInfo backendCatalogMaintenanceInfo) {
 		if (osbCmdbMaintenanceInfo == null) {
@@ -74,10 +83,20 @@ public class MaintenanceInfoFormatterService {
 	}
 
 	/**
+	 * Supports tests only
+	 */
+	@Nullable
+	public MaintenanceInfo getOsbCmdbMaintenanceInfo() {
+		return osbCmdbMaintenanceInfo;
+	}
+
+	/**
 	 * Indicates whether the request is a pure upgrade request `cf update-service --upgrade` resulting from a version
 	 * bump introduced by osb-cmdb, and no backend version bump.
+	 *
 	 * @param request
-	 * @return
+	 * @return False if the update request should be passed to tbe backend broker, true if backend update should be
+	 * 	skipped (i.e. noop)
 	 */
 	public boolean isNoOpUpgradeBackingService(UpdateServiceInstanceRequest request) {
 		if (!hasMaintenanceInfoChangeRequest(request)) {
@@ -88,68 +107,13 @@ public class MaintenanceInfoFormatterService {
 		return inferredBackendMI.equals(DEFAULT_MISSING_BACKEND_MI);
 	}
 
-	public boolean hasMaintenanceInfoChangeRequest(UpdateServiceInstanceRequest request) {
-		boolean hasMaintenanceInfoChangeRequest = false;
-		if (request.getPreviousValues() == null) {
-			LOG.warn("Received an USI without previous value, assuming not an upgrade request (likely not a CF " +
-				"client)");
-			return false;
-		}
-		if (request.getMaintenanceInfo() != null) {
-			hasMaintenanceInfoChangeRequest =
-				! request.getMaintenanceInfo().equals(request.getPreviousValues().getMaintenanceInfo());
-		}
-		return hasMaintenanceInfoChangeRequest;
-	}
-
-	public MaintenanceInfo mergeInfos(MaintenanceInfo backendMaintenanceInfo) {
-		Version backendVersion = Version.parseVersion(backendMaintenanceInfo.getVersion());
-		Version cmdbVersion = Version.parseVersion(osbCmdbMaintenanceInfo.getVersion());
-		String backendBuildMetaData = backendVersion.getBuildMetaData();
-		String buildMetaData = "+";
-		if (! backendBuildMetaData.isEmpty()) {
-			buildMetaData = buildMetaData+ backendBuildMetaData + ".";
-		}
-		buildMetaData = buildMetaData + formatBuildMetadataSuffix(cmdbVersion);
-		String description = defaultString(backendMaintenanceInfo.getDescription());
-		if (osbCmdbMaintenanceInfo.getDescription() != null) {
-			description = description + "\n" + osbCmdbMaintenanceInfo.getDescription();
-		}
-		return MaintenanceInfo.builder()
-			.version(backendVersion.getMajor() + cmdbVersion.getMajor(),
-				backendVersion.getMinor() + cmdbVersion.getMinor(),
-				backendVersion.getPatch() + cmdbVersion.getPatch(),
-				buildMetaData)
-			.description(description)
-			.build();
-	}
-
-
+	/**
+	 * Validates incoming USI request and rejects requests with unsupported maintenance info
+	 */
 	public void validateAnyUpgradeRequest(UpdateServiceInstanceRequest request) {
 		MaintenanceInfo catalogMi = request.getPlan().getMaintenanceInfo();
 		MaintenanceInfo requestedMi = request.getMaintenanceInfo();
 		validateRequestedMaintenanceInfo(requestedMi, catalogMi);
-	}
-
-	public void validateAnyCreateRequest(CreateServiceInstanceRequest request) {
-		MaintenanceInfo catalogMi = request.getPlan().getMaintenanceInfo();
-		MaintenanceInfo requestedMi = request.getMaintenanceInfo();
-		validateRequestedMaintenanceInfo(requestedMi, catalogMi);
-	}
-
-	private void validateRequestedMaintenanceInfo(MaintenanceInfo requestedMi, MaintenanceInfo catalogMi) {
-		if (requestedMi != null && !Objects.equals(requestedMi.getVersion(), catalogMi.getVersion())) {
-			throw new ServiceBrokerMaintenanceInfoConflictException("unknown requested maintenance info: " + requestedMi
-				.getVersion() + " Currently supported maintenance info is: " + catalogMi.getVersion());
-		}
-	}
-
-	private String formatBuildMetadataSuffix(Version cmdbVersion) {
-		return "osb-cmdb."
-			+ cmdbVersion.getMajor() + "."
-			+ cmdbVersion.getMinor() + "."
-			+ cmdbVersion.getPatch()
-			+ (cmdbVersion.getBuildMetaData().isEmpty() ? "" : "." + cmdbVersion.getBuildMetaData());
 	}
 
 	protected MaintenanceInfo unmergeInfos(MaintenanceInfo brokeredMaintenanceInfo) {
@@ -160,7 +124,7 @@ public class MaintenanceInfoFormatterService {
 			formatBuildMetadataSuffix(cmdbVersion));
 		extension = StringUtils.removeEnd(extension, ".");
 		extension = StringUtils.removeEnd(extension, cmdbVersion.getBuildMetaData());
-		if (! extension.isEmpty()) {
+		if (!extension.isEmpty()) {
 			extension = "+" + extension;
 		}
 		String description = StringUtils.removeEnd(brokeredMaintenanceInfo.getDescription(),
@@ -176,6 +140,63 @@ public class MaintenanceInfoFormatterService {
 				extension)
 			.description(description)
 			.build();
+	}
+
+	boolean hasMaintenanceInfoChangeRequest(UpdateServiceInstanceRequest request) {
+		boolean hasMaintenanceInfoChangeRequest = false;
+		if (request.getPreviousValues() == null) {
+			LOG.warn("Received an USI without previous value, assuming not an upgrade request (likely not a CF " +
+				"client)");
+			return false;
+		}
+		if (request.getMaintenanceInfo() != null) {
+			hasMaintenanceInfoChangeRequest =
+				!request.getMaintenanceInfo().equals(request.getPreviousValues().getMaintenanceInfo());
+		}
+		return hasMaintenanceInfoChangeRequest;
+	}
+
+	MaintenanceInfo mergeInfos(MaintenanceInfo backendMaintenanceInfo) {
+		Version backendVersion = Version.parseVersion(backendMaintenanceInfo.getVersion());
+		Version cmdbVersion = Version.parseVersion(osbCmdbMaintenanceInfo.getVersion());
+		String backendBuildMetaData = backendVersion.getBuildMetaData();
+		String buildMetaData = "+";
+		if (!backendBuildMetaData.isEmpty()) {
+			buildMetaData = buildMetaData + backendBuildMetaData + ".";
+		}
+		buildMetaData = buildMetaData + formatBuildMetadataSuffix(cmdbVersion);
+		String description = defaultString(backendMaintenanceInfo.getDescription());
+		if (osbCmdbMaintenanceInfo.getDescription() != null) {
+			description = description + "\n" + osbCmdbMaintenanceInfo.getDescription();
+		}
+		return MaintenanceInfo.builder()
+			.version(backendVersion.getMajor() + cmdbVersion.getMajor(),
+				backendVersion.getMinor() + cmdbVersion.getMinor(),
+				backendVersion.getPatch() + cmdbVersion.getPatch(),
+				buildMetaData)
+			.description(description)
+			.build();
+	}
+
+	void validateAnyCreateRequest(CreateServiceInstanceRequest request) {
+		MaintenanceInfo catalogMi = request.getPlan().getMaintenanceInfo();
+		MaintenanceInfo requestedMi = request.getMaintenanceInfo();
+		validateRequestedMaintenanceInfo(requestedMi, catalogMi);
+	}
+
+	private String formatBuildMetadataSuffix(Version cmdbVersion) {
+		return "osb-cmdb."
+			+ cmdbVersion.getMajor() + "."
+			+ cmdbVersion.getMinor() + "."
+			+ cmdbVersion.getPatch()
+			+ (cmdbVersion.getBuildMetaData().isEmpty() ? "" : "." + cmdbVersion.getBuildMetaData());
+	}
+
+	private void validateRequestedMaintenanceInfo(MaintenanceInfo requestedMi, MaintenanceInfo catalogMi) {
+		if (requestedMi != null && !Objects.equals(requestedMi.getVersion(), catalogMi.getVersion())) {
+			throw new ServiceBrokerMaintenanceInfoConflictException("unknown requested maintenance info: " + requestedMi
+				.getVersion() + " Currently supported maintenance info is: " + catalogMi.getVersion());
+		}
 	}
 
 }

@@ -26,14 +26,18 @@ finish AT:
         2020-06-11T17:40:54.48+0200 [APP/PROC/WEB/0] OUT 		at reactor.core.publisher.Operators$ScalarSubscription.request(Operators.java:2274) ~[reactor-core-3.3.4.RELEASE.jar:3.3.4.RELEASE]
         2020 
       ```
-   * [ ] Reproduce NPE in a unit test: 
+   * [x] Reproduce NPE in a unit test: 
       * when no osb-cmdb bump isNoOpUpgradeBackingService() should return false, regardless of backend and request
          * Rationale: expecting osb client (CF) to be filtering noops upstreams.
          * We only force noops for osb-cmdb upgrades (i.e. without backend upgrades) 
       * MaintenanceInfoFormatterService has no configured maintenanceInfo
       * isNoOpUpgradeBackingService() should return false 
    * [ ] Fix NPE
-      * Check whether same NPE can occur in formatForBackendInstance()
+      * [ ] Check whether same NPE can occur in 
+         * [ ] formatForBackendInstance(): no test covers a MIS with null MI
+         * [ ] other methods
+      * [ ] Rationale for a MaintenanceInfoService with null MI
+      
    * [ ] Relaunch acceptance test, make it pass
       * [ ] Configure maintenance info bump
    * [ ] Commit & push, and get feedback from AT pipeline
