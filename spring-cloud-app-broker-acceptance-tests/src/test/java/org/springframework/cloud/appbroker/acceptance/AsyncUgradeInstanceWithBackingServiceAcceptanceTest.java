@@ -87,39 +87,47 @@ class AsyncUgradeInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFound
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"logging.level.com.orange.oss.osbcmdb.catalog=debug",
 
-		//We can't enable dynamic catalog to bump maintenance info, otherwise the catalog is fetched from the hosting
-		//CF default org
+		//We can't enable dynamic catalog to bump maintenance info, otherwise the catalog is fetched from the default
+		//org of the hosting CF
 		"osbcmdb.dynamic-catalog.enabled=false",
 
-		//therefore we have to override the brokered service catalog
+		//therefore we simulate the maintenance info bump: with a manual override the brokered service catalog
 		"spring.cloud.openservicebroker.catalog.services[0].plans[0].maintenance_info.version=2.1.1",
 		"spring.cloud.openservicebroker.catalog.services[0].plans[0].maintenance_info.description=COAB adds dashboard" +
 			" url\nOsb-cmdb displays dashboard url",
 
-		// as well as the backing service
+		// as well as manual override the backing service catalog
 		"spring.cloud.openservicebroker.catalog.services[1].plans[0].maintenance_info.version=1.0.1",
 		"spring.cloud.openservicebroker.catalog.services[1].plans[0].maintenance_info.description=COAB adds dashboard url"
 
 	})
 	@DisplayName("Initial service instance is upgraded to with backing service broker v2")
-	void upgradesServiceInstance() {
+	void upgradesServiceInstanceToV2() {
 		//given an update of osb-cmdb deployment to bump maintenance info
 		//and update of the backing service plan1 with some maintenance info
 		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
-
+		//osb client sees the brokered service as not yet upgraded
+		assertThat(brokeredServiceInstance.getDashboardUrl()).isNull();
+		MaintenanceInfo brokeredServiceInstanceMaintenanceInfo = brokeredServiceInstance.getMaintenanceInfo();
+		assertThat(brokeredServiceInstanceMaintenanceInfo).isNotNull();
+		assertThat(brokeredServiceInstanceMaintenanceInfo.getVersion())
+			.withFailMessage("before upgrade, description should be null")
+			.isNull();
+		assertThat(brokeredServiceInstanceMaintenanceInfo.getVersion())
+			.withFailMessage("before upgrade, version should be null")
+			.isNull();
+		//TODO: assert that in catalog, Plan MaintenanceInfo is updated and thus visible to OSB users.
 
 		//When requesting to upgrade the existing service instance, with the merged maintenance info
-		updateServiceInstance(brokeredServiceInstance.getId(), "2.1.1");
-//		given(brokerFixture.serviceInstanceUpgradeRequest(SERVICE_ID, PLAN_ID, "2.1.1"))
-//			.when()
-//			.patch(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
-//			.then()
-//			//update request is accepted as a noop
-//			.statusCode(HttpStatus.OK.value());
+		upgradeService(brokeredServiceInstanceName(), "2.1.1");
 
 		//then the brokered service instance now includes a dashboard url
-		assertThat(brokeredServiceInstance.getDashboardUrl()).isNotBlank();
-
+		ServiceInstance upgradedBrokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
+		// and the service instance is not upgradeable anymore, osb users see it was upgraded to last version.
+		MaintenanceInfo upgradedBrokeredServiceInstanceMI = upgradedBrokeredServiceInstance.getMaintenanceInfo();
+		assertThat(upgradedBrokeredServiceInstanceMI).isNotNull();
+		assertThat(upgradedBrokeredServiceInstanceMI.getVersion()).isEqualTo("2.1.1");
+		assertThat(upgradedBrokeredServiceInstance.getDashboardUrl()).isNotBlank();
 	}
 
 	@Test

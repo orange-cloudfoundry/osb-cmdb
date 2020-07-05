@@ -358,18 +358,16 @@ public class CloudFoundryService {
 			.doOnError(error -> LOG.error("Error updating service instance " + serviceInstanceName + ": " + error));
 	}
 
-	//waiting for https://github.com/cloudfoundry/cf-java-client/issues/1052
-		public Mono<Void> syncUpgradeServiceInstance(final String serviceInstanceId, final String version) {
-		return cloudFoundryClient.serviceInstances().update(org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceRequest.builder()
-					.serviceInstanceId(serviceInstanceId)
-					.maintenanceInfo(MaintenanceInfo.builder()
-						.version(version)
-						.build())
+	public Mono<Void> syncUpgradeServiceInstance(final String serviceInstanceName, final String version) {
+		return cloudFoundryOperations.services()
+			.updateInstance(UpdateServiceInstanceRequest.builder()
+				.serviceInstanceName(serviceInstanceName)
+				.maintenanceInfo(MaintenanceInfo.builder()
+					.version(version)
 					.build())
-			.then()
-			.doOnSuccess(item -> LOG.info("Upgraded service instance " + serviceInstanceId))
-			.doOnError(error -> LOG.error("Error upgrading service instance " + serviceInstanceId + ": " + error));
-
+				.build())
+			.doOnSuccess(item -> LOG.info("Upgrated service instance " + serviceInstanceName))
+			.doOnError(error -> LOG.error("Error upgrating service instance " + serviceInstanceName + ": " + error));
 	}
 
 
