@@ -71,7 +71,8 @@ class DynamicCatalogServiceAutoConfigurationTest {
 		ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 			.withConfiguration(AutoConfigurations.of(
 				SingleServiceDefinitionAnswerAutoConfig.class,
-				DynamicCatalogServiceAutoConfiguration.class
+				DynamicCatalogServiceAutoConfiguration.class,
+				MockedMaintenanceInfoFormatterServiceConfig.class
 			))
 //			.withPropertyValues(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true") //Not sure why this seems ignored
 			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
@@ -88,7 +89,8 @@ class DynamicCatalogServiceAutoConfigurationTest {
 		ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 			.withConfiguration(AutoConfigurations.of(
 				SingleServiceDefinitionAnswerAutoConfig.class,
-				DynamicCatalogServiceAutoConfiguration.class
+				DynamicCatalogServiceAutoConfiguration.class,
+				MockedMaintenanceInfoFormatterServiceConfig.class
 			))
 //			.withPropertyValues(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true") //Not sure why this seems ignored
 			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true",
@@ -120,10 +122,12 @@ class DynamicCatalogServiceAutoConfigurationTest {
 		ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
 			.withConfiguration(AutoConfigurations.of(
 				DynamicCatalogServiceAutoConfiguration.class,
+				MockedDynamicCatalogDependenciesAutoConfiguration.class,
 				EmptyServiceDefinitionAnswerAutoConfig.class))
 			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
 		applicationContextRunner.run(context -> {
 			assertThat(context).hasFailed();
+			assertThat(context).getFailure().hasMessageStartingWith("Error creating bean with name 'catalog'");
 		});
 	}
 
@@ -158,6 +162,14 @@ class DynamicCatalogServiceAutoConfigurationTest {
 
 		protected abstract List<ServiceDefinition> serviceDefinitionsAnswer();
 
+	}
+
+	@Configuration
+	static class MockedMaintenanceInfoFormatterServiceConfig {
+		@Bean
+		public MaintenanceInfoFormatterService maintenanceInfoFormatterService() {
+			return new MaintenanceInfoFormatterService(null);
+		}
 	}
 
 	@Configuration
