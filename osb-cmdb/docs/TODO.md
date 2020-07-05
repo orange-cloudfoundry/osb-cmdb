@@ -27,9 +27,13 @@ finish AT:
         2020 
       ```
    * [ ] Reproduce NPE in a unit test: 
+      * when no osb-cmdb bump isNoOpUpgradeBackingService() should return false, regardless of backend and request
+         * Rationale: expecting osb client (CF) to be filtering noops upstreams.
+         * We only force noops for osb-cmdb upgrades (i.e. without backend upgrades) 
       * MaintenanceInfoFormatterService has no configured maintenanceInfo
       * isNoOpUpgradeBackingService() should return false 
    * [ ] Fix NPE
+      * Check whether same NPE can occur in formatForBackendInstance()
    * [ ] Relaunch acceptance test, make it pass
       * [ ] Configure maintenance info bump
    * [ ] Commit & push, and get feedback from AT pipeline

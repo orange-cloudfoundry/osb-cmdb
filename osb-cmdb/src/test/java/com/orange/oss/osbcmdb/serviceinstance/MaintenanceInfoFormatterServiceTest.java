@@ -124,12 +124,38 @@ class MaintenanceInfoFormatterServiceTest {
 			.isInstanceOf(ServiceBrokerMaintenanceInfoConflictException.class);
 	}
 
+	/**
+	 *  Rationale: we are expecting osb client (CF) to be filtering noops upstreams.
+	 *  We only force noops for osb-cmdb upgrades (i.e. without backend upgrades)
+	 */
+	@DisplayName("an upgrade request should not be a noop, when formatter has no osb-cmdb bump, regardless of backend and request")
+	@Test
+	void test_isNoOpUpgradeBackingService_without_cmdb_bump() {
+		//Given
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			null);
+		MaintenanceInfo brokeredServiceMi = maintenanceInfoFormatterService.formatForCatalog(aBackendInfoV2());
+		UpdateServiceInstanceRequest updateServiceInstanceRequestWithMaintenanceUpgradeRequested = UpdateServiceInstanceRequest.builder()
+			.planId("a-plan")
+			.maintenanceInfo(brokeredServiceMi)
+			.previousValues(new UpdateServiceInstanceRequest.PreviousValues("a-plan", aBackendInfoV1()))
+			.plan(Plan.builder()
+				.maintenanceInfo(brokeredServiceMi)
+				.build())
+			.build();
+		//when
+		boolean isNoOpUpgradeBackingService = maintenanceInfoFormatterService
+			.isNoOpUpgradeBackingService(updateServiceInstanceRequestWithMaintenanceUpgradeRequested);
+		assertThat(isNoOpUpgradeBackingService).isFalse();
+	}
+
 	@DisplayName("an upgrade request should be a noop, when backing service has no MI")
 	@Test
 	void test_isNoOpUpgradeBackingService_when_default_backend() {
 		//Given
+		MaintenanceInfo osbCmdbMaintenanceInfo = anOsbCmdbInfoV1();
 		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
-			anOsbCmdbInfoV1());
+			osbCmdbMaintenanceInfo);
 		MaintenanceInfo cmdbDefaultMI = maintenanceInfoFormatterService.formatForCatalog(null);
 		UpdateServiceInstanceRequest updateServiceInstanceRequest = UpdateServiceInstanceRequest.builder()
 			.planId("a-plan")
