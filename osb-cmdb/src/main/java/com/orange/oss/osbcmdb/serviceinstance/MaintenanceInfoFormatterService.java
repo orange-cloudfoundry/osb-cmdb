@@ -1,5 +1,7 @@
 package com.orange.oss.osbcmdb.serviceinstance;
 
+import java.util.Objects;
+
 import de.skuzzle.semantic.Version;
 import org.apache.commons.lang3.StringUtils;
 import reactor.util.Logger;
@@ -14,6 +16,12 @@ import org.springframework.lang.Nullable;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
 public class MaintenanceInfoFormatterService {
+
+	/**
+	 * Configuration prefix for the MaintenanceInfo configuration bean
+	 */
+	public static final String PROPERTY_PREFIX = "osbcmdb.maintenanceinfo";
+
 	protected final Logger LOG = Loggers.getLogger(MaintenanceInfoFormatterService.class);
 
 	private static final MaintenanceInfo DEFAULT_MISSING_BACKEND_MI = MaintenanceInfo.builder()
@@ -25,7 +33,16 @@ public class MaintenanceInfoFormatterService {
 	private MaintenanceInfo osbCmdbMaintenanceInfo;
 
 	public MaintenanceInfoFormatterService(MaintenanceInfo osbCmdbMaintenanceInfo) {
+		LOG.info("MaintenanceInfo configured is {}", osbCmdbMaintenanceInfo);
 		this.osbCmdbMaintenanceInfo = osbCmdbMaintenanceInfo;
+	}
+
+	/**
+	 * Supports tests only
+	 */
+	@Nullable
+	public MaintenanceInfo getOsbCmdbMaintenanceInfo() {
+		return osbCmdbMaintenanceInfo;
 	}
 
 	public org.cloudfoundry.client.v2.MaintenanceInfo formatForBackendInstance(UpdateServiceInstanceRequest request) {
@@ -111,16 +128,19 @@ public class MaintenanceInfoFormatterService {
 	public void validateAnyUpgradeRequest(UpdateServiceInstanceRequest request) {
 		MaintenanceInfo catalogMi = request.getPlan().getMaintenanceInfo();
 		MaintenanceInfo requestedMi = request.getMaintenanceInfo();
-		if (requestedMi != null && ! requestedMi.equals(catalogMi)) {
-			throw new ServiceBrokerMaintenanceInfoConflictException("unknown requested maintenance info: " + requestedMi + " Currently supported maintenance info is: " + catalogMi);
-		}
+		validateRequestedMaintenanceInfo(requestedMi, catalogMi);
 	}
 
 	public void validateAnyCreateRequest(CreateServiceInstanceRequest request) {
 		MaintenanceInfo catalogMi = request.getPlan().getMaintenanceInfo();
 		MaintenanceInfo requestedMi = request.getMaintenanceInfo();
-		if (requestedMi != null && ! requestedMi.equals(catalogMi)) {
-			throw new ServiceBrokerMaintenanceInfoConflictException("unknown requested maintenance info: " + requestedMi + " Currently supported maintenance info is: " + catalogMi);
+		validateRequestedMaintenanceInfo(requestedMi, catalogMi);
+	}
+
+	private void validateRequestedMaintenanceInfo(MaintenanceInfo requestedMi, MaintenanceInfo catalogMi) {
+		if (requestedMi != null && !Objects.equals(requestedMi.getVersion(), catalogMi.getVersion())) {
+			throw new ServiceBrokerMaintenanceInfoConflictException("unknown requested maintenance info: " + requestedMi
+				.getVersion() + " Currently supported maintenance info is: " + catalogMi.getVersion());
 		}
 	}
 

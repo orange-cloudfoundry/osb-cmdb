@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.servicebroker.autoconfigure.web.MaintenanceInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -172,6 +173,20 @@ public class OsbCmdbBrokerConfiguration {
 		return new OsbCmdbBrokerProperties();
 	}
 
+	@Bean
+	@ConfigurationProperties(prefix = MaintenanceInfoFormatterService.PROPERTY_PREFIX, ignoreUnknownFields = false)
+	public MaintenanceInfo osbCmdbMaintenanceInfo() {
+		return new MaintenanceInfo();
+	}
+
+	@Bean
+	public MaintenanceInfoFormatterService maintenanceInfoFormatterService(
+		@Autowired(required = false)
+			MaintenanceInfo osbCmdbMaintenanceInfo) {
+		boolean missingOrEmptyMIConfig = osbCmdbMaintenanceInfo == null ||
+			(osbCmdbMaintenanceInfo.getVersion() == null && osbCmdbMaintenanceInfo.getDescription() == null);
+		return new MaintenanceInfoFormatterService(missingOrEmptyMIConfig ? null: osbCmdbMaintenanceInfo.toModel());
+	}
 
 
 	/**
@@ -192,14 +207,7 @@ public class OsbCmdbBrokerConfiguration {
 			ServiceInstanceInterceptor serviceInstanceInterceptor,
 		Environment environment,
 		OsbCmdbBrokerProperties osbCmdbBrokerProperties,
-		@Autowired(required = false)
 		MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
-
-		if (maintenanceInfoFormatterService == null) {
-			//When dynamic catalog is disabled, the MI can't be bumped in catalog, therefore using a default version
-			// instead
-			maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(null);
-		}
 
 		String acceptanceTestsProfile = "acceptanceTests";
 		if (serviceInstanceInterceptor == null && environment.acceptsProfiles(Profiles.of(acceptanceTestsProfile))) {

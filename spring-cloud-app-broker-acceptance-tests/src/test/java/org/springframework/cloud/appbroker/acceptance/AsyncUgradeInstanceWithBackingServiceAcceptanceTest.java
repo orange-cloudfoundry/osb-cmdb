@@ -87,29 +87,35 @@ class AsyncUgradeInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFound
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"logging.level.com.orange.oss.osbcmdb.catalog=debug",
 
-		"osbcmdb.dynamic-catalog.enabled=true",
-		"osbcmdb.dynamic-catalog.maintenanceInfo.version=1.1.0",
-		"osbcmdb.dynamic-catalog.maintenanceInfo.description=Osb-cmdb displays dashboard url",
-		// backing service
+		//We can't enable dynamic catalog to bump maintenance info, otherwise the catalog is fetched from the hosting
+		//CF default org
+		"osbcmdb.dynamic-catalog.enabled=false",
+
+		//therefore we have to override the brokered service catalog
+		"spring.cloud.openservicebroker.catalog.services[0].plans[0].maintenance_info.version=2.1.1",
+		"spring.cloud.openservicebroker.catalog.services[0].plans[0].maintenance_info.description=COAB adds dashboard" +
+			" url\nOsb-cmdb displays dashboard url",
+
+		// as well as the backing service
 		"spring.cloud.openservicebroker.catalog.services[1].plans[0].maintenance_info.version=1.0.1",
 		"spring.cloud.openservicebroker.catalog.services[1].plans[0].maintenance_info.description=COAB adds dashboard url"
 
 	})
 	@DisplayName("Initial service instance is upgraded to with backing service broker v2")
 	void upgradesServiceInstance() {
-		//given an update of osb-cmdb deployment to enable dynamic catalog and bump maintenance info
+		//given an update of osb-cmdb deployment to bump maintenance info
 		//and update of the backing service plan1 with some maintenance info
 		ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
 
 
 		//When requesting to upgrade the existing service instance, with the merged maintenance info
-		//Can't yet do it with cf-java-client, see https://github.com/cloudfoundry/cf-java-client/issues/1048
-		given(brokerFixture.serviceInstanceUpgradeRequest(SERVICE_ID, PLAN_ID, "2.1.1"))
-			.when()
-			.patch(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
-			.then()
-			//update request is accepted as a noop
-			.statusCode(HttpStatus.OK.value());
+		updateServiceInstance(brokeredServiceInstance.getId(), "2.1.1");
+//		given(brokerFixture.serviceInstanceUpgradeRequest(SERVICE_ID, PLAN_ID, "2.1.1"))
+//			.when()
+//			.patch(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
+//			.then()
+//			//update request is accepted as a noop
+//			.statusCode(HttpStatus.OK.value());
 
 		//then the brokered service instance now includes a dashboard url
 		assertThat(brokeredServiceInstance.getDashboardUrl()).isNotBlank();

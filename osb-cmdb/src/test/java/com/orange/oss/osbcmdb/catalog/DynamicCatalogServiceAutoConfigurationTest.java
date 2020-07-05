@@ -19,6 +19,7 @@ package com.orange.oss.osbcmdb.catalog;
 import java.util.List;
 
 import com.orange.oss.osbcmdb.CloudFoundryTargetProperties;
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ import org.springframework.context.annotation.Configuration;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.RETURNS_SMART_NULLS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -141,6 +143,8 @@ class DynamicCatalogServiceAutoConfigurationTest {
 		CloudFoundryTargetProperties targetProperties () {
 			return mock(CloudFoundryTargetProperties.class);
 		}
+		@Bean
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService() { return mock(MaintenanceInfoFormatterService.class, RETURNS_SMART_NULLS); }
 	}
 
 	@Configuration
