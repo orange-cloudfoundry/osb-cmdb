@@ -1,12 +1,17 @@
-finish AT: 
+* [ ] finish AT: 
    * [x] bump cf-java-client and sc-osb
    * [x] Relaunch acceptance test, make it pass
       * [x] Configure maintenance info bump
    * [x] Commit & push, and get feedback from AT pipeline
-   * [ ] Remove workarounds following cf-java-client and sc-osb bumps 
-workaround cf-java client https://github.com/cloudfoundry/cf-java-client/issues/1052 in CloudFoundryServices.upgradeServices by duplicating cf-java-client code for
- 
-
+   * [x] Remove workarounds following cf-java-client and sc-osb bumps as possible 
+ * [ ] integrate in paas-templates
+    * [ ] update manifest.yml to include new properties 
+ * [ ] manually test with cf-mysql
+    * [ ] bump one of osb-cmdb instances with an existing SI
+    * [ ] manually upgrade service and check dashboard appears
+ * [ ] Review pending steps below
+ * [ ] Release new version
+ * [ ] Bump version in paas-templates
 
 Design maintenance info
 * [x] Decide which version format to use when merging/unmerging osb-cmdb and backing service versions
