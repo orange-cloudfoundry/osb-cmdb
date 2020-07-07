@@ -4,6 +4,9 @@
       * [x] Configure maintenance info bump
    * [x] Commit & push, and get feedback from AT pipeline
    * [x] Remove workarounds following cf-java-client and sc-osb bumps as possible 
+   * [x] Review AT scenario indeed matches the most important scenarios
+      * [x] existing shared brokered cf-mysql instances missing dashboard URLs (backing service had dashboard url): NOT YET COVERED
+      * [x] existing dedicated brokered cf-mysql instances missing dashboard URLs (backing service had no dashboard url): COVERED
  * [ ] integrate in paas-templates
     * [ ] update manifest.yml to include new properties 
  * [ ] manually test with cf-mysql
