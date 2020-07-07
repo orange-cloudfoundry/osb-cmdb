@@ -17,7 +17,6 @@ cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc -
        * [Static catalog](#static-catalog)
     * [Typical CMDB content](#typical-cmdb-content)
     * [Metadata attached to backing services](#metadata-attached-to-backing-services)
-    * [Dynamic catalog](#dynamic-catalog-1)
  * [Technical details](#technical-details)
     * [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
        * [Future support for additional meta-data](#future-support-for-additional-meta-data)
@@ -124,20 +123,9 @@ Backing services register with osb-cmdb using the CF CLI commands for [managing 
 
 Osb-cmdb operators might consider using terraform with the [cloudfoundry-community/terraform-provider-cf](https://github.com/cloudfoundry-community/terraform-provider-cf) for using a declarative approach, see [cloudfoundry_service_broker](https://github.com/cloudfoundry-community/terraform-provider-cf/blob/master/docs/resources/service_broker.md) and [cloudfoundry_service_access](https://github.com/cloudfoundry-community/terraform-provider-cf/blob/master/docs/resources/service_plan_access.md) resources
 
-##### Dynamic catalog
-
-Osb-cmdb by default dynamically generates a catalog from the services and service plans visible from the backing service organization configured with the `spring.cloud.appbroker.deployer.cloudfoundry.default-org` property. The following properties enable configuring the dynamically generated catalog
-
-property name | default value | description  
--- | -- | -- 
-osbcmdb.dynamic-catalog.enabled | true | enables dynamic catalog when set to true 
-osbcmdb.dynamic-catalog.catalog.services.suffix| null| when set, adds a suffix to every service definition names 
-osbcmdb.dynamic-catalog.catalog.services.excludeBrokerNamesRegexp| null | when set, exclude service brokers from dynamic catalog whose name match the specified java regular expression 
-
-
 ##### Static catalog
 
-Osb-cmdb also supports a statically configured catalog of brokered services, by setting `osbcmdb.dynamic-catalog.enabled=false`, and configuring the spring-cloud-open-service-broker catalog.
+Osb-cmdb supports a statically configured catalog of brokered services, by setting `osbcmdb.dynamic-catalog.enabled=false`, and configuring the spring-cloud-open-service-broker catalog.
 
 Following is an example of a simple [spring-cloud-open-service-broker catalog configuration](https://docs.spring.io/spring-cloud-open-service-broker/docs/3.1.1.RELEASE/reference/html5/#providing-a-catalog-using-properties) (without detailed catalog customization)
 
@@ -165,6 +153,42 @@ Following is an example of a simple [spring-cloud-open-service-broker catalog co
                   description: A standard plan
                   free: true
 ```
+
+
+
+##### Dynamic catalog
+
+With large marketplace being brokered, manually maintaining the catalog might be a tedious task.
+
+Osb-Cmdb brings the feature of dynamic catalog generation. This feature is enabled by default, and can be opted-out if necessary. 
+
+At start up, the broker will fetch the service definitions from the target CF instance, as visible from the default organization and space (the equivalent of the `cf marketplace` command). For now service plan visibility is not fetched.
+
+As a result, a catalog of Brokered services is generated with a one-to-one mapping between brokered services and backing services. 
+The following properties can be used to tune this mapping:
+
+```yaml
+  osbcmdb:
+    dynamic-catalog:
+      enabled: "true" #Turned on by default. Enables dynamic catalog. Catalog and brokered services properties 
+      catalog:
+        services:
+          suffix: "-cmdb" #Suffix to add each service definition
+          excludeBrokerNamesRegexp: ".*cmdb.*" # Excludes broker names matching this regexp. Good to excluding osb-cmdb itself to avoid brokering itself. 
+```
+
+Additionally, the generated catalog is dumped on disk onto `/tmp/osb-cmdb-dynamicCatalog.yml` (see org.springframework.cloud.appbroker.autoconfigure.ServiceConfigurationYamlDumper)
+
+This can be used as a baseline for manually tuned catalog when supported tunings in automated generation are insufficient.  
+
+The following table further documents the options and their default values:
+
+property name | default value | description  
+-- | -- | -- 
+osbcmdb.dynamic-catalog.enabled | true | enables dynamic catalog when set to true 
+osbcmdb.dynamic-catalog.catalog.services.suffix| null| when set, adds a suffix to every service definition names 
+osbcmdb.dynamic-catalog.catalog.services.excludeBrokerNamesRegexp| null | when set, exclude service brokers from dynamic catalog whose name match the specified java regular expression 
+
 
 
 #### Typical CMDB content
@@ -331,32 +355,6 @@ $ cf curl "/v3/service_instances?label_selector=brokered_service_instance_guid==
 
 ```
 
-
-#### Dynamic catalog
-
-With large marketplace being brokered, manually maintaining the catalog might be a tedious task.
-
-Osb-Cmdb brings the feature of dynamic catalog generation which can be opted-in as follows. 
-
-At start up, the broker will fetch the service definitions from the target CF instance, as visible from the default organization and space (the equivalent of the `cf marketplace`command). For now service plan visibility is not fetched.
-
-As a result, a catalog of Brokered services is generated with a one-to-one mapping between brokered services and backing services. 
-The following properties can be used to tune this mapping:
-
-```yaml
-  osbcmdb:
-    dynamic-catalog:
-      enabled: "true" #Turn on dynamic catalog. Catalog and brokered services properties 
-      catalog:
-        services:
-          suffix: "-cmdb" #Suffix to add each service definition
-          excludeBrokerNamesRegexp: ".*cmdb.*" # Excludes broker names matching this regexp. Good to excluding osb-cmdb itself to avoid brokering itself. 
-```
-
-Additionally, the generated catalog is dumped on disk onto `/tmp/osb-cmdb-dynamicCatalog.yml` (see org.springframework.cloud.appbroker.autoconfigure.ServiceConfigurationYamlDumper)
-
-This can be used as a baseline for manually tuned catalog when supported tunings in automated generation are insufficient.  
-
 ### Technical details
 
 #### osb-cmdb osb client calls requirements
@@ -387,7 +385,7 @@ These annotations get propagated into service monitoring/alerts.
 
 #### OSB-api extension used with backing service brokers   
 
-By default, when propagating OSB calls to backing service brokers, osb-cmdb adds an extra `x-osb-cmdb` param to the [service instance provisionning call](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#provisioning) containing additional metadata matching the [inventory metadata]((#metadata-attached-to-backing-services)). This can be opted-out with the `osbcmdb.broker.propagateMetadataAsCustomParam=false` flag
+By default, when propagating OSB calls to backing service brokers, osb-cmdb adds an extra `x-osb-cmdb` param to the [service instance provisionning call](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#provisioning) containing additional metadata matching the [inventory metadata](#metadata-attached-to-backing-services). This can be opted-out with the `osbcmdb.broker.propagateMetadataAsCustomParam=false` flag
 
 ```json
 {
