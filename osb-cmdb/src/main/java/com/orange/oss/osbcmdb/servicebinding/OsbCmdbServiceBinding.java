@@ -59,8 +59,9 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 		if (existingSi == null) {
 			LOG.warn("Asked to bind service instance id={} which does not exists in backing space associated with " +
 				"service definition name={}", request.getServiceInstanceId(), request.getServiceDefinition().getName());
-			throw new ServiceBrokerInvalidParametersException("instance_id: ", request.getServiceInstanceId() + " " +
-				"does not match service_id=" + request.getServiceDefinitionId());
+			throw new ServiceBrokerInvalidParametersException("instance_id path param: " + request.getServiceInstanceId() + " " +
+				"does not match service_id=" + request.getServiceDefinitionId() + "(possibly missing backing service " +
+				"instance guid associated with requested instance_id of type service_id))");
 		}
 
 		//Directly use the v2 api to avoid a second API call to fetch the service key credentials

@@ -5,16 +5,24 @@
    * [x] Commit & push, and get feedback from AT pipeline
    * [x] Remove workarounds following cf-java-client and sc-osb bumps as possible 
    * [x] Review AT scenario indeed matches the most important scenarios
-      * [x] existing shared brokered cf-mysql instances missing dashboard URLs (backing service had dashboard url): NOT YET COVERED
       * [x] existing dedicated brokered cf-mysql instances missing dashboard URLs (backing service had no dashboard url): COVERED
- * [ ] integrate in paas-templates
-    * [ ] update manifest.yml to include new properties 
- * [ ] manually test with cf-mysql
-    * [ ] bump one of osb-cmdb instances with an existing SI
-    * [ ] manually upgrade service and check dashboard appears
- * [ ] Review pending steps below
- * [ ] Release new version
- * [ ] Bump version in paas-templates
+      * [x] existing shared brokered cf-mysql instances missing dashboard URLs (backing service had dashboard url): NOT YET COVERED, will be covered manually, in addition to unit test coverage. 
+* [ ] update README.md with supported properties and MI
+* [ ] integrate in paas-templates
+   * [ ] update manifest.yml to include new properties for enabling osb-cmdb MI bump
+* [ ] manually test with cf-mysql
+   * [ ] configure osb-cmdb-0 to use `maintenance-info` tarball
+   * [ ] bump one of osb-cmdb instances with an existing SI
+      * 4 instances available created before osb-cmdb 1.0
+   * [ ] manually upgrade service and check dashboard appears
+   * [ ] configure osb-cmdb-0 to use `p-mysql` in smoke test & check new instances indeed have dashboard url
+* [x] Review pending steps below
+* [ ] Release new version
+* [ ] Bump version in paas-templates
+* [ ] test and push osb-cmdb-ci workaround for failed purge + share workaround in cli issue
+* [ ] Refine acceptance test coverage
+   * [ ] Refine acceptance test to cover case of backing service which should not be upgraded (shared cf-mysql)
+   * [ ] Refine acceptance test to assert whether backing service was upgraded or not
 
 Design maintenance info
 * [x] Decide which version format to use when merging/unmerging osb-cmdb and backing service versions
@@ -69,13 +77,15 @@ Implement maintenance info
       * shouldUpgradeBackingService(requested osb-cmdb-mi): 
          * unmerge(backing service mi, osb-cmdb mi))
          * true if unmerged != 0.0.0
-* [ ] DynamicCatalog
+* [x] DynamicCatalog
    * [x] configuration properties
    * [x] set maintenance info to broker value
    * [x] merge maintenance info
       * [x] add a new collaborator to OsbCmdbServiceInstance that can unit-tested: MaintenanceInfoFormatterService 
          * [x] inject PlanMapperProperties
-   * [ ] Make sure to set "plan_updateable": true when defaulting MI beyond no backing service MI 
+   * [x] Make sure to set `plan_updateable: true` when defaulting MI beyond no backing service MI
+      * Not necessary according to CLI tests at https://github.com/cloudfoundry/cli/blob/eb8e9de1025aa3e86ae22a10c01796a0b30a9366/command/v6/service_command_test.go#L702-L732
+      * Only the presence of maintenance_info seems sufficient to trigger upgrades, no need for `plan_updateable` or `allow_context_updates`
    * [x] test
       * [x] unit test
       * [x] ~~component test~~
@@ -83,7 +93,7 @@ Implement maintenance info
          * which minimal case to cover ? which risk not covered by UT ?
             * no specific code in ServiceInstanceService, only in DynamicCatalog which is covered by UT
          
-* [ ] CSI
+* [x] CSI
    * [x] MI is not matching brokered service MI: reject
       * Pb: missing MI from CSIReq https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/290 
       * [x] contribute SC-OSB PR (+ bump dependency using jit pack)
@@ -93,7 +103,7 @@ Implement maintenance info
       * [x] contribute SC-OSB PR (+ bump dependency using jit pack)
    * [x] backing broker has no maintenance info in its catalog (following unmerge) (case of cf-mysql already returning dashboard) 
       * [x] backing broker does not receive USI
-         * [ ] UT
+         * [x] UT
          * [ ] AT
              * AsyncUgradeInstanceWithBackingServiceAcceptanceTest
                 * Simulates backend broker upgrade with SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor that only differ in returned dashboard depending on presence of maintenance info
