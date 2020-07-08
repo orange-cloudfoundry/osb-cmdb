@@ -1,4 +1,6 @@
-* [ ] finish AT: 
+* [x] Improve error handling of USI when backing service is missing, likely resulting in NPE currently
+
+* [x] finish AT: 
    * [x] bump cf-java-client and sc-osb
    * [x] Relaunch acceptance test, make it pass
       * [x] Configure maintenance info bump

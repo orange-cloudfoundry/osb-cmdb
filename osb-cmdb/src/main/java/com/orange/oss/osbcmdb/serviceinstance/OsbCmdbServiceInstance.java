@@ -479,6 +479,13 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
 		ServiceInstance existingBackingServiceInstance = getCfServiceInstance(spacedTargetedOperations,
 			backingServiceInstanceName);
+
+		if (existingBackingServiceInstance == null) {
+			LOG.info("Asked to update a brokered service instance with guid {} for which no backing service instance " +
+				"was found");
+			throw new ServiceInstanceDoesNotExistException(backingServiceInstanceName);
+		}
+
 		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
