@@ -9,7 +9,7 @@
    * [x] Review AT scenario indeed matches the most important scenarios
       * [x] existing dedicated brokered cf-mysql instances missing dashboard URLs (backing service had no dashboard url): COVERED
       * [x] existing shared brokered cf-mysql instances missing dashboard URLs (backing service had dashboard url): NOT YET COVERED, will be covered manually, in addition to unit test coverage. 
-* [ ] update README.md with supported properties and MI
+* [x] update README.md with supported properties and MI
 * [ ] integrate in paas-templates
    * [ ] update manifest.yml to include new properties for enabling osb-cmdb MI bump
 * [ ] manually test with cf-mysql

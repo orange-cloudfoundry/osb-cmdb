@@ -12,11 +12,16 @@ cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc -
  * [Getting started](#getting-started)
     * [Deploying](#deploying)
     * [Increasing log levels dynamically](#increasing-log-levels-dynamically)
+    * [Accessing http traces](#accessing-http-traces)
+    * [Accessing other production-ready actuator endpoints](#accessing-other-production-ready-actuator-endpoints)
     * [Catalog management](#catalog-management)
-       * [Dynamic catalog](#dynamic-catalog)
        * [Static catalog](#static-catalog)
+       * [Dynamic catalog](#dynamic-catalog)
     * [Typical CMDB content](#typical-cmdb-content)
     * [Metadata attached to backing services](#metadata-attached-to-backing-services)
+       * [Metadata for CF OSB client](#metadata-for-cf-osb-client)
+       * [Metadata for K8S OSB client](#metadata-for-k8s-osb-client)
+    * [Refreshing OSB client cache through Maintenance-info](#refreshing-osb-client-cache-through-maintenance-info)
  * [Technical details](#technical-details)
     * [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
        * [Future support for additional meta-data](#future-support-for-additional-meta-data)
@@ -262,7 +267,9 @@ brokered_service_api_info_location | [X-Api-Info-Location header](https://docs.c
 
 (*) annotations can not be queried in CF
 
-To lookup metadata attached to a backing service instance, scripts is available at https://github.com/orange-cloudfoundry/cf-cli-cmdb-scripts to workaround incomplete CF V3 API and CF V7 CLI:
+To lookup metadata attached to a backing service instance, scripts is available at https://github.com/orange-cloudfoundry/cf-cli-cmdb-scripts to workaround incomplete CF V3 API and CF V7 CLI
+
+##### Metadata for CF OSB client 
 
 ```bash
 # Example of a backing service being looked up (corresponding to a brokered service instance provisionned by a CF OSB client)
@@ -270,9 +277,9 @@ $ cf s
 Getting services in org osb-cmdb-backend-services-org-client-0 / space p-mysql as xx...
 
 name                                           service   plan   bound apps   last operation     broker    upgrade available
-p-mysql-3aa96c94-1d01-4389-ab4f-260d99257215   p-mysql   10mb                create succeeded   p-mysql 
+3aa96c94-1d01-4389-ab4f-260d99257215   p-mysql   10mb                create succeeded   p-mysql 
 
-$ cf_labels_service p-mysql-80134f9b-b6fd-48e2-8ca5-e185c4cb5ce0
+$ cf_labels_service 80134f9b-b6fd-48e2-8ca5-e185c4cb5ce0
 {
     "labels": {
         "brokered_service_instance_guid": "3aa96c94-1d01-4389-ab4f-260d99257215",
@@ -290,8 +297,11 @@ $ cf_labels_service p-mysql-80134f9b-b6fd-48e2-8ca5-e185c4cb5ce0
 }
 ```
 
+##### Metadata for K8S OSB client 
+
+
 ```
-# Example of a backing service being looked up (corresponding to a brokered service instance provisionned by a CF OSB client)
+# Example of a backing service being looked up (corresponding to a brokered service instance provisionned by a K8S OSB client)
 $ cf s
 Getting services in org osb-cmdb-backend-services-org-client-0 / space p-mysql as xx...
 
@@ -363,6 +373,20 @@ $ cf curl "/v3/service_instances?label_selector=brokered_service_instance_guid==
 }
 
 ```
+
+#### Refreshing OSB client cache through Maintenance-info  
+
+OSB clients maintain a cache of the brokered service instance data returned from the OSB provisionning endpoint. In particular, this includes the dashboard url. 
+
+Whenever the backing service dashboard url changes and needs to be reflected to brokered service instance fetched by OSB clients, OSB clients can request for a [service instance upgrade](https://docs.cloudfoundry.org/devguide/services/managing-services.html#upgrade).
+
+Additionally, the 0.x version of osb-cmdb used to not propagate backing service instance dashboard to brokered services. Starting with 1.1.0 version, osb-cmdb can be opted-in to bump the [maintenance_info](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#maintenance-info-object) object within the served catalog, which enables users to upgrade brokered services without backing services supporting upgrades. The following configuration properties control the maintenance-info behavior:
+
+property name | default value | example value | description   
+-- | -- | -- 
+osbcmdb.maintenanceinfo.version     | null| 1.1.0 | set as version if backing service has no maintenance_info.version, merged through addition otherwise 
+osbcmdb.maintenanceinfo.description | null| osb-cmdb now propagates dashboard url | set as description if backing service has no maintenance_info.description, merged through string concat with LF otherwise 
+ 
 
 ### Technical details
 
