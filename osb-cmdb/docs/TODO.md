@@ -1,8 +1,20 @@
 
+* [ ] Release new version
+* [x] Refine default log level in paas-templates 
+* [ ] Bump version in paas-templates
+* [ ] test and push osb-cmdb-ci workaround for failed purge + share workaround in cli issue
+   * [ ] use cf curl --fail
+* [ ] Refine MI acceptance test coverage
+   * [ ] Refine acceptance test to cover case of backing service which should not be upgraded (shared cf-mysql)
+   * [ ] Refine acceptance test to assert whether backing service was upgraded or not
+* [ ] PR SCOSB improvement to org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo
+ 
+
+
 
 Polish before 1.0 release
 * [x] Manage git repo history. 
-   * 0.x are based on scab code base
+   * 0.x are based on scab code basem
    * `redesign-cmdb` branch rewritten spike history in a single squashed commit, and added incremental redesign and cleanup
    * Goals
       * make repo smaller

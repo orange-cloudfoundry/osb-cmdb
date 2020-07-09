@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.orange.oss.osbcmdb.CloudFoundryTargetProperties;
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.slf4j.Logger;
@@ -47,8 +48,8 @@ public class DynamicCatalogServiceAutoConfiguration {
 	}
 
 	@Bean
-	public PlanMapper planMapper(PlanMapperProperties planMapperProperties) {
-		return new PlanMapper(planMapperProperties);
+	public PlanMapper planMapper(PlanMapperProperties planMapperProperties, MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
+		return new PlanMapper(planMapperProperties, maintenanceInfoFormatterService);
 	}
 
 	@Bean

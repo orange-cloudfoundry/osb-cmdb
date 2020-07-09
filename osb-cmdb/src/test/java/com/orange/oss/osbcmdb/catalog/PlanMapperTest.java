@@ -7,6 +7,8 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
+import org.cloudfoundry.client.v2.MaintenanceInfo;
 import org.cloudfoundry.client.v2.Metadata;
 import org.cloudfoundry.client.v2.serviceplans.Schema;
 import org.cloudfoundry.client.v2.serviceplans.Schemas;
@@ -28,7 +30,7 @@ class PlanMapperTest {
 	private static final Logger logger = LoggerFactory.getLogger(PlanMapperTest.class);
 
 	@Test
-	void mapsPlanResourcesIntoPlan() throws JsonProcessingException {
+	void mapsPlanResourcesIntoPlan() {
 		List<ServicePlanResource> servicePlans = asList(
 		ServicePlanResource.builder()
 			.entity(ServicePlanEntity.builder()
@@ -38,6 +40,10 @@ class PlanMapperTest {
 				.description("description")
 				.extra("{\"displayName\":\"Big Bunny\"}")
 				.free(false)
+				.maintenanceInfo(MaintenanceInfo.builder()
+					.version("2.1.0+coab-mysql-v48")
+					.description("mariadb version update to y")
+					.build())
 				.build())
 			.metadata(Metadata.builder()
 				.id("plan-id")
@@ -46,24 +52,60 @@ class PlanMapperTest {
 		ServicePlanResource.builder()
 			.entity(ServicePlanEntity.builder()
 				.name("plan2")
+				//.maintenanceInfo()  // case of missing MI
+				.build())
+			.build(),
+		ServicePlanResource.builder()
+			.entity(ServicePlanEntity.builder()
+				.name("plan3")
+				//case of empty MI
+				.maintenanceInfo(MaintenanceInfo.builder()
+					.version(null)
+					.description(null)
+					.build())
 				.build())
 			.build());
 
+			MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+				org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
+					.version("1.1.0")
+					.description("displays dashboard urls")
+					.build());
+		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties(), maintenanceInfoFormatterService);
 
-		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties());
-
+		//when
 		List<Plan> plans = planMapper.toPlans(servicePlans);
-		assertThat(plans).hasSize(2);
+		//then
+
+		org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo expectedMergedPlan1MI =
+			org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
+				.version(3,2,0,"+coab-mysql-v48.osb-cmdb.1.1.0")
+				.description("mariadb version update to y\ndisplays dashboard urls")
+				.build();
+		org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo expectedDefaultCmdbMI =
+			org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
+				.version("1.1.0")
+				.description("displays dashboard urls")
+				.build();
+
+
+		assertThat(plans).hasSize(3);
 		Plan plan1 = plans.get(0);
 		assertThat(plan1.getName()).isEqualTo("plan1");
 		assertThat(plan1.getDescription()).isEqualTo("description");
 		assertThat(plan1.isBindable()).isTrue();
 		assertThat(plan1.isFree()).isFalse();
+		assertThat(plan1.getMaintenanceInfo()).isEqualTo(expectedMergedPlan1MI);
 		assertThat(plan1.getId()).isEqualTo("plan-id");
 		assertPlanSerializesWithoutPollutingWithNulls(plan1);
 		Plan plan2 = plans.get(1);
 		assertThat(plan2.getName()).isEqualTo("plan2");
+		assertThat(plan2.getMaintenanceInfo()).isEqualTo(expectedDefaultCmdbMI);
 		assertPlanSerializesWithoutPollutingWithNulls(plan2);
+		Plan plan3 = plans.get(2);
+		assertThat(plan3.getName()).isEqualTo("plan3");
+		assertThat(plan3.getMaintenanceInfo()).isEqualTo(expectedDefaultCmdbMI);
+		assertPlanSerializesWithoutPollutingWithNulls(plan3);
 	}
 
 	@Test
@@ -81,7 +123,7 @@ class PlanMapperTest {
 				.build());
 
 
-		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties());
+		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties(), new MaintenanceInfoFormatterService(null));
 
 		List<Plan> plans = planMapper.toPlans(servicePlans);
 		assertThat(plans).hasSize(1);
@@ -119,7 +161,7 @@ class PlanMapperTest {
 					.build())
 				.build());
 
-		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties());
+		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties(), new MaintenanceInfoFormatterService(null));
 
 		//when
 		List<Plan> plans = planMapper.toPlans(servicePlans);
@@ -162,7 +204,7 @@ class PlanMapperTest {
 				.build());
 
 
-		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties());
+		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties(), new MaintenanceInfoFormatterService(null));
 
 		//when
 		List<Plan> plans = planMapper.toPlans(servicePlans);

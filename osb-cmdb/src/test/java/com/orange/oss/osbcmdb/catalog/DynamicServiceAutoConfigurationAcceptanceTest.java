@@ -21,10 +21,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orange.oss.osbcmdb.catalog.DynamicCatalogConstants;
-import com.orange.oss.osbcmdb.catalog.DynamicCatalogServiceAutoConfiguration;
 import com.orange.oss.osbcmdb.fixtures.CloudFoundryClientConfiguration;
 import com.orange.oss.osbcmdb.fixtures.TargetPropertiesConfiguration;
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -36,6 +35,8 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,6 +51,7 @@ class DynamicServiceAutoConfigurationAcceptanceTest {
 		.withConfiguration(AutoConfigurations.of(
 			TargetPropertiesConfiguration.class,
 			CloudFoundryClientConfiguration.class,
+			MockedMaintenanceInfoFormatterServiceConfig.class,
 			DynamicCatalogServiceAutoConfiguration.class
 		))
 		.withPropertyValues(DynamicCatalogConstants.OPT_IN_PROPERTY+"=true");
@@ -113,5 +115,12 @@ class DynamicServiceAutoConfigurationAcceptanceTest {
 	}
 
 
+	@Configuration
+	static class MockedMaintenanceInfoFormatterServiceConfig {
+		@Bean
+		public MaintenanceInfoFormatterService maintenanceInfoFormatterService() {
+			return new MaintenanceInfoFormatterService(null);
+		}
+	}
 
 }

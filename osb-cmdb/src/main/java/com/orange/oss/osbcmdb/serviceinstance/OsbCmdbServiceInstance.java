@@ -13,6 +13,7 @@ import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl
 import com.orange.oss.osbcmdb.metadata.MetaData;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.MaintenanceInfo;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
 import org.cloudfoundry.client.v2.organizations.OrganizationEntity;
@@ -82,9 +83,22 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	private final UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService;
 
-	private boolean propagateMetadataAsCustomParam;
+	/**
+	 * When set to true, then a custom param (whose name is @{link
+	 * X_OSB_CMDB_CUSTOM_KEY_NAME}) is sent to backing service with meta-data about osb client context.
+	 * This is a transient workaround until OSB 2.16 with annotations is supported and metadata will be passed
+	 * as annotations in the OSB context object.
+	 * Set to false when a backing broker makes a strict check of received params and rejects osb-cmdb custom param
+	 */
+	private final boolean propagateMetadataAsCustomParam;
 
-	private boolean hideMetadataCustomParamInGetServiceInstanceEndpoint;
+	/**
+	 * When set to true, then the custom param sent to backing service (whose name is @{link
+	 * X_OSB_CMDB_CUSTOM_KEY_NAME}) is hidden from the get service endpoint response.
+	 */
+	private final boolean hideMetadataCustomParamInGetServiceInstanceEndpoint;
+
+	private final MaintenanceInfoFormatterService maintenanceInfoFormatterService;
 
 	public OsbCmdbServiceInstance(CloudFoundryOperations cloudFoundryOperations, CloudFoundryClient cloudFoundryClient,
 		String defaultOrg, String userName,
@@ -92,7 +106,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		CreateServiceMetadataFormatterServiceImpl createServiceMetadataFormatterService,
 		UpdateServiceMetadataFormatterService updateServiceMetadataFormatterService,
 		boolean propagateMetadataAsCustomParam,
-		boolean hideMetadataCustomParamInGetServiceInstanceEndpoint) {
+		boolean hideMetadataCustomParamInGetServiceInstanceEndpoint,
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
 		super(cloudFoundryClient, defaultOrg, userName, cloudFoundryOperations);
 
 		this.osbInterceptor = osbInterceptor;
@@ -100,6 +115,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		this.updateServiceMetadataFormatterService = updateServiceMetadataFormatterService;
 		this.propagateMetadataAsCustomParam = propagateMetadataAsCustomParam;
 		this.hideMetadataCustomParamInGetServiceInstanceEndpoint = hideMetadataCustomParamInGetServiceInstanceEndpoint;
+		this.maintenanceInfoFormatterService = maintenanceInfoFormatterService;
 	}
 
 	@Override
@@ -127,6 +143,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.build())
 					.map(GetOrganizationResponse::getEntity)
 					.block();
+				assert backingOrganization != null;
 				String backingOrganizationName = backingOrganization.getName();
 				if (! this.defaultOrg.equals(backingOrganizationName)) {
 					LOG.warn("Suspicious request to look up service instance guid {} from another tenant with guid {} and" +
@@ -142,15 +159,17 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.build())
 					.map(GetServiceInstanceResponse::getEntity)
 					.block();
+				assert backingServiceInstance != null : "unable to fetch details of service instance whose id was looked up by name";
 				Map<String, Object> backingServiceInstanceParams = client.serviceInstances()
 					.getParameters(GetServiceInstanceParametersRequest.builder()
 						.serviceInstanceId(backingServiceInstanceId)
 						.build())
 					.map(GetServiceInstanceParametersResponse::getParameters)
 					.block();
-				if (hideMetadataCustomParamInGetServiceInstanceEndpoint) {
-					Map<String, Object>  sanitizedParams = new HashMap<>(); //Original map is immutable.
-					sanitizedParams.putAll(backingServiceInstanceParams);
+				if (hideMetadataCustomParamInGetServiceInstanceEndpoint &&
+					backingServiceInstanceParams != null) {
+					//Original map is immutable.
+					Map<String, Object> sanitizedParams = new HashMap<>(backingServiceInstanceParams);
 					Object customParams = sanitizedParams.remove(X_OSB_CMDB_CUSTOM_KEY_NAME);
 					LOG.debug("Hiding param with key {} and value {} from GSI response", X_OSB_CMDB_CUSTOM_KEY_NAME, customParams);
 					backingServiceInstanceParams = sanitizedParams;
@@ -183,6 +202,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
 			request.getServiceDefinitionId(), request.getPlanId());
+		maintenanceInfoFormatterService.validateAnyCreateRequest(request);
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
 		CloudFoundryOperations spacedTargetedOperations = null;
@@ -264,8 +284,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	}
 
 	private Map<String, Object> formatParameters(MetaData metaData, Map<String, Object> requestParams) {
-		Map<String, Object> parameters = new HashMap<>();
-		parameters.putAll(requestParams);
+		Map<String, Object> parameters = new HashMap<>(requestParams);
 		if (propagateMetadataAsCustomParam) {
 			parameters.put(X_OSB_CMDB_CUSTOM_KEY_NAME, metaData);
 		}
@@ -449,6 +468,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
 			request.getServiceDefinitionId(), request.getPlanId());
+		maintenanceInfoFormatterService.validateAnyUpgradeRequest(request);
+
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
 		String backingServiceInstanceName = ServiceInstanceNameHelper
@@ -458,20 +479,52 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
 		ServiceInstance existingBackingServiceInstance = getCfServiceInstance(spacedTargetedOperations,
 			backingServiceInstanceName);
+
+		if (existingBackingServiceInstance == null) {
+			LOG.info("Asked to update a brokered service instance with guid {} for which no backing service instance " +
+				"was found");
+			throw new ServiceInstanceDoesNotExistException(backingServiceInstanceName);
+		}
+
 		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
 		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
+
+		if (maintenanceInfoFormatterService.isNoOpUpgradeBackingService(request)) {
+			LOG.info("NoOp upgrade detected, returning early 200 OK");
+			return Mono.just(UpdateServiceInstanceResponse.builder()
+				.dashboardUrl(existingBackingServiceInstance.getDashboardUrl())
+				.async(false)
+				.build());
+		}
+
+		// Lets assume for now that OSB client properly fill in the PreviousValue.maintenance_info, and that we don't
+		//		 need to fetch it from the existing backing instance
+		/*
+		MaintenanceInfo existingBackingServiceInstanceEntityMaintenanceInfo = null;
+		if (existingBackingServiceInstance != null && maintenanceInfoFormatterService.hasMaintenanceInfoChangeRequest(request)) {
+			existingBackingServiceInstanceEntityMaintenanceInfo = client.serviceInstances().get(GetServiceInstanceRequest.builder()
+				.serviceInstanceId(existingBackingServiceInstance.getId())
+				.build())
+				.map(GetServiceInstanceResponse::getEntity)
+				.map(ServiceInstanceEntity::getMaintenanceInfo)
+				.block();
+		}
+		 */
 
 		UpdateServiceInstanceResponseBuilder responseBuilder = UpdateServiceInstanceResponse.builder();
 		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
 
 		try {
 			org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceResponse updateServiceInstanceResponse;
+			MaintenanceInfo formattedForBackendInstanceMI = maintenanceInfoFormatterService.formatForBackendInstance(request);
+			LOG.debug("Passing formatted maintenance info {} to backing service", formattedForBackendInstanceMI);
 			updateServiceInstanceResponse = client.serviceInstances()
 				.update(org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceRequest.builder()
 					.serviceInstanceId(existingBackingServiceInstance.getId())
 					.servicePlanId(backingServicePlanId)
 					.parameters(formatParameters(metaData, request.getParameters()))
+					.maintenanceInfo(formattedForBackendInstanceMI)
 					.build())
 				.block();
 
@@ -505,6 +558,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					throw new ServiceBrokerException("Internal CF protocol error");
 			}
 			responseBuilder.async(asyncProvisioning);
+			responseBuilder.dashboardUrl(updateServiceInstanceResponse.getEntity().getDashboardUrl());
 		}
 		catch (Exception e) {
 			LOG.info("Unable to update service, caught:" + e, e);
@@ -662,8 +716,10 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					LOG.info("Concurrent request is not incompatible and is still in progress success: 202");
 					String operation = toJson(
 						new CmdbOperationState(existingServiceInstance.getId(), OsbOperation.CREATE));
-					//202 Accepted (can't yet throw ServiceInstanceExistsException, see https://github
-					// .com/spring-cloud/spring-cloud-open-service-broker/issues/284)
+					//202 Accepted (can't yet throw ServiceBrokerCreateOperationInProgressException,
+					//because despite fix for
+					//https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/284
+					//we're still lacking support for returning dashboard url)
 					return Mono.just(CreateServiceInstanceResponse.builder()
 						.dashboardUrl(existingServiceInstance.getDashboardUrl())
 						.operation(operation)

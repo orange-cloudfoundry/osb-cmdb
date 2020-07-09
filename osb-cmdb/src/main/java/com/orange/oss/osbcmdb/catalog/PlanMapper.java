@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import org.cloudfoundry.client.v2.Metadata;
 import org.cloudfoundry.client.v2.serviceplans.Parameters;
 import org.cloudfoundry.client.v2.serviceplans.Schema;
@@ -13,12 +14,14 @@ import org.cloudfoundry.util.ResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo;
 import org.springframework.cloud.servicebroker.model.catalog.MethodSchema;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.catalog.Schemas;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceBindingSchema;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceInstanceSchema;
 
+@SuppressWarnings("ConstantConditions")
 public class PlanMapper extends BaseMapper {
 
 	private static final Logger logger = LoggerFactory.getLogger(
@@ -26,8 +29,12 @@ public class PlanMapper extends BaseMapper {
 
 	private final PlanMapperProperties properties;
 
-	public PlanMapper(PlanMapperProperties properties) {
+	private MaintenanceInfoFormatterService maintenanceInfoFormatterService;
+
+	public PlanMapper(PlanMapperProperties properties,
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
 		this.properties = properties;
+		this.maintenanceInfoFormatterService = maintenanceInfoFormatterService;
 	}
 
 	public List<Plan> toPlans(List<ServicePlanResource> servicePlans) {
@@ -50,13 +57,27 @@ public class PlanMapper extends BaseMapper {
 			.free(entity.getFree())
 			.bindable(entity.getBindable())
 			.description(entity.getDescription())
-			.metadata(toServiceMetaData(entity.getExtra()));
+			.metadata(toServiceMetaData(entity.getExtra()))
+			.maintenanceInfo(toMaintenanceInfo(entity.getMaintenanceInfo()));
 		planBuilder = toSchemas(planBuilder, entity.getSchemas());
 
 		Plan plan = planBuilder.build();
 
 		logger.debug("plan entity {}", plan);
 		return plan;
+	}
+
+	private MaintenanceInfo toMaintenanceInfo(org.cloudfoundry.client.v2.MaintenanceInfo maintenanceInfo) {
+		MaintenanceInfo backendCatalogMaintenanceInfo = null;
+		if (maintenanceInfo !=null && maintenanceInfo.getVersion() !=null) {
+			backendCatalogMaintenanceInfo = MaintenanceInfo.builder()
+				.version(maintenanceInfo.getVersion())
+				.description(maintenanceInfo.getDescription())
+				.build();
+		}
+		MaintenanceInfo mappedMI = maintenanceInfoFormatterService.formatForCatalog(backendCatalogMaintenanceInfo);
+		logger.debug("mapped maintenance_info [{}] into [{}]", maintenanceInfo, mappedMI);
+		return mappedMI;
 	}
 
 	private Plan.PlanBuilder toSchemas(Plan.PlanBuilder planBuilder, org.cloudfoundry.client.v2.serviceplans.Schemas entitySchemas) {

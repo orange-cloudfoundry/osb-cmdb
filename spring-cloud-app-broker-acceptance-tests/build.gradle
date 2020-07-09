@@ -40,9 +40,14 @@ dependencies {
 	}
 	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("io.rest-assured:rest-assured") //for osbapi client
-	testImplementation("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
-	testImplementation("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
+//	//transiently until updated cf-java-client gets released
+//	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-client-reactor:${cfJavaClientForkedVersion}")
+//	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-operations:${cfJavaClientForkedVersion}")
+	compile("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
+	compile("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
 	testImplementation("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}") //Just for OSB API constants
+//	testImplementation("com.github.spring-cloud.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
+//	testImplementation("com.github.orange-cloudfoundry.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
 
 }
 
