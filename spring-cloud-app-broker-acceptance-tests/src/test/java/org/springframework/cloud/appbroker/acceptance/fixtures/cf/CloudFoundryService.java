@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.MaintenanceInfo;
 import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.client.v2.organizations.AssociateOrganizationManagerRequest;
 import org.cloudfoundry.client.v2.organizations.AssociateOrganizationManagerResponse;
@@ -356,6 +357,20 @@ public class CloudFoundryService {
 			.doOnSuccess(item -> LOG.info("Updated service instance " + serviceInstanceName))
 			.doOnError(error -> LOG.error("Error updating service instance " + serviceInstanceName + ": " + error));
 	}
+
+	public Mono<Void> syncUpgradeServiceInstance(final String serviceInstanceName, final String version) {
+		return cloudFoundryOperations.services()
+			.updateInstance(UpdateServiceInstanceRequest.builder()
+				.serviceInstanceName(serviceInstanceName)
+				.maintenanceInfo(MaintenanceInfo.builder()
+					.version(version)
+					.build())
+				.build())
+			.doOnSuccess(item -> LOG.info("Upgrated service instance " + serviceInstanceName))
+			.doOnError(error -> LOG.error("Error upgrating service instance " + serviceInstanceName + ": " + error));
+	}
+
+
 
 	public Mono<Void> updateServiceInstance(String serviceInstanceName, String planName, Duration completionTimeout) {
 		return cloudFoundryOperations.services()

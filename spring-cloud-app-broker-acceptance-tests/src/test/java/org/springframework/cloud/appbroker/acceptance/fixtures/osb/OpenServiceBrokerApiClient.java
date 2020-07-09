@@ -119,6 +119,17 @@ public class OpenServiceBrokerApiClient  {
 				"}");
 	}
 
+	public RequestSpecification serviceInstanceUpgradeRequest(String serviceDefinitionId, String planId, String maintenanceVersionInfo) {
+		return serviceBrokerSpecification()
+			.body("{" +
+				"\"service_id\": \"" + serviceDefinitionId + "\"," +
+				"\"plan_id\": \"" + planId + "\"," +
+				"\"organization_guid\": \"" + ORG_ID + "\"," +
+				"\"space_guid\": \"" + SPACE_ID + "\"," +
+				"\"maintenance_info\": { \"version\": \""+ maintenanceVersionInfo + "\" }" +
+				"}");
+	}
+
 	public RequestSpecification serviceInstanceRequestWithCfOsbContext(String context) {
 		return serviceBrokerSpecification()
 			.body("{" +

@@ -74,9 +74,11 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 
 			//then a brokered service is updated
 			ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
-			// then the brokered service instance once completes, is expected to be failed
+			// then the brokered service instance once completes, is expected to be successull
 			assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("update");
 			assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
+			//and dashboard url still available
+			assertThat(brokeredServiceInstance.getDashboardUrl()).isNotEmpty();
 
 			//and backing service was indeed updated
 			backingServiceName = brokeredServiceInstance.getId();

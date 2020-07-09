@@ -217,7 +217,7 @@ abstract class CloudFoundryAcceptanceTest {
 			"spring.cloud.openservicebroker.catalog.services[0].plans[1].bindable=true",
 			"spring.cloud.openservicebroker.catalog.services[0].plans[1].description=A 2nd simple plan",
 			"spring.cloud.openservicebroker.catalog.services[0].plans[1].free=true",
-			"spring.cloud.openservicebroker.catalog.services[1].id=" + BACKING_SERVICE_ID,
+		"spring.cloud.openservicebroker.catalog.services[1].id=" + BACKING_SERVICE_ID,
 			"spring.cloud.openservicebroker.catalog.services[1].name=" + backingServiceName(),
 			"spring.cloud.openservicebroker.catalog.services[1].description=A backing service",
 			"spring.cloud.openservicebroker.catalog.services[1].bindable=true",
@@ -417,6 +417,11 @@ abstract class CloudFoundryAcceptanceTest {
 			})
 			.block();
 	}
+
+	protected void upgradeService(String serviceInstanceName, String version) {
+		cloudFoundryService.syncUpgradeServiceInstance(serviceInstanceName, version).block();
+	}
+
 	protected void updateServiceInstanceWithoutAsserts(String serviceInstanceName, String planName,
 		Duration completionTimeout) {
 		try {
@@ -600,6 +605,10 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	private <T> void blockingSubscribe(Mono<? super T> publisher) {
+		publisher.block();
+		//Not clear with SCAB did not use block(), maybe because of static code analysis offenses.
+		//Side effect was that exception thrown were swallowed
+		/*
 		CountDownLatch latch = new CountDownLatch(1);
 		publisher.subscribe(System.out::println, t -> {
 			if (LOG.isDebugEnabled()) {
@@ -613,6 +622,7 @@ abstract class CloudFoundryAcceptanceTest {
 		catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+		 */
 	}
 
 	protected Mono<String> manageApps(String serviceInstanceName, String operation) {

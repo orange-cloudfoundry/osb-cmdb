@@ -4,6 +4,7 @@ import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import com.orange.oss.osbcmdb.servicebinding.OsbCmdbServiceBinding;
 import com.orange.oss.osbcmdb.servicebinding.ServiceBindingInterceptor;
+import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstance;
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
@@ -19,6 +20,7 @@ import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceI
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncTimeoutCreateBackingSpaceInstanceInterceptor;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
@@ -27,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.servicebroker.autoconfigure.web.MaintenanceInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -58,6 +61,13 @@ public class OsbCmdbBrokerConfiguration {
 	public ServiceInstanceInterceptor acceptanceTestBackingServiceInstanceInterceptor(
 		CloudFoundryTargetProperties targetProperties) {
 		return new SyncSuccessfulBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestSyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean
@@ -163,6 +173,20 @@ public class OsbCmdbBrokerConfiguration {
 		return new OsbCmdbBrokerProperties();
 	}
 
+	@Bean
+	@ConfigurationProperties(prefix = MaintenanceInfoFormatterService.PROPERTY_PREFIX, ignoreUnknownFields = false)
+	public MaintenanceInfo osbCmdbMaintenanceInfo() {
+		return new MaintenanceInfo();
+	}
+
+	@Bean
+	public MaintenanceInfoFormatterService maintenanceInfoFormatterService(
+		@Autowired(required = false)
+			MaintenanceInfo osbCmdbMaintenanceInfo) {
+		boolean missingOrEmptyMIConfig = osbCmdbMaintenanceInfo == null ||
+			(osbCmdbMaintenanceInfo.getVersion() == null && osbCmdbMaintenanceInfo.getDescription() == null);
+		return new MaintenanceInfoFormatterService(missingOrEmptyMIConfig ? null: osbCmdbMaintenanceInfo.toModel());
+	}
 
 
 	/**
@@ -182,7 +206,9 @@ public class OsbCmdbBrokerConfiguration {
 		@Autowired(required = false)
 			ServiceInstanceInterceptor serviceInstanceInterceptor,
 		Environment environment,
-		OsbCmdbBrokerProperties osbCmdbBrokerProperties) {
+		OsbCmdbBrokerProperties osbCmdbBrokerProperties,
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService) {
+
 		String acceptanceTestsProfile = "acceptanceTests";
 		if (serviceInstanceInterceptor == null && environment.acceptsProfiles(Profiles.of(acceptanceTestsProfile))) {
 			throw new IllegalArgumentException("With " + acceptanceTestsProfile + " profile, at least one interceptor" +
@@ -192,7 +218,8 @@ public class OsbCmdbBrokerConfiguration {
 			targetProperties.getDefaultOrg(), targetProperties.getUsername(),
 			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(),
 			new UpdateServiceMetadataFormatterService(), osbCmdbBrokerProperties.isPropagateMetadataAsCustomParam(),
-			osbCmdbBrokerProperties.isHideMetadataCustomParamInGetServiceInstanceEndpoint());
+			osbCmdbBrokerProperties.isHideMetadataCustomParamInGetServiceInstanceEndpoint(),
+			maintenanceInfoFormatterService);
 	}
 
 }

@@ -1,10 +1,28 @@
 package com.orange.oss.osbcmdb.catalog;
 
+import org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo;
+import org.springframework.lang.Nullable;
+
 public class PlanMapperProperties {
 
 	public static final String PROPERTY_PREFIX = DynamicCatalogConstants.PROPERTY_PREFIX + ".plans";
 
-//For future use
+	/**
+	 * The Osb-cmdb maintenance info that augments the backing services maintenance info as build metadata, see
+	 * https://semver.org/spec/v2.0.0.html
+	 */
+	@Nullable
+	public MaintenanceInfo maintenanceInfo;
+
+	public MaintenanceInfo getMaintenanceInfo() {
+		return maintenanceInfo;
+	}
+
+	public void setMaintenanceInfo(MaintenanceInfo maintenanceInfo) {
+		this.maintenanceInfo = maintenanceInfo;
+	}
+
+	//For future use
 //	/**
 //	 * Define a suffix to service plan names
 //	 */
