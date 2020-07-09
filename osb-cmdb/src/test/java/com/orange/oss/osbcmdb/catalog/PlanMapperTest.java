@@ -17,7 +17,6 @@ import org.cloudfoundry.client.v2.serviceplans.ServiceInstanceSchema;
 import org.cloudfoundry.client.v2.serviceplans.ServicePlanEntity;
 import org.cloudfoundry.client.v2.serviceplans.ServicePlanResource;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +24,6 @@ import org.springframework.cloud.servicebroker.model.catalog.Plan;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class PlanMapperTest {
 
@@ -56,11 +52,13 @@ class PlanMapperTest {
 		ServicePlanResource.builder()
 			.entity(ServicePlanEntity.builder()
 				.name("plan2")
+				//.maintenanceInfo()  // case of missing MI
 				.build())
 			.build(),
 		ServicePlanResource.builder()
 			.entity(ServicePlanEntity.builder()
 				.name("plan3")
+				//case of empty MI
 				.maintenanceInfo(MaintenanceInfo.builder()
 					.version(null)
 					.description(null)
@@ -68,25 +66,28 @@ class PlanMapperTest {
 				.build())
 			.build());
 
-			MaintenanceInfoFormatterService maintenanceInfoFormatterService =
-			Mockito.mock(MaintenanceInfoFormatterService.class,Mockito.RETURNS_SMART_NULLS);
-		org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo backingServiceMI =
-			org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
-				.version(2,1,0,"+coab-mysql-v48")
-				.description("mariadb version update to y")
-				.build();
-		org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo mergedMI =
-			org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
-				.version(3,2,0,"+coab-mysql-v48.osb-cmdb.1.1.0")
-				.description("mariadb version update to y\ndisplays dashboard urls")
-				.build();
-		when(maintenanceInfoFormatterService.formatForCatalog(backingServiceMI)).thenReturn(mergedMI);
+			MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+				org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
+					.version("1.1.0")
+					.description("displays dashboard urls")
+					.build());
 		PlanMapper planMapper = new PlanMapper(new PlanMapperProperties(), maintenanceInfoFormatterService);
 
 		//when
 		List<Plan> plans = planMapper.toPlans(servicePlans);
 		//then
-		verify(maintenanceInfoFormatterService, times(1)).formatForCatalog(backingServiceMI);
+
+		org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo expectedMergedPlan1MI =
+			org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
+				.version(3,2,0,"+coab-mysql-v48.osb-cmdb.1.1.0")
+				.description("mariadb version update to y\ndisplays dashboard urls")
+				.build();
+		org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo expectedDefaultCmdbMI =
+			org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.builder()
+				.version("1.1.0")
+				.description("displays dashboard urls")
+				.build();
+
 
 		assertThat(plans).hasSize(3);
 		Plan plan1 = plans.get(0);
@@ -94,16 +95,16 @@ class PlanMapperTest {
 		assertThat(plan1.getDescription()).isEqualTo("description");
 		assertThat(plan1.isBindable()).isTrue();
 		assertThat(plan1.isFree()).isFalse();
-		assertThat(plan1.getMaintenanceInfo()).isEqualTo(mergedMI);
+		assertThat(plan1.getMaintenanceInfo()).isEqualTo(expectedMergedPlan1MI);
 		assertThat(plan1.getId()).isEqualTo("plan-id");
 		assertPlanSerializesWithoutPollutingWithNulls(plan1);
 		Plan plan2 = plans.get(1);
 		assertThat(plan2.getName()).isEqualTo("plan2");
-		assertThat(plan2.getMaintenanceInfo()).isNull();
+		assertThat(plan2.getMaintenanceInfo()).isEqualTo(expectedDefaultCmdbMI);
 		assertPlanSerializesWithoutPollutingWithNulls(plan2);
 		Plan plan3 = plans.get(2);
 		assertThat(plan3.getName()).isEqualTo("plan3");
-		assertThat(plan3.getMaintenanceInfo()).isNull();
+		assertThat(plan3.getMaintenanceInfo()).isEqualTo(expectedDefaultCmdbMI);
 		assertPlanSerializesWithoutPollutingWithNulls(plan3);
 	}
 
