@@ -610,10 +610,12 @@ See more details in [spring-cloud-app-broker-acceptance-tests/README.adoc](sprin
 
 #### Releasing
 
-For the spike, 
-* manually edit the version in `gradle.properties` (e.g `version=0.1.0`), commit & push
-* git tag v0.1.0 -a -m "0.1.0 release"
-* git push github-orange-osbcmdb-spike  v0.1.0
+* manually edit the version in `gradle.properties` (e.g `version=1.1.0`), commit & push
+* git tag v1.1.0 -a -m "1.1.0 release"
+* git push origin  v1.1.0
 * let circle ci build and upload the binaries to github
-* edit the github release to complete release noets
-* manually edit the version in `osb-cmdb/gradle.properties`, commit & push e.g. `version=0.2.0.BUILD-SNAPSHOT` 
+* edit the github release to complete release notes
+* manually edit the version in `osb-cmdb/gradle.properties`, commit & push e.g. `version=0.2.0.BUILD-SNAPSHOT`
+* [ ] fix unit tests invocation currently expecting version in jar name (e.g. `osbcmdb-1.0.0.jar`) 
+   * [ ] fix osb-cmdb-ci  
+   * [ ] fix intellij run configurations  
