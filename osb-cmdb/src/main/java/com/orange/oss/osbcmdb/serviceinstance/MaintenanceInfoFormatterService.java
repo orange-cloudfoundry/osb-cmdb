@@ -47,7 +47,15 @@ public class MaintenanceInfoFormatterService {
 	private MaintenanceInfo osbCmdbMaintenanceInfo;
 
 	public MaintenanceInfoFormatterService(MaintenanceInfo osbCmdbMaintenanceInfo) {
-		LOG.info("MaintenanceInfo configured is {}", osbCmdbMaintenanceInfo);
+		if (osbCmdbMaintenanceInfo != null) {
+			LOG.info("Configured to trigger bump with MaintenanceInfo={}", osbCmdbMaintenanceInfo);
+			if (osbCmdbMaintenanceInfo.getVersion() == null) {
+				throw new IllegalArgumentException("Invalid osbCmdbMaintenanceInfo=" + osbCmdbMaintenanceInfo + " " +
+					"with missing version");
+			}
+		} else {
+			LOG.info("Configured to not trigger MI bumps");
+		}
 		this.osbCmdbMaintenanceInfo = osbCmdbMaintenanceInfo;
 	}
 
@@ -81,6 +89,9 @@ public class MaintenanceInfoFormatterService {
 
 	/**
 	 * Formats for brokered service catalog returned to OSB client
+	 * @param backendCatalogMaintenanceInfo The backing service maintenance info, possibly null if none (or empty)
+	 * was provided in backing service catalog
+	 * @return the brokered service MI to serve in catalog
 	 */
 	public MaintenanceInfo formatForCatalog(MaintenanceInfo backendCatalogMaintenanceInfo) {
 		if (osbCmdbMaintenanceInfo == null) {
@@ -94,7 +105,6 @@ public class MaintenanceInfoFormatterService {
 
 	/**
 	 * Only used in tests
-	 * @return
 	 */
 	public MaintenanceInfo getOsbCmdbMaintenanceInfo() {
 		return this.osbCmdbMaintenanceInfo;
@@ -104,7 +114,6 @@ public class MaintenanceInfoFormatterService {
 	 * Indicates whether the request is a pure upgrade request `cf update-service --upgrade` resulting from a version
 	 * bump introduced by osb-cmdb, and no backend version bump.
 	 *
-	 * @param request
 	 * @return False if the update request should be passed to tbe backend broker, true if backend update should be
 	 * 	skipped (i.e. noop)
 	 */
@@ -131,6 +140,7 @@ public class MaintenanceInfoFormatterService {
 
 	protected MaintenanceInfo unmergeInfos(MaintenanceInfo brokeredMaintenanceInfo) {
 		Version backendVersion = Version.parseVersion(brokeredMaintenanceInfo.getVersion());
+		assert osbCmdbMaintenanceInfo != null : "null cmdb version should be rejected in constructor";
 		Version cmdbVersion = Version.parseVersion(osbCmdbMaintenanceInfo.getVersion());
 
 		String extension = StringUtils.removeEnd(backendVersion.getBuildMetaData(),
@@ -171,6 +181,7 @@ public class MaintenanceInfoFormatterService {
 
 	MaintenanceInfo mergeInfos(MaintenanceInfo backendMaintenanceInfo) {
 		Version backendVersion = Version.parseVersion(backendMaintenanceInfo.getVersion());
+		assert osbCmdbMaintenanceInfo != null : "null cmdb version should be rejected in constructor";
 		Version cmdbVersion = Version.parseVersion(osbCmdbMaintenanceInfo.getVersion());
 		String backendBuildMetaData = backendVersion.getBuildMetaData();
 		String buildMetaData = "+";

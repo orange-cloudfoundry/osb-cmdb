@@ -21,6 +21,7 @@ import org.springframework.cloud.servicebroker.model.catalog.Schemas;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceBindingSchema;
 import org.springframework.cloud.servicebroker.model.catalog.ServiceInstanceSchema;
 
+@SuppressWarnings("ConstantConditions")
 public class PlanMapper extends BaseMapper {
 
 	private static final Logger logger = LoggerFactory.getLogger(
@@ -67,17 +68,16 @@ public class PlanMapper extends BaseMapper {
 	}
 
 	private MaintenanceInfo toMaintenanceInfo(org.cloudfoundry.client.v2.MaintenanceInfo maintenanceInfo) {
-		logger.debug("mapping maintenance_info {}", maintenanceInfo);
-		if (maintenanceInfo == null) {
-			return null;
+		MaintenanceInfo backendCatalogMaintenanceInfo = null;
+		if (maintenanceInfo !=null && maintenanceInfo.getVersion() !=null) {
+			backendCatalogMaintenanceInfo = MaintenanceInfo.builder()
+				.version(maintenanceInfo.getVersion())
+				.description(maintenanceInfo.getDescription())
+				.build();
 		}
-		if (maintenanceInfo.getVersion() == null && maintenanceInfo.getDescription()==null) {
-			return null;
-		}
-		return maintenanceInfoFormatterService.formatForCatalog(MaintenanceInfo.builder()
-			.version(maintenanceInfo.getVersion())
-			.description(maintenanceInfo.getDescription())
-			.build());
+		MaintenanceInfo mappedMI = maintenanceInfoFormatterService.formatForCatalog(backendCatalogMaintenanceInfo);
+		logger.debug("mapped maintenance_info [{}] into [{}]", maintenanceInfo, mappedMI);
+		return mappedMI;
 	}
 
 	private Plan.PlanBuilder toSchemas(Plan.PlanBuilder planBuilder, org.cloudfoundry.client.v2.serviceplans.Schemas entitySchemas) {
