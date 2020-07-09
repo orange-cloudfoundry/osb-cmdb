@@ -129,3 +129,5 @@ workflows:
               ignore: /.*/
             tags:
               only: /.*/
+
+# Weird condition whether build trigger by a commit pushed, but builds from an old commit
