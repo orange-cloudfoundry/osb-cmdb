@@ -1,14 +1,35 @@
+Dashboard proxy support
+* [ ] Add dashboard controller with two endpoints
+   * [ ] dashboard portal
+   * [ ] dashboard proxy
+* [ ] design user and backing service interfaces
+   * https://github.com/orange-cloudfoundry/osb-cmdb/issues/48
+* [ ] Spike spring cloud gateway. See [spring-cloud-gateway-proxy-spike.md](./impl-notes/spring-cloud-gateway-proxy-spike.md)
+   * https://spring.io/guides/gs/gateway/
+      * shield login page never displays upon login
+      * websocket requests loop: /bearings and /events
+      
+   * https://github.com/spring-guides/gs-gateway
+   * [x] Study CF route service in SG
+      * https://medium.com/@fitzoh/creating-a-cloud-foundry-route-service-with-spring-cloud-gateway-2dcabf04540e
+      * CloudFoundryRouteService builtin support
+         * https://github.com/spring-cloud/spring-cloud-gateway/blob/58b53c6ce26465aa61724e43c07359861cf51028/spring-cloud-gateway-core/src/test/java/org/springframework/cloud/gateway/handler/predicate/CloudFoundryRouteServiceRoutePredicateFactoryIntegrationTests.java#L87-L92
+      * Confirmation that route services won't be supported in CF-on-K8S
+   * [ ] POC CF route service in SG
+      * [ ] Copy sample route service config
+      * [ ] Deploy POC in CF manually with a CF push
+      * [ ] Modify route registrar call to reference the route service, see https://github.com/cloudfoundry/routing-release/pull/157/files
+         * `route_service_url: https://my-oauth-proxy-route-service.example.com`
+         * [ ] On a coab instance, in the feature branch
 
-* [ ] Release new version
-* [x] Refine default log level in paas-templates 
-* [ ] Bump version in paas-templates
+* [ ] Polish release process and necessary updates to unit test launchers when jar name changes.
+* [ ] Improve common broker scripts to have osb-cmdb noop tests green https://github.com/orange-cloudfoundry/paas-templates/issues/831
 * [ ] test and push osb-cmdb-ci workaround for failed purge + share workaround in cli issue
    * [ ] use cf curl --fail
+* [x] PR SCOSB improvement to org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo.toString()
 * [ ] Refine MI acceptance test coverage
    * [ ] Refine acceptance test to cover case of backing service which should not be upgraded (shared cf-mysql)
    * [ ] Refine acceptance test to assert whether backing service was upgraded or not
-* [ ] PR SCOSB improvement to org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo
- 
 
 
 
