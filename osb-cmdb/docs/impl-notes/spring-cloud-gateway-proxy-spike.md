@@ -88,7 +88,7 @@ io.netty.handler.codec.http.websocketx.WebSocketHandshakeException: Invalid hand
 	at reactor.netty.channel.ChannelOperationsHandler.channelRead(ChannelOperationsHandler.java:96) [reactor-netty-0.9.10.RELEASE.jar:0.9.10.RELEASE]
 ```
 
-Root cause: the websocket request isn't rewritten by springcloud getway, and hence lands with the "Host: localhost" to gorouter which rejects it with an unknown route
+Root cause: the websocket request isn't rewritten by springcloud gateway, and hence lands with the "Host: localhost" to gorouter which rejects it with an unknown route
       
 In initial request, spring cloud gateway had the right host:
 
@@ -825,3 +825,44 @@ io.netty.handler.codec.http.websocketx.WebSocketHandshakeException: Invalid hand
 	at io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker13.verify(WebSocketClientHandshaker13.java:274) ~[netty-codec-http-4.1.51.Final.jar:4.1.51.Final]
 ``` 
 * server code (ReactorNettyRequestUpgradeStrategy in spring-webflux) needs to receive and collect server errors during client handshake and return them to the client prior to committing the websocket handshake 
+
+
+
+Aug 4th: Workaround with fix to shield
+* Symptom 1: infinite loop
+   * Infinite loop due to WS on open event triggering v2/bearings call, while the WS is actually incorrect
+   * Uncaught XHR error closes the webocket ?
+      * which triggers the sending of a new request
+   * With a properly caught 401 response, this triggers a `document.location.href = '/'` at https://github.com/shieldproject/shield/blob/18089dd0fb1c2e4ae43aeffb23983ef1ee389138/web/htdocs/js/lib.js#L317 which reloads the page and avoids 
+* alternative fixes
+   * WS on open tries to detect empty v2/events response and triggers a `document.location.href = '/'`
+      * Pb: websocket state does not provide the "Internal error" payload
+   * Prevent exception in reading bearing that closes the WS
+   * Handle exception in reading bearing into `document.location.href = '/'`
+      * https://github.com/shieldproject/shield/blob/18089dd0fb1c2e4ae43aeffb23983ef1ee389138/web/htdocs/js/data.js#L552
+      * Possible side effects somewhere else outside of WS auth
+   * **Add a sleep before retrying on a socket close**
+      * https://stackoverflow.com/questions/758688/sleep-in-javascript-delay-between-actions
+      
+* Symptom 2: non systematic stalled login request in firefox 68.11 esr and firefox 79.0 on Ubuntu
+   * login request marked as stalled in FF
+   * suspecting race condition with JS code closing the request indirectly ?
+
+   
+* [x] Submit shield PR https://github.com/shieldproject/shield/pull/699
+* [ ] Investigate auth improvements
+   * [ ] a way to use basic auth between osb-cmdb and shield
+      * [x] Experiment with basic auth added to each shield query
+         * v2/bearing with basic auth in curl returns same result
+      * [ ] have shield register on an internal http route rather than a public route
+   * [ ] a way to avoid users to login with a well-known user/password
+      * Shield improvement to be contributed or funded
+      * Patched shield to login automatically with well-known user/password
+   * `/v2/auth/providers?for=web` endpoint returns
+```json
+[{"name":"LDAP ACCOUNT LOGIN","identifier":"cf","type":"uaa","web_entry":"/auth/cf/web","cli_entry":"/auth/cf/cli","redirect":"/auth/cf/redir"}]
+```
+
+
+* [x] Test with graphana. No issue noticed.
+
