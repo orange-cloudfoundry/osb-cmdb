@@ -607,6 +607,15 @@ Stack trace:
             * Not much in unit test https://github.com/spring-projects/spring-framework/blob/913eca9e141b9c58c2c175dc822ceab624a96f0b/spring-webflux/src/test/java/org/springframework/web/reactive/socket/server/upgrade/ReactorNettyRequestUpgradeStrategyTests.java#L27
             * WebSocket session close is covered into integration test https://github.com/spring-projects/spring-framework/blob/22bf62def11c990335b2d604c147b524105bf32e/spring-webflux/src/test/java/org/springframework/web/reactive/socket/WebSocketIntegrationTests.java#L147-L164
             * Not clear about websocket handshake error 
+            * [ ] Check how to register an error handler
+            * [x] Search for `spring reactive websocket 401 authorization failure` 
+               * https://github.com/spring-cloud/spring-cloud-gateway/issues/857 Gateway fail to close websocket when server return 401 when fail to check token during handshake
+                  * Exact same symptom as my problem
+                  * Marked as duplicate of https://github.com/spring-cloud/spring-cloud-gateway/issues/845 Gateway don't close websocket connection when client close websocket.
+         * [ ] try locating where is the exception handled
+            * [ ] set log level to trace
+            * reactor.netty.http.server.WebsocketServerOperations.onOutboundError() is where the error is caught, with the exception thrown indicating the http status
+               * [ ] read reactor netty documentation to better understand the API https://projectreactor.io/docs/netty/release/reference/index.html
       * [ ] Try fixing WebsocketRoutingFilter (gateway), assuming it can influence the handskake error
          * [ ] Read documentation about error handling
             * https://docs.spring.io/spring/docs/current/spring-framework-reference/web-reactive.html#webflux-dispatcher-exceptions
@@ -618,8 +627,12 @@ Stack trace:
            Common WebFlux exception handler that detects instances of org.springframework.web.server.ResponseStatusException (inherited from the base class) as well as exceptions annotated with @ResponseStatus by determining the HTTP status for them and updating the status of the response accordingly. If the response is already committed, the error remains unresolved and is propagated. 
              ```
          * [x] Increase log level on reactor netty server side: reactor.netty.http.server
+         * [x] Reproduce outside of webbrowser with curl to get raw byte output and be faster to reproduce. Need to edit ws:// protocol to http:// otherwise curl fails with `curl: (1) Protocol "ws" not supported or disabled in libcurl`
+         ```
+        curl -vvv 'http://localhost:8080/v2/events' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:79.0) G0' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Sec-WebSocket-Version: 13' -H 'Origin: http://localhost:8080' -H 'Sec-WebSocket-Extensions: permessage-deflate' -H 'Sec-WebSocket-Key: RVzxNmmNHdZQPNOCIWbomA==' -H 'Connection: keep-alive, Upgrade' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' -H 'Upgrade: websocket'
+          ```
          * [x] Add debugger breakpoint in the error handler
-            * [ ] during handling
+            * [x] during handling
                * triggers for premature webpage closed
                * does not trigger for 401 response
                  
@@ -641,3 +654,174 @@ Error has been observed at the following site(s):
 	|_        Flux.next ⇢ at org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient.execute(ReactorNettyWebSocketClient.java:155)
 	|_       checkpoint ⇢ http://localhost:8080/v2/events [ReactorNettyRequestUpgradeStrategy]
 ```
+
+
+```
+curl --trace - 'http://localhost:8080/v2/events' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:79.0) Gecko/20100101 Firefox/79.0' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Sec-WebSocket-Version: 13' -H 'Origin: http://localhost:8080' -H 'Sec-WebSocket-Extensions: permessage-deflate' -H 'Sec-WebSocket-Key: RVzxNmmNHdZQPNOCIWbomA==' -H 'Connection: keep-alive, Upgrade' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' -H 'Upgrade: websocket'
+
+<= Recv header, 21 bytes (0x15)
+0000: 63 6f 6e 6e 65 63 74 69 6f 6e 3a 20 75 70 67 72 connection: upgr
+0010: 61 64 65 0d 0a                                  ade..
+<= Recv header, 52 bytes (0x34)
+0000: 73 65 63 2d 77 65 62 73 6f 63 6b 65 74 2d 61 63 sec-websocket-ac
+0010: 63 65 70 74 3a 20 76 73 46 36 34 32 64 69 44 62 cept: vsF642diDb
+0020: 74 6b 57 54 5a 77 76 50 58 52 6f 37 67 65 76 47 tkWTZwvPXRo7gevG
+0030: 49 3d 0d 0a                                     I=..
+<= Recv header, 2 bytes (0x2)
+0000: 0d 0a                                           ..
+<= Recv data, 25 bytes (0x19)
+0000: 88 17 03 ea 53 65 72 76 65 72 20 69 6e 74 65 72 ....Server inter
+0010: 6e 61 6c 20 65 72 72 6f 72                      nal error
+��Server internal error== Info: Connection #0 to host localhost left intact
+
+```
+
+```
+strace  -e trace=network curl  'http://localhost:8080/v2/events' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:79.0) Gecko/20100101 Firefox/79.0' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Sec-WebSocket-Version: 13' -H 'Origin: http://localhost:8080' -H 'Sec-WebSocket-Extensions: permessage-deflate' -H 'Sec-WebSocket-Key: RVzxNmmNHdZQPNOCIWbomA==' -H 'Connection: keep-alive, Upgrade' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' -H 'Upgrade: websocket'
+socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP) = 3
+socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) = 3
+setsockopt(3, SOL_TCP, TCP_NODELAY, [1], 4) = 0
+setsockopt(3, SOL_SOCKET, SO_KEEPALIVE, [1], 4) = 0
+setsockopt(3, SOL_TCP, TCP_KEEPIDLE, [60], 4) = 0
+setsockopt(3, SOL_TCP, TCP_KEEPINTVL, [60], 4) = 0
+connect(3, {sa_family=AF_INET, sin_port=htons(8080), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+getsockopt(3, SOL_SOCKET, SO_ERROR, [0], [4]) = 0
+getpeername(3, {sa_family=AF_INET, sin_port=htons(8080), sin_addr=inet_addr("127.0.0.1")}, [128->16]) = 0
+getsockname(3, {sa_family=AF_INET, sin_port=htons(42764), sin_addr=inet_addr("127.0.0.1")}, [128->16]) = 0
+sendto(3, "GET /v2/events HTTP/1.1\r\nHost: l"..., 462, MSG_NOSIGNAL, NULL, 0) = 462
+recvfrom(3, "HTTP/1.1 101 Switching Protocols"..., 102400, 0, NULL, NULL) = 129
+recvfrom(3, "\210\27\3\352Server internal error", 102400, 0, NULL, NULL) = 25
+recvfrom(3, "", 102400, 0, NULL, NULL)  = 0
+��Server internal error+++ exited with 0 +++
+
+```
+
+
+
+```
+	@Override
+	protected void onOutboundError(Throwable err) {
+		if (channel().isActive()) {
+			if (log.isDebugEnabled()) {
+				log.debug(format(channel(), "Outbound error happened"), err);
+			}
+			sendCloseNow(new CloseWebSocketFrame(1002, "Server internal error"), f ->
+					terminate());
+		}
+	}
+
+ at stack trace:
+onOutboundError:172, WebsocketServerOperations (reactor.netty.http.server)
+onError:219, ChannelOperations (reactor.netty.channel)
+onError:670, HttpServerOperations$WebsocketSubscriber (reactor.netty.http.server)
+onError:390, FluxOnAssembly$OnAssemblySubscriber (reactor.core.publisher)
+onError:390, FluxOnAssembly$OnAssemblySubscriber (reactor.core.publisher)
+onError:87, MonoNext$NextSubscriber (reactor.core.publisher)
+onError:390, FluxOnAssembly$OnAssemblySubscriber (reactor.core.publisher)
+onError:227, FluxPeekFuseable$PeekFuseableSubscriber (reactor.core.publisher)
+onError:390, FluxOnAssembly$OnAssemblySubscriber (reactor.core.publisher)
+onError:197, MonoFlatMapMany$FlatMapManyMain (reactor.core.publisher)
+onError:390, FluxOnAssembly$OnAssemblySubscriber (reactor.core.publisher)
+onError:124, SerializedSubscriber (reactor.core.publisher)
+whenError:213, FluxRetryWhen$RetryWhenMainSubscriber (reactor.core.publisher)
+onError:255, FluxRetryWhen$RetryWhenOtherSubscriber (reactor.core.publisher)
+onError:390, FluxOnAssembly$OnAssemblySubscriber (reactor.core.publisher)
+drain:406, FluxConcatMap$ConcatMapImmediate (reactor.core.publisher)
+onNext:243, FluxConcatMap$ConcatMapImmediate (reactor.core.publisher)
+onNext:333, DirectProcessor$DirectInner (reactor.core.publisher)
+onNext:142, DirectProcessor (reactor.core.publisher)
+onNext:99, SerializedSubscriber (reactor.core.publisher)
+onError:180, FluxRetryWhen$RetryWhenMainSubscriber (reactor.core.publisher)
+onError:390, FluxOnAssembly$OnAssemblySubscriber (reactor.core.publisher)
+error:185, MonoCreate$DefaultMonoSink (reactor.core.publisher)
+onUncaughtException:402, HttpClientConnect$HttpObserver (reactor.netty.http.client)
+onUncaughtException:507, ReactorNetty$CompositeConnectionObserver (reactor.netty)
+onUncaughtException:528, PooledConnectionProvider$DisposableAcquire (reactor.netty.resources)
+onUncaughtException:364, PooledConnectionProvider$PooledConnection (reactor.netty.resources)
+drainReceiver:225, FluxReceive (reactor.netty.channel)
+onInboundError:430, FluxReceive (reactor.netty.channel)
+onInboundError:442, ChannelOperations (reactor.netty.channel)
+onInboundNext:122, WebsocketClientOperations (reactor.netty.http.client)
+channelRead:96, ChannelOperationsHandler (reactor.netty.channel)
+invokeChannelRead:379, AbstractChannelHandlerContext (io.netty.channel)
+invokeChannelRead:365, AbstractChannelHandlerContext (io.netty.channel)
+fireChannelRead:357, AbstractChannelHandlerContext (io.netty.channel)
+channelRead:103, MessageToMessageDecoder (io.netty.handler.codec)
+invokeChannelRead:379, AbstractChannelHandlerContext (io.netty.channel)
+invokeChannelRead:365, AbstractChannelHandlerContext (io.netty.channel)
+fireChannelRead:357, AbstractChannelHandlerContext (io.netty.channel)
+fireChannelRead:436, CombinedChannelDuplexHandler$DelegatingChannelHandlerContext (io.netty.channel)
+fireChannelRead:324, ByteToMessageDecoder (io.netty.handler.codec)
+channelRead:296, ByteToMessageDecoder (io.netty.handler.codec)
+channelRead:251, CombinedChannelDuplexHandler (io.netty.channel)
+invokeChannelRead:379, AbstractChannelHandlerContext (io.netty.channel)
+invokeChannelRead:365, AbstractChannelHandlerContext (io.netty.channel)
+fireChannelRead:357, AbstractChannelHandlerContext (io.netty.channel)
+channelRead:271, LoggingHandler (io.netty.handler.logging)
+invokeChannelRead:379, AbstractChannelHandlerContext (io.netty.channel)
+invokeChannelRead:365, AbstractChannelHandlerContext (io.netty.channel)
+fireChannelRead:357, AbstractChannelHandlerContext (io.netty.channel)
+unwrap:1526, SslHandler (io.netty.handler.ssl)
+decodeJdkCompatible:1275, SslHandler (io.netty.handler.ssl)
+decode:1322, SslHandler (io.netty.handler.ssl)
+decodeRemovalReentryProtection:501, ByteToMessageDecoder (io.netty.handler.codec)
+callDecode:440, ByteToMessageDecoder (io.netty.handler.codec)
+channelRead:276, ByteToMessageDecoder (io.netty.handler.codec)
+invokeChannelRead:379, AbstractChannelHandlerContext (io.netty.channel)
+invokeChannelRead:365, AbstractChannelHandlerContext (io.netty.channel)
+fireChannelRead:357, AbstractChannelHandlerContext (io.netty.channel)
+channelRead:1410, DefaultChannelPipeline$HeadContext (io.netty.channel)
+invokeChannelRead:379, AbstractChannelHandlerContext (io.netty.channel)
+invokeChannelRead:365, AbstractChannelHandlerContext (io.netty.channel)
+fireChannelRead:919, DefaultChannelPipeline (io.netty.channel)
+epollInReady:792, AbstractEpollStreamChannel$EpollStreamUnsafe (io.netty.channel.epoll)
+processReady:475, EpollEventLoop (io.netty.channel.epoll)
+run:378, EpollEventLoop (io.netty.channel.epoll)
+run:989, SingleThreadEventExecutor$4 (io.netty.util.concurrent)
+run:74, ThreadExecutorMap$2 (io.netty.util.internal)
+run:30, FastThreadLocalRunnable (io.netty.util.concurrent)
+run:748, Thread (java.lang) 
+```
+
+
+* Aug 3rd, 2020 3pm
+   * status:
+       * Very likely bug in SCG/reactor-netty 
+       * shield loops on unexpected response (which was modified by SCG proxification)
+   * Fixes
+       * [x] Submit a GH issue as a complement to stack overflow question https://github.com/spring-cloud/spring-cloud-gateway/issues/1884
+       * client code (Netty client?) to expose the observed HTTP response code during handshake. Currently exception does not provide status code programmatically (only present in the exception message)
+       * server code (WebsocketRoutingFilter) to catch/handle the error instead of letting it flow up to reactor-netty which currently applies default behavior
+          * mark WS connection for closing
+          * return hardcoded internal error message 
+        
+   * Workaround
+      * Modify shield nginx config to return 401 on the WSS message ?
+      * Modify SCG with a shield-specific rule to workaround
+         * make an HTTP request before websocket upgrading to check shield authentication status
+      * [ ] study shield authentication backends and possible basic auth support 
+      * [ ] fix shield JS client code to avoid looping on empty responses and triggering a race condition with `login`
+         * submit issue to shield
+         * [ ] study how 401 status is currently handled to avoid retry. Try to apply same handling on empty/invalid response. 
+      
+Server WebSocket handshake errors should result in handshake error returned to client
+Handle failures during WebSocket handshake (currently returns 101)
+Server WebSocket handshake errors should return client handshake error
+Return original status code during server WebSocket handshake errors
+
+* As a spring cloud gateway user
+* in order to route traffic to websocket servers that perform authentication at the websocket handshake time (which is a valid behavior according to [WSS specs section-4.2.2](https://tools.ietf.org/html/rfc6455#section-4.2.2) ) and return a 401 status code to clients
+* I need to be able handle server WS handshake failure and to return the original (e.g. 401) status to websocket client handshake
+
+
+Currently, as previously reported in #857 (which was marked as a duplicate for #845), the gateway is first returning the WSS handshake response (`HTTP/1.1 101 Switching Protocols` triggered in ReactorNettyRequestUpgradeStrategy) prior to contacting the server and receiving the 401 status, and finally returns a default `Server internal error` to the client
+
+Traces and steps to reproduce are detailed into https://stackoverflow.com/questions/63196638/spring-cloud-gateway-hides-server-websocket-handshake-401-failures-to-clients
+
+I'm suspecting the following problems/dependencies to fix this issue:
+* client code (Netty client?) needs to expose the observed HTTP response code during handshake. Currently, the exception does not provide access to the status code programmatically (it is only present in the exception message).
+```
+io.netty.handler.codec.http.websocketx.WebSocketHandshakeException: Invalid handshake response getStatus: 401 Unauthorized
+	at io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker13.verify(WebSocketClientHandshaker13.java:274) ~[netty-codec-http-4.1.51.Final.jar:4.1.51.Final]
+``` 
+* server code (ReactorNettyRequestUpgradeStrategy in spring-webflux) needs to receive and collect server errors during client handshake and return them to the client prior to committing the websocket handshake 
