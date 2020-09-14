@@ -96,7 +96,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		InMemoryUserDetailsManagerConfigurer<AuthenticationManagerBuilder> inMemoryAuthentication) {
 		if (osbUser != null && osbPassword != null) {
 			inMemoryAuthentication.withUser(osbUser).password(NOOP_PASSWORD_PREFIX + osbPassword).roles(
-				"ADMIN");
+				"OSB_USER");
 		}
 		else {
 			log.warn("No admin user configured with  property: {}={} and {}={}, actuator access will not be possible." +
