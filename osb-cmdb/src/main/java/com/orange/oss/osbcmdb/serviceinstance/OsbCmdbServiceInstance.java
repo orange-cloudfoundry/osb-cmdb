@@ -532,7 +532,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		UpdateServiceInstanceResponseBuilder responseBuilder = UpdateServiceInstanceResponse.builder();
 		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
-
+		boolean updateMetadataNow = false;
 		try {
 			org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceResponse updateServiceInstanceResponse;
 			MaintenanceInfo formattedForBackendInstanceMI = maintenanceInfoFormatterService.formatForBackendInstance(request);
@@ -565,11 +565,14 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					break;
 				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
 					asyncProvisioning = false;
+					updateMetadataNow = true;
+
 					break;
 				case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
 					LOG.info("Backing service failed to update with {}, flowing up the error to the osb " +
 							"client",
 						lastOperation);
+					updateMetadataNow = true;
 					throw new ServiceBrokerException(redactExceptionMessage(lastOperation.getDescription()));
 				default:
 					LOG.error("Unexpected last operation state:" + lastOperation.getState());
@@ -581,6 +584,14 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		catch (Exception e) {
 			LOG.info("Unable to update service, caught:" + e, e);
 			return handleUpdateException(e, backingServiceInstanceName, spacedTargetedOperations, request, metaData);
+		}
+		finally {
+
+			//update metadata (e.g. service instance rename) even if update failed as long as
+			//service instance is not locked (i.e. being updated)
+			if (updateMetadataNow) {
+				updateServiceInstanceMetadata(existingBackingServiceInstance.getId(), metaData);
+			}
 		}
 		return Mono.just(responseBuilder.build());
 	}
