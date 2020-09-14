@@ -571,10 +571,6 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			LOG.info("Unable to update service, caught:" + e, e);
 			return handleUpdateException(e, backingServiceInstanceName, spacedTargetedOperations, request, metaData);
 		}
-		finally {
-			//systematically try to update metadata (e.g. service instance rename) even if update failed
-			updateServiceInstanceMetadata(existingBackingServiceInstance.getId(), metaData);
-		}
 		return Mono.just(responseBuilder.build());
 	}
 
@@ -815,7 +811,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	private Mono<UpdateServiceInstanceResponse> handleUpdateException(Exception originalException,
 		String backingServiceInstanceName,
 		CloudFoundryOperations spacedTargetedOperations,
-		UpdateServiceInstanceRequest request, MetaData metaData) {
+		UpdateServiceInstanceRequest request,
+		MetaData metaData) {
 		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ",
 			originalException, request);
 
