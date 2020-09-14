@@ -3,6 +3,7 @@ package com.orange.oss.osbcmdb.serviceinstance;
 import java.time.Duration;
 
 import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
+import com.orange.oss.osbcmdb.metadata.MetaData;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.organizations.ListOrganizationSpacesRequest;
@@ -32,6 +33,7 @@ import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
@@ -72,16 +74,22 @@ class OsbCmdbServiceInstanceTest {
 
 	@Test
 	void serializesStateToJson() {
+		MetaData serviceInstanceMetaData = MetaData.builder()
+			.labels(singletonMap("key", "value"))
+			.build();
 		String json = osbCmdbServiceInstance.toJson(new OsbCmdbServiceInstance.CmdbOperationState("guid",
-			OsbCmdbServiceInstance.OsbOperation.CREATE));
-		assertThat(json).isEqualTo("{\"backingCfServiceInstanceGuid\":\"guid\",\"operationType\":\"CREATE\"}");
+			OsbCmdbServiceInstance.OsbOperation.CREATE, serviceInstanceMetaData));
+		assertThat(json).isEqualTo("{\"backingCfServiceInstanceGuid\":\"guid\",\"operationType\":\"CREATE\",\"metaData\":{\"annotations\":{},\"labels\":{\"key\":\"value\"}}}");
 	}
 
 	@Test
 	void deserializesStateFromJson() {
-		String json = "{\"backingCfServiceInstanceGuid\":\"guid\",\"operationType\":\"CREATE\"}";
+		MetaData serviceInstanceMetaData = MetaData.builder()
+			.labels(singletonMap("key", "value"))
+			.build();
+		String json = "{\"backingCfServiceInstanceGuid\":\"guid\",\"operationType\":\"CREATE\",\"metaData\":{\"annotations\":{},\"labels\":{\"key\":\"value\"}}}";
 		assertThat(osbCmdbServiceInstance.fromJson(json)).isEqualTo(new OsbCmdbServiceInstance.CmdbOperationState("guid",
-			OsbCmdbServiceInstance.OsbOperation.CREATE));
+			OsbCmdbServiceInstance.OsbOperation.CREATE, serviceInstanceMetaData));
 	}
 
 	@Test
