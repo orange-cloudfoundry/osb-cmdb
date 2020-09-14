@@ -19,8 +19,6 @@ package com.orange.oss.osbcmdb.metadata;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.springframework.util.CollectionUtils;
 
 public class MetaData {
@@ -78,6 +76,33 @@ public class MetaData {
 			return new MetaData(annotations, labels);
 		}
 
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		MetaData metaData = (MetaData) o;
+
+		if (annotations != null ? !annotations.equals(metaData.annotations) : metaData.annotations != null)
+			return false;
+		return labels != null ? labels.equals(metaData.labels) : metaData.labels == null;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = annotations != null ? annotations.hashCode() : 0;
+		result = 31 * result + (labels != null ? labels.hashCode() : 0);
+		return result;
+	}
+
+	@Override
+	public String toString() {
+		return "MetaData{" +
+			"annotations=" + annotations +
+			", labels=" + labels +
+			'}';
 	}
 
 }

@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 
 import javax.net.ssl.SSLException;
 
@@ -472,7 +471,7 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	protected Map<String, Object> getServiceInstanceParams(String serviceInstanceGuid) {
-		return cloudFoundryService.getServiceInstanceParams(serviceInstanceGuid).block();
+		return cloudFoundryService.getServiceInstanceParams(serviceInstanceGuid).	block();
 	}
 
 	protected ServiceKey getServiceKey(String serviceKeyName, String serviceInstanceName, String space) {

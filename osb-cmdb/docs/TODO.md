@@ -1,5 +1,8 @@
 
-* [ ] Release new version
+
+---------------------------------------
+
+* [X] Release new version 1.1.0
 * [x] Refine default log level in paas-templates 
 * [ ] Bump version in paas-templates
 * [ ] test and push osb-cmdb-ci workaround for failed purge + share workaround in cli issue

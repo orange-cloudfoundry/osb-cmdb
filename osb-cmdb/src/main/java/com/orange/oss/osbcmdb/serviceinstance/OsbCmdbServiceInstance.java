@@ -63,6 +63,7 @@ import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInsta
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceResponse.UpdateServiceInstanceResponseBuilder;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
+import org.springframework.lang.Nullable;
 
 import static com.orange.oss.osbcmdb.metadata.BaseMetadataFormatter.BROKERED_SERVICE_INSTANCE_GUID;
 
@@ -207,6 +208,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		String backingServicePlanName = request.getPlan().getName();
 		CloudFoundryOperations spacedTargetedOperations = null;
 
+		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
 		try {
 			spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
 			//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
@@ -217,7 +219,6 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 			CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
 			String backingServiceInstanceInstanceId = null;
-			MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
 			try {
 				rejectDuplicateServiceInstanceGuid(request, spacedTargetedOperations);
 
@@ -249,7 +250,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						// GUID
 						responseBuilder.operation(
 							toJson(new CmdbOperationState(createServiceInstanceResponse.getMetadata().getId(),
-								OsbOperation.CREATE)));
+								OsbOperation.CREATE, metaData)));
 						break;
 					case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
 						asyncProvisioning = false;
@@ -279,7 +280,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			// https://github.com/cloudfoundry/cloud_controller_ng/blob/80176ff0068741088e19629516c0285b4cf57ef3/spec/unit/lib/services/service_brokers/v2/client_spec.rb
 			// To avoid relying on exceptions thrown to make decisions, we try to diagnose and recover the exception
 			// globally by inspecting the backing service instance state instead.
-			return handleCreateException(e, backingServiceName, spacedTargetedOperations, request);
+			return handleCreateException(e, backingServiceName, spacedTargetedOperations, request, metaData);
 		}
 	}
 
@@ -353,7 +354,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						// GUID
 						responseBuilder
 							.operation(toJson(new CmdbOperationState(deletedSi.getId(),
-								OsbOperation.DELETE)));
+								OsbOperation.DELETE, null)));
 						break;
 					case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED: //unlikely, deletedSi would be null instead
 						asyncProvisioning = false;
@@ -543,7 +544,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					// GUID
 					responseBuilder
 						.operation(toJson(new CmdbOperationState(updateServiceInstanceResponse.getMetadata().getId(),
-							OsbOperation.UPDATE)));
+							OsbOperation.UPDATE, metaData)));
 					break;
 				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
 					asyncProvisioning = false;
@@ -562,7 +563,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		catch (Exception e) {
 			LOG.info("Unable to update service, caught:" + e, e);
-			return handleUpdateException(e, backingServiceInstanceName, spacedTargetedOperations, request);
+			return handleUpdateException(e, backingServiceInstanceName, spacedTargetedOperations, request, metaData);
 		}
 		finally {
 			//systematically try to update metadata (e.g. service instance rename) even if update failed
@@ -666,11 +667,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	 *
 	 * @param originalException The exception occuring during processing. Note that Subclasses of
 	 * 	ServiceBrokerException are considered already qualified, and returned as-is
+	 * @param metaData metadata to assign to service instance upon its async completion
 	 */
 	private Mono<CreateServiceInstanceResponse> handleCreateException(Exception originalException,
 		String backingServiceName,
 		CloudFoundryOperations spacedTargetedOperations,
-		CreateServiceInstanceRequest request) {
+		CreateServiceInstanceRequest request, MetaData metaData) {
 		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ",
 			originalException, request);
 
@@ -715,7 +717,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				else {
 					LOG.info("Concurrent request is not incompatible and is still in progress success: 202");
 					String operation = toJson(
-						new CmdbOperationState(existingServiceInstance.getId(), OsbOperation.CREATE));
+						new CmdbOperationState(existingServiceInstance.getId(), OsbOperation.CREATE,
+							metaData));
 					//202 Accepted (can't yet throw ServiceBrokerCreateOperationInProgressException,
 					//because despite fix for
 					//https://github.com/spring-cloud/spring-cloud-open-service-broker/issues/284
@@ -769,7 +772,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					LOG.info("Concurrent deprovisionning request is still in progress. " +
 						"Returning accepted: 202");
 					String operation = toJson(new CmdbOperationState(deletedSi.getId(),
-						OsbOperation.DELETE));
+						OsbOperation.DELETE, null));
 					//202 Accepted
 					return Mono.just(DeleteServiceInstanceResponse.builder()
 						.operation(operation)
@@ -801,11 +804,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	 *
 	 * @param originalException The exception occuring during processing. Note that Subclasses of
 	 * 	ServiceBrokerException are considered already qualified, and returned as-is
+	 * @param metaData metadata to update to service instance upon its async completion
 	 */
 	private Mono<UpdateServiceInstanceResponse> handleUpdateException(Exception originalException,
 		String backingServiceInstanceName,
 		CloudFoundryOperations spacedTargetedOperations,
-		UpdateServiceInstanceRequest request) {
+		UpdateServiceInstanceRequest request, MetaData metaData) {
 		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ",
 			originalException, request);
 
@@ -831,7 +835,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					LOG.info("Concurrent update request is still in progress. " +
 						"Returning accepted: 202");
 					String operation = toJson(new CmdbOperationState(updatedSi.getId(),
-						OsbOperation.UPDATE));
+						OsbOperation.UPDATE, metaData));
 					//202 Accepted
 					return Mono.just(UpdateServiceInstanceResponse.builder()
 						.operation(operation)
@@ -970,6 +974,9 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		OsbOperation operationType;
 
+		@Nullable
+		MetaData metaData;
+
 		/**
 		 * Required for Jackson deserialization. See https://www.baeldung.com/jackson-exception#2-the-solution
 		 */
@@ -977,10 +984,17 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		public CmdbOperationState() {
 		}
 
+		/**
+		 * construct a new {@link CmdbOperationState}
+		 * @param metaData metadata to assign/update to service instance, or null to not update/assign
+		 * one
+		 */
 		public CmdbOperationState(String backingCfServiceInstanceGuid,
-			OsbOperation operationType) {
+			OsbOperation operationType,
+			@Nullable MetaData metaData) {
 			this.backingCfServiceInstanceGuid = backingCfServiceInstanceGuid;
 			this.operationType = operationType;
+			this.metaData = metaData;
 		}
 
 		@Override
@@ -991,7 +1005,25 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			CmdbOperationState that = (CmdbOperationState) o;
 
 			if (!backingCfServiceInstanceGuid.equals(that.backingCfServiceInstanceGuid)) return false;
-			return operationType == that.operationType;
+			if (operationType != that.operationType) return false;
+			return metaData != null ? metaData.equals(that.metaData) : that.metaData == null;
+		}
+
+		@Override
+		public int hashCode() {
+			int result = backingCfServiceInstanceGuid.hashCode();
+			result = 31 * result + operationType.hashCode();
+			result = 31 * result + (metaData != null ? metaData.hashCode() : 0);
+			return result;
+		}
+
+		@Override
+		public String toString() {
+			return "CmdbOperationState{" +
+				"backingCfServiceInstanceGuid='" + backingCfServiceInstanceGuid + '\'' +
+				", operationType=" + operationType +
+				", metaData=" + metaData +
+				'}';
 		}
 
 		@SuppressWarnings("unused")
@@ -1000,16 +1032,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 
 		@SuppressWarnings("unused")
-		public OsbOperation getOperationType() {
-			return operationType;
-		}
+		@Nullable
+		public MetaData getMetaData() { return metaData; }
 
-		@Override
-		public int hashCode() {
-			int result = backingCfServiceInstanceGuid.hashCode();
-			result = 31 * result + operationType.hashCode();
-			return result;
-		}
+		@SuppressWarnings("unused")
+		public OsbOperation getOperationType() { return operationType; }
 
 	}
 
