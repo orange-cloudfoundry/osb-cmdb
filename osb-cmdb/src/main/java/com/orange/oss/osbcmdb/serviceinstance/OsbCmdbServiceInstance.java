@@ -454,21 +454,18 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			// errored -> errored
 			LastOperation lastOperation = serviceInstanceResponse.getEntity().getLastOperation();
 			operationState = convertCfStateToOsbState(lastOperation.getState());
-		}
 
-		switch (operationState) {
-			case IN_PROGRESS:
-				//wait for completion to update meta-data
-				break;
+			switch (operationState) {
+				case IN_PROGRESS:
+					//wait for completion to update meta-data
+					break;
 
-			case SUCCEEDED: // fall through
-			case FAILED:
-				//Now that service provisionning/update is complete, we can update its metadata, see https://github.com/cloudfoundry/capi-release/issues/183
-				if (backingServiceInstanceGuid != null) {
-					//Flow up any error during meta-a assignment, as to let CF CC_NG perform the retry.
+				case SUCCEEDED: // fall through
+				case FAILED:
+					//Now that service provisionning/update is complete, we can update its metadata, see https://github.com/cloudfoundry/capi-release/issues/183
 					updateServiceInstanceMetadata(backingServiceInstanceGuid, cmdbOperationState.metaData);
-				}
-				break;
+					break;
+			}
 		}
 
 		return Mono.just(GetLastServiceOperationResponse.builder()
