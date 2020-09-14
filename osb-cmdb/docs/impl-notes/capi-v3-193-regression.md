@@ -124,7 +124,7 @@ CF_TRACE=true cf curl -X PATH /v3/service_instances/39308492-68d3-4601-adb6-8f76
             * update parsed returned state
          * GetLastOperation
             * [X] extract metadata from returned state
-            * [ ] update metadata
+            * [x] update metadata
 
 
       * 1b) transiently move meta-data update in GetLastOperation once the service status is'nt in progress
