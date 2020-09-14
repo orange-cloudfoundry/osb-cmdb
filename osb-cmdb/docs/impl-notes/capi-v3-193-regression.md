@@ -122,7 +122,7 @@ CF_TRACE=true cf curl -X PATH /v3/service_instances/39308492-68d3-4601-adb6-8f76
             * might break acceptance tests
          * [X] CSI: add metadata to returned state **only when async**
             * update parsed returned state
-         * [ ] USI: add metadata to returned state **only when async**
+         * [x] USI: add metadata to returned state **only when async**
             * update parsed returned state
          * GetLastOperation
             * [X] extract metadata from returned state
