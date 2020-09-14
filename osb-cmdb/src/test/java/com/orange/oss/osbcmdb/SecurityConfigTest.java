@@ -148,11 +148,11 @@ public class SecurityConfigTest {
 	}
 
 	@Test
-	public void basicAuthAuthenticatedOsbUser_to_ActuactorInfo_shouldSucceedWith401() throws Exception {
+	public void basicAuthAuthenticatedOsbUser_to_ActuactorInfo_shouldBeRejectedWith401() throws Exception {
 		mvc.perform(get("/actuator/info")
 			.with(httpBasic(USER, PASSWORD))
 			.contentType(MediaType.APPLICATION_JSON))
-			.andExpect(status().isOk());
+			.andExpect(status().isForbidden());
 	}
 
 	/**
