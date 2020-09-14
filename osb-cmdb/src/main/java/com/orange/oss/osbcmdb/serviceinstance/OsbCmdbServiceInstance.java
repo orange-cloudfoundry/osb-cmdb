@@ -209,6 +209,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		CloudFoundryOperations spacedTargetedOperations = null;
 
 		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
+		boolean updateMetadataNow = false;
 		try {
 			spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
 			//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
@@ -218,49 +219,59 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 
 			CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
-			rejectDuplicateServiceInstanceGuid(request, spacedTargetedOperations);
+			String backingServiceInstanceInstanceId = null;
+			try {
+				rejectDuplicateServiceInstanceGuid(request, spacedTargetedOperations);
 
-			org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceResponse createServiceInstanceResponse;
-			createServiceInstanceResponse = client.serviceInstances()
-				.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
-					.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()))
-					.servicePlanId(backingServicePlanId)
-					.parameters(formatParameters(metaData, request.getParameters()))
-					.spaceId(spaceId)
-					.build())
-				.block();
+				org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceResponse createServiceInstanceResponse;
+				createServiceInstanceResponse = client.serviceInstances()
+					.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
+						.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()))
+						.servicePlanId(backingServicePlanId)
+						.parameters(formatParameters(metaData, request.getParameters()))
+						.spaceId(spaceId)
+						.build())
+					.block();
 
-			//noinspection ConstantConditions
-			responseBuilder.dashboardUrl(createServiceInstanceResponse.getEntity().getDashboardUrl());
+				//noinspection ConstantConditions
+				responseBuilder.dashboardUrl(createServiceInstanceResponse.getEntity().getDashboardUrl());
 
-			LastOperation lastOperation = createServiceInstanceResponse.getEntity().getLastOperation();
-			if (lastOperation == null) {
-				LOG.error("Unexpected missing last operation from CSI. Full response was {}",
-					createServiceInstanceResponse);
-				throw new OsbCmdbInternalErrorException("Internal CF protocol error");
-			}
-			boolean asyncProvisioning;
-			switch (lastOperation.getState()) {
-				case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
-					asyncProvisioning = true;
-					//make get last operation faster by tracking the underlying CF instance
-					// GUID
-					responseBuilder.operation(
-						toJson(new CmdbOperationState(createServiceInstanceResponse.getMetadata().getId(),
-							OsbOperation.CREATE, metaData)));
-					break;
-				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
-					asyncProvisioning = false;
-					break;
-				case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
-					LOG.info("Backing service failed to provision with {}, flowing up the error to the osb client",
-						lastOperation);
-					throw new OsbCmdbInternalErrorException(redactExceptionMessage(lastOperation.getDescription()));
-				default:
-					LOG.error("Unexpected last operation state:" + lastOperation.getState());
+				backingServiceInstanceInstanceId = createServiceInstanceResponse.getMetadata().getId();
+				LastOperation lastOperation = createServiceInstanceResponse.getEntity().getLastOperation();
+				if (lastOperation == null) {
+					LOG.error("Unexpected missing last operation from CSI. Full response was {}",
+						createServiceInstanceResponse);
 					throw new OsbCmdbInternalErrorException("Internal CF protocol error");
+				}
+				boolean asyncProvisioning;
+				switch (lastOperation.getState()) {
+					case OsbApiConstants.LAST_OPERATION_STATE_INPROGRESS:
+						asyncProvisioning = true;
+						//make get last operation faster by tracking the underlying CF instance
+						// GUID
+						responseBuilder.operation(
+							toJson(new CmdbOperationState(createServiceInstanceResponse.getMetadata().getId(),
+								OsbOperation.CREATE, metaData)));
+						break;
+					case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
+						asyncProvisioning = false;
+						updateMetadataNow = true;
+						break;
+					case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
+						LOG.info("Backing service failed to provision with {}, flowing up the error to the osb client",
+							lastOperation);
+						throw new OsbCmdbInternalErrorException(redactExceptionMessage(lastOperation.getDescription()));
+					default:
+						LOG.error("Unexpected last operation state:" + lastOperation.getState());
+						throw new OsbCmdbInternalErrorException("Internal CF protocol error");
+				}
+				responseBuilder.async(asyncProvisioning);
 			}
-			responseBuilder.async(asyncProvisioning);
+			finally {
+				if (backingServiceInstanceInstanceId != null && updateMetadataNow) {
+					updateServiceInstanceMetadata(backingServiceInstanceInstanceId, metaData);
+				}
+			}
 
 			return Mono.just(responseBuilder.build());
 		}

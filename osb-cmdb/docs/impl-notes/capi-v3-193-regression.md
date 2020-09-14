@@ -120,7 +120,9 @@ CF_TRACE=true cf curl -X PATH /v3/service_instances/39308492-68d3-4601-adb6-8f76
                   * a database
          * during async service provisioning, the GetServiceInstance and concurrency prevention in CSI will still be broken as they rely on metadata that would be missing
             * might break acceptance tests
-         * [X] CSI/USI: add metadata to returned state
+         * [X] CSI: add metadata to returned state **only when async**
+            * update parsed returned state
+         * [ ] USI: add metadata to returned state **only when async**
             * update parsed returned state
          * GetLastOperation
             * [X] extract metadata from returned state
