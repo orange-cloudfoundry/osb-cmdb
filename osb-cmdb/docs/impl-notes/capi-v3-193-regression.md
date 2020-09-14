@@ -323,3 +323,18 @@ ationGuid='c2169b61-9360-4d67-968c-575f3a10edf5', spaceGuid='1a603476-a3a1-4c32-
 
 
 
+# Orphan mitigation (OM) change
+
+* CC now sends a DELETE on async provisionning failure, whereas it used not to.
+* impacts
+   * this breaks assertions that were inspecting the failed backing service instance which is now gone.
+   * prevents coab operators from inspecting fa
+* [x] report the issue upstream https://github.com/cloudfoundry/cloud_controller_ng/issues/1842
+* Q: can we update tests in a way that remains passing if previous OM behavior gets restored ?
+
+
+# Metadata update change
+
+* a service instance metadata update is now intepreted as a service instance update, consequently swallowing the last service instance update
+* [ ] reproduce the problem with overview broker
+* [ ] report the issue upstream

@@ -74,7 +74,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 
 			//then a brokered service is updated
 			ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
-			// then the brokered service instance once completes, is expected to be successull
+			// then the brokered service instance once completes, is expected to be successful
 			assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("update");
 			assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
 			//and dashboard url still available
@@ -93,13 +93,13 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 			// duplicated concurrent requests
 			LOG.info("Param update #{}", i);
 			//given a backend service is configured to accept any update
-			//when a brokered service update plan is requested
+			//when a brokered service update param is requested
 			Map<String, Object> parameters = Collections.singletonMap("a-key", "a-value");
 			updateServiceInstance(brokeredServiceInstanceName(), parameters);
 
 			//then a brokered service is updated
 			ServiceInstance brokeredServiceInstance = getServiceInstance(brokeredServiceInstanceName());
-			// then the brokered service instance once completes, is expected to be failed
+			// then the brokered service instance once completes, is expected to be successful
 			assertThat(brokeredServiceInstance.getLastOperation()).isEqualTo("update");
 			assertThat(brokeredServiceInstance.getStatus()).isEqualTo("succeeded");
 			assertThat(getServiceInstanceParams(brokeredServiceInstance.getId())).containsExactlyInAnyOrderEntriesOf(parameters);

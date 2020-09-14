@@ -66,10 +66,18 @@ class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 
 		// and an async backing service instance is created in the backing service with the id as service name
 		String backingServiceName = brokeredServiceInstance.getId();
-		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
-		//and the backing service has the right type
-		assertThat(backingServiceInstance.getService()).isEqualTo(brokeredServiceName());
-		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
+		try {
+			ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
+			//and the backing service has the right type
+			assertThat(backingServiceInstance.getService()).isEqualTo(brokeredServiceName());
+			assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
+		}
+		catch (java.lang.IllegalArgumentException e) { //in capi 1.197.0, orphan mitigation triggers and deletes the
+			// backing service
+			assertThat(e)
+				.hasMessageContaining("Service instance")
+				.hasMessageContaining("does not exist");
+		}
 
 
 		// when the service instance is deleted
