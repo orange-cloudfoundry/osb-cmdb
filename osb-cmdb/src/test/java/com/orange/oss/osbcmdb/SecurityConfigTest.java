@@ -10,13 +10,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -25,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -65,32 +69,31 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 public class SecurityConfigTest {
 
-	public static final String USER = "unit-test-user";
-
-	public static final String PASSWORD = "unit-test-password";
+	public static final String ADMIN_PASSWORD = "unit-test-admin-password";
 
 	public static final String ADMIN_USER = "unit-test-admin-user";
 
-	public static final String ADMIN_PASSWORD = "unit-test-admin-password";
+	public static final String PASSWORD = "unit-test-password";
+
+	public static final String USER = "unit-test-user";
 
 	@Autowired
 	private WebApplicationContext context;
 
 	private MockMvc mvc;
 
-	@BeforeEach
-	public void setup() {
-		mvc = MockMvcBuilders
-			.webAppContextSetup(context)
-			.apply(springSecurity())
-			.build();
-	}
+	@Autowired
+	private TestRestTemplate template;
 
+	@WithMockUser(roles = "ADMIN")
 	@Test
-	public void unauthenticatedOsbRequest_shouldFailWith401() throws Exception {
-		mvc.perform(get("/v2/catalog")
-			.contentType(MediaType.APPLICATION_JSON))
-			.andExpect(status().isUnauthorized());
+	public void adminAuthenticatedSensitiveActuactorEndPoints_shouldSucceedWith200() throws Exception {
+		String[] endpoints = {"conditions", "info", "httptrace", "loggers", "metrics", "threaddump"};
+		for (String endpoint : endpoints) {
+			mvc.perform(get("/actuator/" + endpoint)
+				.contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk());
+		}
 	}
 
 	@WithMockUser()
@@ -104,29 +107,37 @@ public class SecurityConfigTest {
 	/**
 	 * Ensure CSFR filter is disabled and does not prevents OSB PUT
 	 */
-    @WithMockUser()
-    @Test
-    public void authenticatedPostOsbRequest_shouldSucceedWith200() throws Exception {
-        mvc.perform(
-            put("/v2/service_instances/c594cdcf-72b2-4f24-ba51-ee8f2b179a4d?accepts_incomplete=true")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\n" +
-                    "  \"service_id\": \"a-fake-id\",\n" +
-                    "  \"plan_id\": \"id\",\n" +
-                    "  \"context\": {\n" +
-                    "    \"platform\": \"cloudfoundry\",\n" +
-                    "    \"some_field\": \"some-contextual-data\"\n" +
-                    "  },\n" +
-                    "  \"organization_guid\": \"org-guid-here\",\n" +
-                    "  \"space_guid\": \"space-guid-here\",\n" +
-                    "  \"parameters\": {\n" +
-                    "    \"parameter1\": 1,\n" +
-                    "    \"parameter2\": \"foo\"\n" +
-                    "  }\n" +
-                    "}")
-        )
-            .andExpect(status().isOk());
-    }
+	@WithMockUser()
+	@Test
+	public void authenticatedPostOsbRequest_shouldSucceedWith200() throws Exception {
+		mvc.perform(
+			put("/v2/service_instances/c594cdcf-72b2-4f24-ba51-ee8f2b179a4d?accepts_incomplete=true")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\n" +
+					"  \"service_id\": \"a-fake-id\",\n" +
+					"  \"plan_id\": \"id\",\n" +
+					"  \"context\": {\n" +
+					"    \"platform\": \"cloudfoundry\",\n" +
+					"    \"some_field\": \"some-contextual-data\"\n" +
+					"  },\n" +
+					"  \"organization_guid\": \"org-guid-here\",\n" +
+					"  \"space_guid\": \"space-guid-here\",\n" +
+					"  \"parameters\": {\n" +
+					"    \"parameter1\": 1,\n" +
+					"    \"parameter2\": \"foo\"\n" +
+					"  }\n" +
+					"}")
+		)
+			.andExpect(status().isOk());
+	}
+
+	@Test
+	public void basicAuthAuthenticatedAdmin_to_ActuactorInfo_shouldSucceedWith200() throws Exception {
+		mvc.perform(get("/actuator/info")
+			.with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+			.contentType(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk());
+	}
 
 	@Test
 	public void basicAuthAuthenticatedOsbRequest_shouldSucceedWith200() throws Exception {
@@ -134,6 +145,35 @@ public class SecurityConfigTest {
 			.with(httpBasic(USER, PASSWORD))
 			.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk());
+	}
+
+	@Test
+	public void basicAuthAuthenticatedOsbUser_to_ActuactorInfo_shouldBeRejectedWith401() throws Exception {
+		mvc.perform(get("/actuator/info")
+			.with(httpBasic(USER, PASSWORD))
+			.contentType(MediaType.APPLICATION_JSON))
+			.andExpect(status().isForbidden());
+	}
+
+	/**
+	 * Test with rest template to detect role mismatch for osb user
+	 */
+	@Test
+	public void osbAuthenticatedSensitiveActuactorEndPoints_shouldFailWith401() {
+		String[] endpoints = {"", "conditions", "info", "httptrace", "loggers", "metrics", "threaddump"};
+		for (String endpoint : endpoints) {
+			ResponseEntity<String> result = template.withBasicAuth(SecurityConfigTest.USER, SecurityConfigTest.PASSWORD)
+				.getForEntity("/actuator/" + endpoint, String.class);
+			assertThat(result.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+		}
+	}
+
+	@BeforeEach
+	public void setup() {
+		mvc = MockMvcBuilders
+			.webAppContextSetup(context)
+			.apply(springSecurity())
+			.build();
 	}
 
 	@Test
@@ -153,31 +193,11 @@ public class SecurityConfigTest {
 		}
 	}
 
-	@WithMockUser(roles = "ADMIN")
 	@Test
-	public void adminAuthenticatedSensitiveActuactorEndPoints_shouldSucceedWith200() throws Exception {
-		String[] endpoints = {"conditions", "info", "httptrace", "loggers", "metrics", "threaddump"};
-		for (String endpoint : endpoints) {
-			mvc.perform(get("/actuator/" + endpoint)
-				.contentType(MediaType.APPLICATION_JSON))
-				.andExpect(status().isOk());
-		}
-	}
-
-	@Test
-	public void basicAuthAuthenticatedAdmin_to_ActuactorInfo_shouldSucceedWith200() throws Exception {
-		mvc.perform(get("/actuator/info")
-			.with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+	public void unauthenticatedOsbRequest_shouldFailWith401() throws Exception {
+		mvc.perform(get("/v2/catalog")
 			.contentType(MediaType.APPLICATION_JSON))
-			.andExpect(status().isOk());
-	}
-
-	@Test
-	public void basicAuthAuthenticatedOsbUser_to_ActuactorInfo_shouldSucceedWith401() throws Exception {
-		mvc.perform(get("/actuator/info")
-			.with(httpBasic(USER, PASSWORD))
-			.contentType(MediaType.APPLICATION_JSON))
-			.andExpect(status().isOk());
+			.andExpect(status().isUnauthorized());
 	}
 
 	//Ensure SC-OSB starts and serves OSB endpoints
