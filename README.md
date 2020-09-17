@@ -18,6 +18,7 @@ cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc -
        * [Static catalog](#static-catalog)
        * [Dynamic catalog](#dynamic-catalog)
     * [Typical CMDB content](#typical-cmdb-content)
+    * [Assigning roles and permissions](#assigning-roles-and-permissions)
     * [Metadata attached to backing services](#metadata-attached-to-backing-services)
        * [Metadata for CF OSB client](#metadata-for-cf-osb-client)
        * [Metadata for K8S OSB client](#metadata-for-k8s-osb-client)
@@ -245,6 +246,33 @@ Following consumption of brokered services by smoke tests, Osb-cmdb have dynamic
     * 05 is the associated backend service in the cmdb
 * 11 is a service instance request made with `cf bind-service myapp myinstance` by smoke tests
     * 06 is the associated service key in the cmdb
+
+#### Assigning roles and permissions
+
+This section describes the use-cases and associated [cloudfoundry roles](https://docs.cloudfoundry.org/concepts/roles.html#roles) that each actor should be granted
+
+Actor  | Use case  | Permission  | Details
+-- | -- | -- | --
+cmdb-operator | deploy cmdb | space developer on the cmdb broker space | --
+cmdb-operator | run smoke tests | space developer on the smoke test space | --
+cmdb-operator | inspect whole cmdb content | Global auditor | --
+cmdb-operator | troubleshoot/fix cmdb content | space developer on each cmdb space or cloud_controller.admin | --
+osb platform consummers | inspect cmdb content for their tenant | space auditor on each cmdb space of their tenant </br>alternatively global editor | --
+osb service provider | inspect cmdb content for their service | space auditor on each cmdb space of their service offerings </br>alternatively global editor | --
+osb service provider | register/update their brokers/service plans | cloud-controller.admin or delegated permission through 3rd party tooling (*) | --
+osb service provider | manage service plan visibility | cloud-controller.admin or delegated permission through 3rd party tooling (*) | --
+
+(*) See related pending work at https://github.com/orange-cloudfoundry/paas-templates/issues/792 
+
+To assign global auditor role, refer to [uaa-user-management.html#global-auditor doc](https://docs.cloudfoundry.org/uaa/uaa-user-management.html#global-auditor)
+
+```
+$ uaac group add cloud_controller.global_auditor
+[...]
+$ uaac member add cloud_controller.global_auditor a-osb-platform-user-name
+ 
+```
+
 
 #### Metadata attached to backing services
 
