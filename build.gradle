@@ -16,12 +16,22 @@
 
 buildscript {
 	repositories {
-		maven { url "https://repo.spring.io/plugins-release" }
+		maven {
+			url "https://repo.spring.io/plugins-release"
+			content {
+				// Don't use repo.spring.io for non spring, See https://twitter.com/gberche/status/1311943761778352130
+				// can be tested with gradle --refresh-dependencies -i
+				// See https://stackoverflow.com/a/56670635/1484823
+				// See https://docs.gradle.org/5.4.1/userguide/declaring_repositories.html#declaring_a_repository_filter
+				excludeGroupByRegex "org\\.jfrog.*"
+			}
+		}
 	}
 	dependencies {
 		classpath("io.spring.gradle:propdeps-plugin:0.0.10.RELEASE")
 		classpath("io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE")
-		classpath("org.jfrog.buildinfo:build-info-extractor-gradle:4.9.9")
+// Was used by app-broker team for publication to artifactory. We don't need it
+//		classpath("org.jfrog.buildinfo:build-info-extractor-gradle:4.9.9")
 		classpath("io.spring.nohttp:nohttp-gradle:0.0.4.RELEASE")
 	}
 }
@@ -71,12 +81,12 @@ configure(allprojects) {
 
 	repositories {
 		mavenCentral()
-		if (!version.endsWith('RELEASE')) {
-			maven { url "https://repo.spring.io/milestone" }
-		}
-		if (version.endsWith('BUILD-SNAPSHOT')) {
-			maven { url "https://repo.spring.io/snapshot" }
-		}
+//		if (!version.endsWith('RELEASE')) {
+//			maven { url "https://repo.spring.io/milestone" }
+//		}
+//		if (version.endsWith('BUILD-SNAPSHOT')) {
+//			maven { url "https://repo.spring.io/snapshot" }
+//		}
 		maven {
 			url 'https://jitpack.io'
 			content {
