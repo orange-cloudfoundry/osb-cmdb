@@ -1,6 +1,8 @@
 
 ## Osb-cmdb
 
+[![CircleCI Build status](https://circleci.com/gh/orange-cloudfoundry/osb-cmdb.svg?style=svg)](https://app.circleci.com/pipelines/github/orange-cloudfoundry/osb-cmdb)
+
 This project provides a configuration management for Open Service Broker API broker implementations, enabling sharing of service brokers among multiple OSB client platoforms. See [orange-cloudfoundry/paas-templates#492](https://github.com/orange-cloudfoundry/paas-templates/issues/492) for more background around use-cases and considered alternatives.
 
 <!-- 
