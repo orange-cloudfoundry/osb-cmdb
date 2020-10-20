@@ -26,7 +26,7 @@ buildscript {
 }
 
 plugins {
-	id "com.gorylenko.gradle-git-properties" version "2.2.0"
+	id "com.gorylenko.gradle-git-properties" version "2.2.4"
 }
 
 description = "Osb Cmdb"
