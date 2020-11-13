@@ -71,6 +71,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 	public static final Duration SYNC_COMPLETION_TIMEOUT = Duration.ofSeconds(5);
 
+	public static final String BROKERED_SERVICE_CLIENT_NAME = "brokered_service_client_name";
+
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	public static final String X_OSB_CMDB_CUSTOM_KEY_NAME = "x-osb-cmdb";
@@ -286,7 +288,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	private Map<String, Object> formatParameters(MetaData metaData, Map<String, Object> requestParams) {
 		Map<String, Object> parameters = new HashMap<>(requestParams);
 		if (propagateMetadataAsCustomParam) {
-			parameters.put(X_OSB_CMDB_CUSTOM_KEY_NAME, metaData);
+			//Don't pollute backing service metadata in osb-cmdb with this field
+			//Therefore, create a copy to only add tenantName to x-osb-cmdb param
+			MetaData metaDataWithTenantName = MetaData.builder().from(metaData).build();
+			metaDataWithTenantName.getAnnotations().put(BROKERED_SERVICE_CLIENT_NAME, getDefaultOrg());
+			parameters.put(X_OSB_CMDB_CUSTOM_KEY_NAME, metaDataWithTenantName);
+			LOG.info("Propagating param name={}  with value={}", X_OSB_CMDB_CUSTOM_KEY_NAME, metaDataWithTenantName);
 		}
 		return parameters;
 	}

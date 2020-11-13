@@ -112,7 +112,7 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 			assertThat(backingServiceInstance.getStatus()).isEqualTo("succeeded");
 			Map<String, Object> backingServiceParams = getServiceInstanceParams(backingServiceInstance.getId());
 			assertThat(backingServiceParams).containsAllEntriesOf(parameters);
-			CreateInstanceCustomParamAcceptanceTest.assertCustomParams(backingServiceParams);
+			assertCustomParams(backingServiceParams);
 		}
 
 		// when the service instance is deleted
