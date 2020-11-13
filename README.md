@@ -28,7 +28,7 @@ cat README.md | /home/guillaume/public-code/github-markdown-toc/gh-md-toc -
  * [Technical details](#technical-details)
     * [osb-cmdb osb client calls requirements](#osb-cmdb-osb-client-calls-requirements)
        * [Future support for additional meta-data](#future-support-for-additional-meta-data)
-    * [OSB-api extension used with backing service brokers](#osb-api-extension-used-with-backing-service-brokers)
+    * [OSB-api extension (x-osb-cmdb) used with backing service brokers](#osb-api-extension-x-osb-cmdb-used-with-backing-service-brokers)
     * [Dashboard AuthN and AuthZ support (WIP)](#dashboard-authn-and-authz-support-wip)
        * [Discovery of the OIDC endpoint](#discovery-of-the-oidc-endpoint)
        * [Discovery of the OAuth client_id and client_secret to provision](#discovery-of-the-oauth-client_id-and-client_secret-to-provision)
@@ -446,9 +446,9 @@ Once OSB 2.16 version gets released and supported by osb-cmdb, the following add
 
 These annotations get propagated into service monitoring/alerts.
 
-#### OSB-api extension used with backing service brokers   
+#### OSB-api extension (x-osb-cmdb) used with backing service brokers   
 
-By default, when propagating OSB calls to backing service brokers, osb-cmdb adds an extra `x-osb-cmdb` param to the [service instance provisionning call](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#provisioning) containing additional metadata matching the [inventory metadata](#metadata-attached-to-backing-services). This can be opted-out with the `osbcmdb.broker.propagateMetadataAsCustomParam=false` flag
+By default, when propagating OSB calls to backing service brokers, osb-cmdb adds an extra `x-osb-cmdb` param to the [service instance provisionning call](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#provisioning) containing additional metadata matching the [inventory metadata](#metadata-attached-to-backing-services) and an additional `brokered_service_client_name` property identifying the calling osb client, whose value matches the name of the backing service instance organization name. This can be opted-out with the `osbcmdb.broker.propagateMetadataAsCustomParam=false` flag
 
 ##### Example for CF profile
 
@@ -465,7 +465,8 @@ By default, when propagating OSB calls to backing service brokers, osb-cmdb adds
       "brokered_service_instance_guid": "7d9235c5-242d-4b17-ac82-935f121ffd7f",
       "brokered_service_context_organization_guid": "c2169b61-9360-4d67-968c-575f3a10edf5",
       "brokered_service_originating_identity_user_id": "0d02117b-aa21-43e2-b35e-8ad6f8223519",
-      "brokered_service_context_space_guid": "1a603476-a3a1-4c32-8021-d2a7b9b7c6b4"
+      "brokered_service_context_space_guid": "1a603476-a3a1-4c32-8021-d2a7b9b7c6b4",
+      "brokered_service_client_name": "osb-cmdb-backend-services-org-client-1"
     }
   }
 }
