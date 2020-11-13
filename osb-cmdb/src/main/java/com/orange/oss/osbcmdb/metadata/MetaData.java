@@ -19,6 +19,10 @@ package com.orange.oss.osbcmdb.metadata;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import org.springframework.util.CollectionUtils;
 
 import static org.springframework.util.Assert.notNull;
@@ -46,6 +50,21 @@ public class MetaData {
 	public Map<String, String> getLabels() { return labels; }
 
 	public void setLabels(Map<String, String> labels) { this.labels = labels; }
+
+	@SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+	@Override
+	public boolean equals(Object obj) {
+		return EqualsBuilder.reflectionEquals(this, obj);
+	}
+	@Override
+	public int hashCode() {
+		return HashCodeBuilder.reflectionHashCode(this);
+	}
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this);
+	}
+
 
 	public static Builder builder() {
 		return new Builder();
