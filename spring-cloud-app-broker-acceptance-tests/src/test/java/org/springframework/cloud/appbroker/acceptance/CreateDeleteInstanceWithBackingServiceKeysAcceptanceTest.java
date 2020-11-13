@@ -28,7 +28,6 @@ import org.springframework.http.HttpStatus;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Tag("cmdb")
 class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
@@ -92,7 +91,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		//and the backing service has params plus custom param
 		Map<String, Object> backingServiceParams = getServiceInstanceParams(backingServiceInstance.getId());
 		assertThat(backingServiceParams).containsAllEntriesOf(parameters);
-		CreateInstanceCustomParamAcceptanceTest.assertCustomParams(backingServiceParams);
+		assertCustomParams(backingServiceParams);
 
 
 		//and the brokered service dashboard url, is the same as the backing service's one
@@ -180,6 +179,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 			.then()
 			.statusCode(expectedStatusCode);
 
+		//noinspection StatementWithEmptyBody
 		if (isSync()) {
 			//and the backing service instance is deleted (and the previously associated service key)
 			assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
