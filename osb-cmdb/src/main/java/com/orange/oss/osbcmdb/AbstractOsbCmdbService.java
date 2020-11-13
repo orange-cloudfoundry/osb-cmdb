@@ -43,6 +43,10 @@ public class AbstractOsbCmdbService {
 		operations = cloudFoundryOperations;
 	}
 
+	public String getDefaultOrg() {
+		return defaultOrg;
+	}
+
 	protected ServiceInstance getCfServiceInstance(CloudFoundryOperations spacedTargetedOperations,
 		String serviceInstanceName) {
 		try {

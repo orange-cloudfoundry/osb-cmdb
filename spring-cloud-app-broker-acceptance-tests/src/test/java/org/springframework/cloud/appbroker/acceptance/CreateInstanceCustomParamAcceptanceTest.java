@@ -37,8 +37,6 @@ class CreateInstanceCustomParamAcceptanceTest extends CmdbCloudFoundryAcceptance
 	public static final Map<String, Object> STATIC_CREDENTIALS = Collections.singletonMap("noop-binding-key", "noop" +
 		"-binding-value");
 
-	public static final String X_OSB_CMDB_CUSTOM_KEY_NAME = "x-osb-cmdb";
-
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
@@ -77,18 +75,6 @@ class CreateInstanceCustomParamAcceptanceTest extends CmdbCloudFoundryAcceptance
 		assertThat(brokeredServiceInstanceParams).containsAllEntriesOf(parameters);
 		//And a custom param propagates metadata to brokered service
 		assertCustomParams(brokeredServiceInstanceParams);
-	}
-
-	public static void assertCustomParams(Map<String, Object> brokeredServiceInstanceParams) {
-		assertThat(brokeredServiceInstanceParams).containsKey(X_OSB_CMDB_CUSTOM_KEY_NAME);
-		Map<String, Object> customParamValue = (Map<String, Object>) brokeredServiceInstanceParams
-			.get(X_OSB_CMDB_CUSTOM_KEY_NAME);
-		assertThat(customParamValue).containsKey("annotations");
-		assertThat(customParamValue).containsKey("labels");
-		Map<String, Object> annotations = (Map<String, Object>) customParamValue.get("annotations");
-		Map<String, Object> labels = (Map<String, Object>) customParamValue.get("labels");
-		assertThat(annotations).isNotEmpty();
-		assertThat(labels).isNotEmpty();
 	}
 
 	@AfterEach

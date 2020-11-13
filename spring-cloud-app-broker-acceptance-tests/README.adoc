@@ -47,6 +47,17 @@ You may use the following script to clean up the environment from left over http
 
 You'd need to be logged in CF CLI and target the default org and space
 
+On Guillaume's desktop, this results into the following commands
+
+[source,bash]
+----
+#custom alias to log-in
+switch-cf-fe-int
+cf t -o osb-cmdb-services-acceptance-tests -s development
+/home/guillaume/code/osb-cmdb-ci/scripts/clean-at-cf-environment.sh
+----
+
+
 === Running from IDE
 
 Make sure to have the osb-cmdb:bootJar gradle target executed before each test to ensure the latest code change are deployed within the test. In Intellij, add a gradle tasks to the test configuration `Before Launch` in the `Run/Debug configuration` dialog. See
