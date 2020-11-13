@@ -19,9 +19,13 @@ package com.orange.oss.osbcmdb.metadata;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import org.springframework.util.CollectionUtils;
+
+import static org.springframework.util.Assert.notNull;
 
 public class MetaData {
 
@@ -47,27 +51,49 @@ public class MetaData {
 
 	public void setLabels(Map<String, String> labels) { this.labels = labels; }
 
-	public static BackingServiceBuilder builder() {
-		return new BackingServiceBuilder();
+	@SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+	@Override
+	public boolean equals(Object obj) {
+		return EqualsBuilder.reflectionEquals(this, obj);
+	}
+	@Override
+	public int hashCode() {
+		return HashCodeBuilder.reflectionHashCode(this);
+	}
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this);
 	}
 
-	public static final class BackingServiceBuilder {
+
+	public static Builder builder() {
+		return new Builder();
+	}
+
+	public static final class Builder {
 
 		private final Map<String, String> annotations = new HashMap<>();
 
 		private final Map<String, String> labels = new HashMap<>();
 
-		private BackingServiceBuilder() {
+		private Builder() {
 		}
 
-		public BackingServiceBuilder annotations(Map<String, String> annotations) {
+		public Builder from(MetaData metaData) {
+			notNull(metaData, "metaData required");
+			annotations(metaData.getAnnotations());
+			labels(metaData.getLabels());
+			return this;
+		}
+
+		public Builder annotations(Map<String, String> annotations) {
 			if (!CollectionUtils.isEmpty(annotations)) {
 				this.annotations.putAll(annotations);
 			}
 			return this;
 		}
 
-		public BackingServiceBuilder labels(Map<String, String> labels) {
+		public Builder labels(Map<String, String> labels) {
 			if (!CollectionUtils.isEmpty(labels)) {
 				this.labels.putAll(labels);
 			}
