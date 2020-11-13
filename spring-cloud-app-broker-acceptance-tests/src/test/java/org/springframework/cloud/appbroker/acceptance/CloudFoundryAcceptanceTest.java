@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 
 import javax.net.ssl.SSLException;
 
@@ -72,6 +71,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryClientConfiguration;
+import org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryProperties;
 import org.springframework.cloud.appbroker.acceptance.fixtures.cf.CloudFoundryService;
 import org.springframework.cloud.appbroker.acceptance.fixtures.uaa.UaaService;
 import org.springframework.http.HttpEntity;
@@ -119,6 +119,10 @@ abstract class CloudFoundryAcceptanceTest {
 
 	@Autowired
 	private UaaService uaaService;
+
+	@Autowired
+	protected CloudFoundryProperties cloudFoundryProperties;
+
 
 	@Autowired
 	private AcceptanceTestProperties acceptanceTestProperties;
@@ -187,9 +191,15 @@ abstract class CloudFoundryAcceptanceTest {
 
 	@BeforeEach
 	void setUp(TestInfo testInfo, BrokerProperties brokerProperties) {
-		Hooks.onOperatorDebug(); // get human readeable reactor stack traces
-		List<String> appBrokerProperties = getAppBrokerProperties(brokerProperties);
-		blockingSubscribe(initializeBroker(appBrokerProperties));
+		try {
+			Hooks.onOperatorDebug(); // get human readeable reactor stack traces
+			List<String> appBrokerProperties = getAppBrokerProperties(brokerProperties);
+			blockingSubscribe(initializeBroker(appBrokerProperties));
+		}
+		finally {
+			//This is useful to set a debugger breakpoint
+			LOG.debug("broker initialization completed");
+		}
 	}
 
 	void setUpForBrokerUpdate(BrokerProperties brokerProperties) {
