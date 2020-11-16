@@ -230,6 +230,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						.servicePlanId(backingServicePlanId)
 						.parameters(formatParameters(metaData, request.getParameters()))
 						.spaceId(spaceId)
+						.acceptsIncomplete(request.isAsyncAccepted())
 						.build())
 					.block();
 
@@ -532,6 +533,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.servicePlanId(backingServicePlanId)
 					.parameters(formatParameters(metaData, request.getParameters()))
 					.maintenanceInfo(formattedForBackendInstanceMI)
+					.acceptsIncomplete(request.isAsyncAccepted())
 					.build())
 				.block();
 
