@@ -125,6 +125,39 @@ In production like in acceptance tests, use spring boot actuator logger to dynam
 curl -kv https://admin:password@test-broker-app-create-instance-with-service-keys.redacted-domain/actuator/loggers/cloudfoundry-client.wire -X POST -H 'Content-Type: application/json' -d '{"configuredLevel": "TRACE"}'
 ```
 
+
+With the following log levels
+
+logger | level 
+-- | --
+cloudfoundry-client.operations | debug 
+cloudfoundry-client.request | debug 
+cloudfoundry-client.response | debug 
+cloudfoundry-client.wire | trace 
+
+We observe wire traces such as  
+
+```
+20-04-2020 16:46:35.395 [cloudfoundry-client-epoll-4] DEBUG cloudfoundry-client.request.request - GET    /v2/spaces/TEST-SPACE-GUID/service_instances?q=name:instance-id&page=1&return_user_provided_service_instances=true
+20-04-2020 16:46:35.401 [cloudfoundry-client-epoll-4] TRACE cloudfoundry-client.wire.log - [id: 0x5cc929b8, L:/127.0.0.1:44870 - R:localhost/127.0.0.1:8080] READ: 574B
+         +-------------------------------------------------+
+         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |
++--------+-------------------------------------------------+----------------+
+|00000000| 48 54 54 50 2f 31 2e 31 20 32 30 30 20 4f 4b 0d |HTTP/1.1 200 OK.|
+|00000010| 0a 4d 61 74 63 68 65 64 2d 53 74 75 62 2d 49 64 |.Matched-Stub-Id|
+|00000020| 3a 20 39 35 39 35 34 65 66 30 2d 62 34 66 36 2d |: 95954ef0-b4f6-|
+|00000030| 34 33 61 38 2d 61 39 63 35 2d 36 35 39 66 39 63 |43a8-a9c5-659f9c|
+|00000040| 37 61 33 36 64 37 0d 0a 56 61 72 79 3a 20 41 63 |7a36d7..Vary: Ac|
+|00000050| 63 65 70 74 2d 45 6e 63 6f 64 69 6e 67 2c 20 55 |cept-Encoding, U|
+|00000060| 73 65 72 2d 41 67 65 6e 74 0d 0a 43 6f 6e 74 65 |ser-Agent..Conte|
+|00000070| 6e 74 2d 45 6e 63 6f 64 69 6e 67 3a 20 67 7a 69 |nt-Encoding: gzi|
+|00000080| 70 0d 0a 54 72 61 6e 73 66 65 72 2d 45 6e 63 6f |p..Transfer-Enco|
+|00000090| 64 69 6e 67 3a 20 63 68 75 6e 6b 65 64 0d 0a 53 |ding: chunked..S|
+|000000a0| 65 72 76 65 72 3a 20 4a 65 74 74 79 28 39 2e 34 |erver: Jetty(9.4|
+|000000b0| 2e 32 37 2e 76 32 30 32 30 30 32 32 37 29 0d 0a |.27.v20200227)..|
+[...]
+```
+
 #### Accessing http traces
 
 Osb-cmdb exposes springboot [actuator http traces](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-features.html#production-ready-http-tracing) through the last 100 requests stored in memory. Load the following endpoint in your browser: `https://admin:password@osb-cmdb-broker-1.redacted-domain/actuator/httptrace`
