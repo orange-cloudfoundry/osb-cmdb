@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class CreateASyncInstanceRejectedBySyncBrokerAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
 
-	private static final String SUFFIX = "create-sync-only-instance";
+	private static final String SUFFIX = "create-async-only-instance";
 
 
 	@Override
