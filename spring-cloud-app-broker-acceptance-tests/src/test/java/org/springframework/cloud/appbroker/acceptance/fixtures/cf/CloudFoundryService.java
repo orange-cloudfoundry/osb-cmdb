@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Random;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.MaintenanceInfo;
@@ -37,8 +39,12 @@ import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceParametersR
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceParametersResponse;
 import org.cloudfoundry.client.v2.serviceinstances.GetServiceInstanceResponse;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
+import org.cloudfoundry.client.v2.serviceplans.ListServicePlansRequest;
+import org.cloudfoundry.client.v2.serviceplans.ServicePlanResource;
+import org.cloudfoundry.client.v2.services.ServiceResource;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperRequest;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperResponse;
+import org.cloudfoundry.client.v2.spaces.ListSpaceServicesRequest;
 import org.cloudfoundry.client.v2.spaces.RemoveSpaceDeveloperRequest;
 import org.cloudfoundry.client.v3.serviceInstances.ListServiceInstancesRequest;
 import org.cloudfoundry.client.v3.serviceInstances.ListServiceInstancesResponse;
@@ -80,6 +86,9 @@ import org.cloudfoundry.operations.services.UpdateServiceInstanceRequest;
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest;
 import org.cloudfoundry.operations.spaces.SpaceSummary;
 import org.cloudfoundry.operations.spaces.Spaces;
+import org.cloudfoundry.util.ExceptionUtils;
+import org.cloudfoundry.util.PaginationUtils;
+import org.cloudfoundry.util.ResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -89,6 +98,7 @@ import org.springframework.stereotype.Service;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.cloudfoundry.util.tuple.TupleUtils.function;
 
 @Service
 public class CloudFoundryService {
@@ -309,6 +319,92 @@ public class CloudFoundryService {
 		Map<String, Object> parameters) {
 		return createServiceInstance(planName, serviceName, serviceInstanceName, parameters, Duration.ofSeconds(30));
 	}
+
+	//Duplicated from cloudfoundry-operations-4.8.0.RELEASE.jar!/org/cloudfoundry/operations/services/DefaultServices.class
+	protected Mono<String> getSpacedIdFromTargettedOperationsInternals() {
+		DefaultCloudFoundryOperations spacedTargetedOperationsInternals = (DefaultCloudFoundryOperations) cloudFoundryOperations;
+		return spacedTargetedOperationsInternals.getSpaceId();
+	}
+
+	//Duplicated from cloudfoundry-operations-4.8.0.RELEASE.jar!/org/cloudfoundry/operations/services/DefaultServices.class
+	private static Mono<ServiceResource> getSpaceService(CloudFoundryClient cloudFoundryClient, String spaceId, String service) {
+		return requestListServices(cloudFoundryClient, spaceId, service)
+			.single()
+			.onErrorResume(NoSuchElementException.class, t -> ExceptionUtils.illegalArgument("Service %s does not exist", service));
+	}
+
+	//Duplicated from cloudfoundry-operations-4.8.0.RELEASE.jar!/org/cloudfoundry/operations/services/DefaultServices.class
+	private static Flux<ServiceResource> requestListServices(CloudFoundryClient cloudFoundryClient, String spaceId, String serviceName) {
+		return PaginationUtils
+			.requestClientV2Resources(page -> cloudFoundryClient.spaces()
+				.listServices(ListSpaceServicesRequest.builder()
+					.label(serviceName)
+					.page(page)
+					.spaceId(spaceId)
+					.build()));
+	}
+
+	//Duplicated from cloudfoundry-operations-4.8.0.RELEASE.jar!/org/cloudfoundry/operations/services/DefaultServices.class
+	private static Mono<String> getServiceIdByName(CloudFoundryClient cloudFoundryClient, String spaceId, String service) {
+		return getSpaceService(cloudFoundryClient, spaceId, service)
+			.map(ResourceUtils::getId);
+	}
+
+	//Duplicated from cloudfoundry-operations-4.8.0.RELEASE.jar!/org/cloudfoundry/operations/services/DefaultServices.class
+	private static Mono<String> getServicePlanIdByName(CloudFoundryClient cloudFoundryClient, String serviceId, String plan) {
+		return requestListServicePlans(cloudFoundryClient, serviceId)
+			.filter(resource -> plan.equals(ResourceUtils.getEntity(resource).getName()))
+			.single()
+			.map(ResourceUtils::getId)
+			.onErrorResume(
+				NoSuchElementException.class, t -> ExceptionUtils.illegalArgument("Service plan %s does not exist", plan));
+	}
+
+	//Duplicated from cloudfoundry-operations-4.8.0.RELEASE.jar!/org/cloudfoundry/operations/services/DefaultServices.class
+	private static Flux<ServicePlanResource> requestListServicePlans(CloudFoundryClient cloudFoundryClient, String serviceId) {
+		return PaginationUtils
+			.requestClientV2Resources(page -> cloudFoundryClient.servicePlans()
+				.list(ListServicePlansRequest.builder()
+					.page(page)
+					.serviceId(serviceId)
+					.build()));
+	}
+
+	/**
+	 * Low level CF java client variant of createService which takes an acceptsIncomplete
+	 * Had to duplicate many methods from cf-java-client because they're private static
+	 * Following CF java client, a PR to make these methods public could reduce duplication
+	 */
+	public Mono<Void> createServiceInstanceLowLevel(
+		String servicePlanName,
+		String serviceName,
+		Map<String, Object> parameters, Boolean acceptsIncomplete) {
+		return Mono
+			.zip(Mono.just(this.cloudFoundryClient), getSpacedIdFromTargettedOperationsInternals())
+			.flatMap(function((cloudFoundryClient, spaceId) -> Mono.zip(
+				Mono.just(cloudFoundryClient),
+				Mono.just(spaceId),
+				getServiceIdByName(cloudFoundryClient, spaceId, serviceName)
+			)))
+			.flatMap(function((cloudFoundryClient, spaceId, serviceId) -> Mono.zip(
+				Mono.just(cloudFoundryClient),
+				Mono.just(spaceId),
+				getServicePlanIdByName(cloudFoundryClient, serviceId, servicePlanName)
+			)))
+			.flatMap( t -> cloudFoundryClient.serviceInstances()
+				.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
+					.name("a-random-service-instance-for-tests-" + new Random().nextInt(100))
+					.servicePlanId(t.getT3())
+					.acceptsIncomplete(acceptsIncomplete)
+					.spaceId(t.getT2())
+					.parameters(parameters)
+					.build()))
+			.doOnSuccess(item -> LOG.info("Created service instance " + item.getEntity()))
+			.doOnError(error -> LOG.error("Error creating service instance: " + error))
+			.then();
+
+	}
+
 
 	public Mono<Void> createServiceInstance(String planName, String serviceName, String serviceInstanceName,
 		Map<String, Object> parameters, Duration completionTimeout) {
