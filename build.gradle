@@ -16,6 +16,7 @@
 
 buildscript {
 	repositories {
+		mavenCentral()
 		maven {
 			url "https://repo.spring.io/plugins-release"
 			content {
@@ -23,7 +24,9 @@ buildscript {
 				// can be tested with gradle --refresh-dependencies -i
 				// See https://stackoverflow.com/a/56670635/1484823
 				// See https://docs.gradle.org/5.4.1/userguide/declaring_repositories.html#declaring_a_repository_filter
-				excludeGroupByRegex "org\\.jfrog.*"
+				includeGroupByRegex "(io\\.spring.*)|(org\\.springframework.*)"
+//				excludeGroupByRegex "org\\.jfrog.*"
+//				excludeGroupByRegex "com\\.puppycrawl.*"
 			}
 		}
 	}
