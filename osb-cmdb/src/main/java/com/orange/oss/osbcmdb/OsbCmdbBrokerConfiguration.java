@@ -8,6 +8,7 @@ import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstance;
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.ASyncOnlyBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledUpdateBackingSpaceInstanceInterceptor;
@@ -19,6 +20,7 @@ import com.orange.oss.osbcmdb.testfixtures.BackingServiceBindingInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncOnlyBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncTimeoutCreateBackingSpaceInstanceInterceptor;
@@ -61,6 +63,20 @@ public class OsbCmdbBrokerConfiguration {
 	public ServiceInstanceInterceptor acceptanceTestBackingServiceInstanceInterceptor(
 		CloudFoundryTargetProperties targetProperties) {
 		return new SyncSuccessfulBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & SyncOnlyBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestSyncOnlyBackingSpaceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new SyncOnlyBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
+	}
+
+	@Bean
+	@Profile("acceptanceTests & ASyncOnlyBackingSpaceInstanceInterceptor")
+	public ServiceInstanceInterceptor acceptanceTestASyncOnlyBackingSpaceInstanceInterceptor(
+		CloudFoundryTargetProperties targetProperties) {
+		return new ASyncOnlyBackingSpaceInstanceInterceptor(targetProperties.getDefaultSpace());
 	}
 
 	@Bean
