@@ -19,6 +19,7 @@ package com.orange.oss.osbcmdb;
 import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.ASyncOnlyBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledUpdateBackingSpaceInstanceInterceptor;
@@ -29,6 +30,7 @@ import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulUpdateBackingSpaceInst
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedUpdateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.SyncOnlyBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncSuccessfulBackingSpaceInstanceWithoutDashboardInInitialVersionInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncTimeoutCreateBackingSpaceInstanceInterceptor;
@@ -115,6 +117,36 @@ class OsbCmdbBrokerConfigurationTest {
 				assertThat(context)
 					.getBean(ServiceInstanceInterceptor.class)
 					.isInstanceOf(SyncSuccessfulBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void aSyncOnlyBackingSpaceInstanceInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,ASyncOnlyBackingSpaceInstanceInterceptor"
+			)
+			.withPropertyValues(requiredProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(ASyncOnlyBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void syncOnlyBackingSpaceInstanceInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,SyncOnlyBackingSpaceInstanceInterceptor"
+			)
+			.withPropertyValues(requiredProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(SyncOnlyBackingSpaceInstanceInterceptor.class);
 			});
 	}
 
