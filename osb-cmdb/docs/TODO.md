@@ -1,11 +1,3 @@
-accept_incomplete bug
-* How to test it ?
-   * AcceptanceTests to require provision with accept_incomplete & broker to reject it
-      * Pb acceptance tests currently use CloudFoundryOperations abstraction which always specifies `acceptsIncomplete(true)`
-         * [ ] Use low level cloudfoundry client just to assert accept_incomplete=false is properly propagated 
-         * [ ] create hook method in base class
-         * [ ] collect params (service instance, definition....) to reuse them
-      
 
 
 

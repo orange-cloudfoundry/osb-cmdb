@@ -4,6 +4,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerAsyncRequiredException;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceResponse;
 import org.springframework.cloud.servicebroker.model.instance.DeleteServiceInstanceRequest;
@@ -26,6 +27,11 @@ public class AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor ex
 
 	@Override
 	public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
+		if (! request.isAsyncAccepted()) {
+			throw new ServiceBrokerAsyncRequiredException("AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor is " +
+				"expecting accept_incomplete=false");
+		}
+
 		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		provisionnedInstanceParams.put(request.getServiceInstanceId(), request.getParameters());
 		return Mono.just(CreateServiceInstanceResponse.builder()
