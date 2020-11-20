@@ -22,11 +22,14 @@ import com.orange.oss.osbcmdb.CloudFoundryTargetProperties;
 import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.servicebroker.model.catalog.Catalog;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
@@ -37,6 +40,7 @@ import org.springframework.context.annotation.Configuration;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.RETURNS_SMART_NULLS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,37 +49,23 @@ class DynamicCatalogServiceAutoConfigurationTest {
 
 	private static final Logger logger = LoggerFactory.getLogger(DynamicCatalogServiceAutoConfigurationTest.class);
 
-	@Test
-	void contextFailsWhenOptInButMissingDependencies() {
-		ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-			.withConfiguration(AutoConfigurations.of(DynamicCatalogServiceAutoConfiguration.class))
-			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
-		applicationContextRunner.run(context -> {
-			assertThat(context).hasFailed();
-		});
-	}
+	private ConditionEvaluationReportLoggingListener initializer;
 
-	@Test
-	void dynamicServiceDontLoadWhenNoPropertiesSet() {
-		new ApplicationContextRunner()
-			.withConfiguration(AutoConfigurations.of(
-				DynamicCatalogServiceAutoConfiguration.class,
-				MockedDynamicCatalogDependenciesAutoConfiguration.class))
-			.run(context -> {
-				assertThat(context).doesNotHaveBean(DynamicCatalogServiceAutoConfiguration.class);
-			});
+	@BeforeEach
+	void setUp() {
+		initializer = new ConditionEvaluationReportLoggingListener();
 	}
 
 	@Test
 	void dynamicServiceLoadWhenOptInProperty() {
 		ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+			.withInitializer(this.initializer)
 			.withConfiguration(AutoConfigurations.of(
-				SingleServiceDefinitionAnswerAutoConfig.class,
+				ValidStubbedDynamicServiceConfig.class,
 				DynamicCatalogServiceAutoConfiguration.class,
 				MockedMaintenanceInfoFormatterServiceConfig.class
 			))
-//			.withPropertyValues(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true") //Not sure why this seems ignored
-			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
+			.withPropertyValues(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
 		contextRunner.run(context -> {
 			Catalog catalog = context.getBean(Catalog.class);
 			assertThat(catalog.getServiceDefinitions()).isNotEmpty();
@@ -87,13 +77,13 @@ class DynamicCatalogServiceAutoConfigurationTest {
 	@Test
 	void serviceDefinitionMapperPropertiesAreProperlyLoaded() {
 		ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+			.withInitializer(this.initializer)
 			.withConfiguration(AutoConfigurations.of(
-				SingleServiceDefinitionAnswerAutoConfig.class,
+				ValidStubbedDynamicServiceConfig.class,
 				DynamicCatalogServiceAutoConfiguration.class,
 				MockedMaintenanceInfoFormatterServiceConfig.class
 			))
-//			.withPropertyValues(DynamicCatalogProperties.OPT_IN_PROPERTY + "=true") //Not sure why this seems ignored
-			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true",
+			.withPropertyValues(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true",
 				ServiceDefinitionMapperProperties.PROPERTY_PREFIX
 					+ServiceDefinitionMapperProperties.SUFFIX_PROPERTY_KEY+ "=suffix")
 		;
@@ -108,26 +98,32 @@ class DynamicCatalogServiceAutoConfigurationTest {
 	@Test
 	void catalogFetchingFailuresTriggersContextFailure() {
 		ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+			.withInitializer(this.initializer)
 			.withConfiguration(AutoConfigurations.of(
 				DynamicCatalogServiceAutoConfiguration.class,
-				ThrowingExceptionServiceDefinitionAnswerAutoConfig.class))
-			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
+				ThrowingExceptionServiceDefinitionAnswerAutoConfig.class,
+				MockedMaintenanceInfoFormatterServiceConfig.class))
+			.withPropertyValues(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
 		applicationContextRunner.run(context -> {
 			assertThat(context).hasFailed();
+			assertThat(context).getFailure()
+				.hasMessageContaining("Injected exception while fetching catalog");
 		});
 	}
 
 	@Test
 	void emptyCatalogFetchedTriggersContextFailure() {
 		ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+			.withInitializer(this.initializer)
 			.withConfiguration(AutoConfigurations.of(
+				EmptyStubbedServiceDefinitionAutoConfig.class,
 				DynamicCatalogServiceAutoConfiguration.class,
-				MockedDynamicCatalogDependenciesAutoConfiguration.class,
-				EmptyServiceDefinitionAnswerAutoConfig.class))
-			.withSystemProperties(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
+				MockedDynamicCatalogDependenciesAutoConfiguration.class))
+			.withPropertyValues(DynamicCatalogConstants.OPT_IN_PROPERTY + "=true");
 		applicationContextRunner.run(context -> {
 			assertThat(context).hasFailed();
-			assertThat(context).getFailure().hasMessageStartingWith("Error creating bean with name 'catalog'");
+			assertThat(context).getFailure()
+				.hasMessageContaining("Unexpected empty marketplace dynamically fetched");
 		});
 	}
 
@@ -151,10 +147,9 @@ class DynamicCatalogServiceAutoConfigurationTest {
 		MaintenanceInfoFormatterService maintenanceInfoFormatterService() { return mock(MaintenanceInfoFormatterService.class, RETURNS_SMART_NULLS); }
 	}
 
-	@Configuration
-	static abstract class MockedDynamicServiceConfig {
+	static abstract class AbtractStubbedDynamicServiceConfig {
 		@Bean
-		DynamicCatalogService dynamicCatalogService() {
+		DynamicCatalogService stubbedDynamicCatalogService() {
 			DynamicCatalogService dynamicCatalogService = mock(DynamicCatalogService.class);
 			when(dynamicCatalogService.fetchServiceDefinitions()).thenReturn(this.serviceDefinitionsAnswer());
 			return dynamicCatalogService;
@@ -172,8 +167,13 @@ class DynamicCatalogServiceAutoConfigurationTest {
 		}
 	}
 
+	/**
+	 * Configuration designed to run before {@link DynamicCatalogServiceAutoConfiguration#dynamicCatalogService(CloudFoundryOperations, CloudFoundryClient, CloudFoundryTargetProperties, ServiceDefinitionMapper)}
+	 * and inject a stubbed implementation instead, returning a valid catalog
+	 */
 	@Configuration
-	static class SingleServiceDefinitionAnswerAutoConfig extends MockedDynamicServiceConfig {
+	@AutoConfigureBefore(value = DynamicCatalogServiceAutoConfiguration.class)
+	static class ValidStubbedDynamicServiceConfig extends AbtractStubbedDynamicServiceConfig {
 		protected List<ServiceDefinition> serviceDefinitionsAnswer() {
 			String serviceName = "serviceName";
 			String planName = "planName";
@@ -190,14 +190,20 @@ class DynamicCatalogServiceAutoConfigurationTest {
 		}
 	}
 
+	/**
+	 * Configuration designed to run before {@link DynamicCatalogServiceAutoConfiguration#dynamicCatalogService(CloudFoundryOperations, CloudFoundryClient, CloudFoundryTargetProperties, ServiceDefinitionMapper)}
+	 * and inject a stubbed implementation instead, returning an invalid catalog
+	 */
 	@Configuration
-	static class EmptyServiceDefinitionAnswerAutoConfig extends MockedDynamicServiceConfig {
+	@AutoConfigureBefore(value = DynamicCatalogServiceAutoConfiguration.class)
+	static class EmptyStubbedServiceDefinitionAutoConfig extends AbtractStubbedDynamicServiceConfig {
 		protected List<ServiceDefinition> serviceDefinitionsAnswer() {
 			return emptyList();
 		}
 	}
 
 	@Configuration
+	@AutoConfigureBefore(value = DynamicCatalogServiceAutoConfiguration.class)
 	static class ThrowingExceptionServiceDefinitionAnswerAutoConfig  {
 		@Bean
 		DynamicCatalogService dynamicCatalogService() {

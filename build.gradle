@@ -40,15 +40,15 @@ buildscript {
 }
 
 ext {
-	springBootVersion = project.findProperty("springBootVersion") ?: "2.2.6.RELEASE"
-	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.5.RELEASE"
+	springBootVersion = project.findProperty("springBootVersion") ?: "2.3.6.RELEASE"
+	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.11.RELEASE"
 	reactorVersion = project.findProperty("reactorVersion") ?: "Dysprosium-SR6"
 	openServiceBrokerVersion = "3.1.2.RELEASE"
 	openServiceBrokerForkVersion = "576b86f31b89f1c0884d12f65947e01d401388f6"
-	springCredhubVersion = "2.1.0.RELEASE"
+	springCredhubVersion = "2.1.1.RELEASE"
 	cfJavaClientVersion = "4.8.0.RELEASE"
 	cfJavaClientForkedVersion = "0b299d2b792207b52a944d50aa459c247c564597"
-	blockHoundVersion = "1.0.3.RELEASE"
+	blockHoundVersion = "1.0.4.RELEASE"
 	junitPlatformLauncherVersion = "1.6.1"
 	checkstyleVersion = "8.29"
 	pmdVersion = "6.21.0"
