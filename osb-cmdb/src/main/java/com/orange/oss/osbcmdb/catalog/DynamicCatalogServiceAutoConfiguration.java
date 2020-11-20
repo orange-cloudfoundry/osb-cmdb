@@ -10,6 +10,7 @@ import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -53,6 +54,7 @@ public class DynamicCatalogServiceAutoConfiguration {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean //Enable tests to inject a mock/stubbed implementation
 	public DynamicCatalogService dynamicCatalogService(
 		CloudFoundryOperations operations,
 		CloudFoundryClient cloudFoundryClient,
