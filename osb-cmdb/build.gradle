@@ -50,7 +50,7 @@ dependencies {
 	compile("org.springframework.boot:spring-boot-starter-security")
 	compile("org.springframework.boot:spring-boot-starter-web")
     compile("org.springframework.boot:spring-boot-starter-actuator")
-	compile("org.apache.commons:commons-text:1.8")
+	compile("org.apache.commons:commons-text:1.9")
 //	transiently until updated cf-java-client gets released
 //	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-client-reactor:${cfJavaClientForkedVersion}")
 //	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-operations:${cfJavaClientForkedVersion}")
