@@ -40,8 +40,9 @@ buildscript {
 }
 
 ext {
-	springBootVersion = project.findProperty("springBootVersion") ?: "2.3.6.RELEASE"
-	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.11.RELEASE"
+	springBootVersion = project.findProperty("springBootVersion") ?: "2.4.0"
+// osb-cmdb doesn't lock spring version and leaves it to springboot (unless meeting issues)
+//	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.11.RELEASE"
 	reactorVersion = project.findProperty("reactorVersion") ?: "Dysprosium-SR6"
 	openServiceBrokerVersion = "3.2.0"
 	openServiceBrokerForkVersion = "576b86f31b89f1c0884d12f65947e01d401388f6"
@@ -54,8 +55,9 @@ ext {
 	pmdVersion = "6.21.0"
 
 	javadocLinks = [
-		"https://docs.oracle.com/javase/8/docs/api/",
-		"https://docs.spring.io/spring/docs/${springFrameworkVersion}/javadoc-api/",
+		"https://docs.oracle.com/javase/8/docs/api/"
+		//can't include spring javadoc link unless a version is pinned
+		// "https://docs.spring.io/spring/docs/${springFrameworkVersion}/javadoc-api/",
 	] as String[]
 }
 
