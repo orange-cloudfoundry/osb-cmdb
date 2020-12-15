@@ -492,14 +492,14 @@ By default, when propagating OSB calls to backing service brokers, osb-cmdb adds
       "brokered_service_context_spaceName": "smoke-tests",
       "brokered_service_context_organizationName": "osb-cmdb-brokered-services-org-client-0",
       "brokered_service_api_info_location": "api.redacted-domain.com/v2/info",
-      "brokered_service_context_instanceName": "osb-cmdb-broker-0-smoketest-1600699922"
+      "brokered_service_context_instanceName": "osb-cmdb-broker-0-smoketest-1600699922",
+      "brokered_service_client_name": "osb-cmdb-backend-services-org-client-1"
     },
     "labels": {
       "brokered_service_instance_guid": "7d9235c5-242d-4b17-ac82-935f121ffd7f",
       "brokered_service_context_organization_guid": "c2169b61-9360-4d67-968c-575f3a10edf5",
       "brokered_service_originating_identity_user_id": "0d02117b-aa21-43e2-b35e-8ad6f8223519",
-      "brokered_service_context_space_guid": "1a603476-a3a1-4c32-8021-d2a7b9b7c6b4",
-      "brokered_service_client_name": "osb-cmdb-backend-services-org-client-1"
+      "brokered_service_context_space_guid": "1a603476-a3a1-4c32-8021-d2a7b9b7c6b4"
     }
   }
 }
@@ -513,7 +513,8 @@ By default, when propagating OSB calls to backing service brokers, osb-cmdb adds
   "annotations": {
     "brokered_service_originating_identity_extra": "{\"scopes.authorization.openshift.io\":[\"user:full\"]}",
     "brokered_service_originating_identity_username": "a-user-name",
-    "brokered_service_originating_identity_groups": "[\"system:authenticated:oauth\",\"system:authenticated\"]"
+    "brokered_service_originating_identity_groups": "[\"system:authenticated:oauth\",\"system:authenticated\"]",
+    "brokered_service_client_name": "osb-cmdb-backend-services-org-client-1"
   },
   "labels": {
     "brokered_service_instance_guid": "b6a7a748-6fa5-497c-b111-a3a727ec88db",
