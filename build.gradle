@@ -40,7 +40,7 @@ buildscript {
 }
 
 ext {
-	springBootVersion = project.findProperty("springBootVersion") ?: "2.4.0"
+	springBootVersion = project.findProperty("springBootVersion") ?: "2.4.2"
 // osb-cmdb doesn't lock spring version and leaves it to springboot (unless meeting issues)
 //	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.11.RELEASE"
 	reactorVersion = project.findProperty("reactorVersion") ?: "Dysprosium-SR6"
