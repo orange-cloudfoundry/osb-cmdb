@@ -459,6 +459,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			// errored -> errored
 			LastOperation lastOperation = serviceInstanceResponse.getEntity().getLastOperation();
 			operationState = convertCfStateToOsbState(lastOperation.getState());
+			description = lastOperation.getDescription();
 		}
 
 		return Mono.just(GetLastServiceOperationResponse.builder()
