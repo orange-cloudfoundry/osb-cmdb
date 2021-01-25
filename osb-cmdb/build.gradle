@@ -56,7 +56,7 @@ dependencies {
 //	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-operations:${cfJavaClientForkedVersion}")
 	compile("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
 	compile("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
-	compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.11.3")
+	compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.1")
 	compile("de.skuzzle:semantic-version:2.1.0")
 
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
