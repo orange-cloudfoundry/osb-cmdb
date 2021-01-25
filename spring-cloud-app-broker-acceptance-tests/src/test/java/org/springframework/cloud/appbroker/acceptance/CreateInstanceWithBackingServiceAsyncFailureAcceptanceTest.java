@@ -69,7 +69,10 @@ class CreateInstanceWithBackingServiceAsyncFailureAcceptanceTest extends CmdbClo
 		ServiceInstance backingServiceInstance = getServiceInstance(backingServiceName, brokeredServiceName());
 		//and the backing service has the right type
 		assertThat(backingServiceInstance.getService()).isEqualTo(brokeredServiceName());
+		// and the brokered service instance async fails, flowing up the backing service reported error message
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("failed");
+		String expectedFailureCause = "ASyncFailedCreateBackingSpaceInstanceInterceptor";
+		assertThat(backingServiceInstance.getMessage()).contains(expectedFailureCause);
 
 
 		// when the service instance is deleted
