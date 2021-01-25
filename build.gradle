@@ -47,7 +47,7 @@ ext {
 	openServiceBrokerVersion = "3.3.0"
 	openServiceBrokerForkVersion = "576b86f31b89f1c0884d12f65947e01d401388f6"
 	springCredhubVersion = "2.1.1.RELEASE"
-	cfJavaClientVersion = "4.12.0.RELEASE"
+	cfJavaClientVersion = "5.1.0.RELEASE"
 	cfJavaClientForkedVersion = "0b299d2b792207b52a944d50aa459c247c564597"
 	blockHoundVersion = "1.0.4.RELEASE"
 	junitPlatformLauncherVersion = "1.6.1"
