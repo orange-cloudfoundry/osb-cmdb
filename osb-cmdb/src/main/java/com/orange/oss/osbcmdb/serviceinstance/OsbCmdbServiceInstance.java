@@ -29,9 +29,9 @@ import org.cloudfoundry.client.v2.spaces.GetSpaceResponse;
 import org.cloudfoundry.client.v2.spaces.ListSpaceServicesRequest;
 import org.cloudfoundry.client.v2.spaces.SpaceEntity;
 import org.cloudfoundry.client.v3.Metadata;
-import org.cloudfoundry.client.v3.serviceInstances.ListServiceInstancesRequest;
-import org.cloudfoundry.client.v3.serviceInstances.ListServiceInstancesResponse;
-import org.cloudfoundry.client.v3.serviceInstances.ServiceInstanceResource;
+import org.cloudfoundry.client.v3.serviceinstances.ListServiceInstancesRequest;
+import org.cloudfoundry.client.v3.serviceinstances.ListServiceInstancesResponse;
+import org.cloudfoundry.client.v3.serviceinstances.ServiceInstanceResource;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.services.DeleteServiceKeyRequest;
@@ -953,7 +953,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			serviceInstanceId, metaData.getAnnotations(), metaData.getLabels());
 
 		client.serviceInstancesV3()
-			.update(org.cloudfoundry.client.v3.serviceInstances.UpdateServiceInstanceRequest.builder()
+			.update(org.cloudfoundry.client.v3.serviceinstances.UpdateServiceInstanceRequest.builder()
 				.serviceInstanceId(serviceInstanceId)
 				.metadata(Metadata.builder()
 					.annotations(metaData.getAnnotations())
