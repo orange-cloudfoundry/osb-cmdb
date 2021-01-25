@@ -44,7 +44,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.cloudfoundry.client.v2.serviceinstances.ServiceInstanceEntity;
 import org.cloudfoundry.client.v3.Metadata;
-import org.cloudfoundry.client.v3.serviceInstances.ServiceInstanceResource;
+import org.cloudfoundry.client.v3.serviceinstances.ServiceInstanceResource;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationEnvironments;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
