@@ -64,7 +64,9 @@ class CreateInstanceWithBackingServiceSyncFailureAcceptanceTest extends CmdbClou
 			Assertions.fail("Expected sync CSI failure");
 		}
 		catch (ClientV2Exception e) {
-			// then the brokered service instance sync fails
+			// then the brokered service instance sync fails, flowing up the backing service reported error message
+			String expectedFailureCause = "com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor";
+			assertThat(e.getMessage()).contains(expectedFailureCause);
 		}
 
 		// and a sync backing service instance is not created
