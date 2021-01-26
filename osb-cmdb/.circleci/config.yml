@@ -76,14 +76,30 @@ jobs:
     docker:
       - image: circleci/openjdk:8-jdk
     steps:
+      # TODO: factor out this code with the `build` workflow, possibly using yaml reference
       - checkout
+#      # Download and cache dependencies as advised by the circleci ui when adding gradle project
+#      - restore_cache:
+#          keys:
+#            - v1-dependencies-{{ checksum "build.gradle" }}
+#            # fallback to using the latest cache if no exact match is found
+#            - v1-dependencies-
+#      - run: ./gradlew dependencies
+#      - save_cache:
+#          paths:
+#            - ~/.gradle
+#          key: v1-dependencies-{{ checksum "build.gradle" }}
+#
       - attach_workspace:
           at: ~/osb-cmdb-spike
       - run:
-          name: building artefacts
+          name: Run unit and component tests
+          #          environment:
+          #          #Workaround OpenJdk8 regression which crashes JVM. See https://stackoverflow.com/a/53085816
+          #          - _JAVA_OPTIONS: "-Djdk.net.URLClassPath.disableClassPathURLCheck=true"
+          # Note: we exclude AT from circle using junit tags to be flexible on unit tests selection.
           command: |
-            rm -f ./artefacts/*.jar osb-cmdb/build/libs/osb-cmdb*.jar
-            ./gradlew :osb-cmdb:assemble
+            ./gradlew --continue -DexcludeTags=AcceptanceTest,scab clean :osb-cmdb:check osb-cmdb:assemble -x checkstyleNohttp -x checkstyleMain -x checkstyleTest -x pmdMain -x pmdTest
       - run:
           name: save jar artefacts
           command: |
@@ -92,20 +108,33 @@ jobs:
           when: always
       - store_artifacts:
           path: ./artefacts
+          when: always
       - run:
           name: Save test results
           # pending aggregation of multi modules report into a single html file
+          # sample output during failures:
+          # Execution failed for task ':osb-cmdb:test'.
+          #> There were failing tests. See the report at: file:///home/circleci/osb-cmdb-spike/osb-cmdb/build/reports/tests/test/index.html
+          # Since circle ci does not support support serving directories, html pages are broken: theyr can't resolve dependent css/js
+          #Workaround is to download tgz archive
+          # https://github.com/gradle/gradle/issues/5934#issuecomment-404217166
+          #  xml report can be found under build/test-results/<test-task-name>
           command: |
-            mkdir -p ~/test-results/junit/
-            cp -r build/reports/tests/test/* ~/test-results/junit/
-            cp -r spring-cloud-app-broker-acceptance-tests/build/reports/tests/test/* ~/test-results/junit/
+            mkdir -p ~/test-results/junit/xml
+            ls -alR osb-cmdb/build/
+            cp -r osb-cmdb/build/reports/tests/test ~/test-results/junit/html
+            tar cvfz ~/test-results/junit/html/test-results.tgz osb-cmdb/build/reports/tests osb-cmdb/build/test-results
+            find osb-cmdb/build/test-results -type f -exec cp {} ~/test-results/junit/xml/ \;
           when: always
-      # have test results (number of tests) displayed in circleci UI
+      # have test results (number of tests) displayed in circleci UI: expects junit xml format
+      # See https://circleci.com/docs/2.0/configuration-reference/#store_test_results
       - store_test_results:
-          path: ~/test-results
-      # archive test reports in the build for interactive browsing in circle ci UI
+          path: ~/test-results/junit/xml
+          when: always
+      # archive html test reports in the build for interactive browsing in circle ci UI
       - store_artifacts:
-          path: ~/test-results/junit
+          path: ~/test-results/junit/html
+
       - persist_to_workspace:
           root: .
           paths:
