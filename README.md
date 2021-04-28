@@ -663,7 +663,11 @@ The user AuthZ will be performed according to the AuthZ endpoint response which 
 }
 ##### Dashboard AuthZ using K8S API
 
-When a K8S OSB client (such as service catalog) requires authorization of K8S users, the osb-cmdb plans to leverage the K8S SubjectAccessReview webhook https://kubernetes.io/docs/reference/access-authn-authz/webhook/#request-payloads for checking the permissions of SVCat resource associated wth the OSB provisionned service instance
+When a K8S OSB client (such as service catalog) requires authorization of K8S users, the osb-cmdb plans to leverage the K8S SubjectAccessReview endpoint https://kubernetes.io/docs/reference/kubernetes-api/authorization-resources/subject-access-review-v1/ for checking the permissions of SVCat resource associated wth the OSB provisionned service instance
+
+From https://kubernetes.io/docs/reference/access-authn-authz/authorization/#checking-api-access
+> SelfSubjectAccessReview is part of the authorization.k8s.io API group, which exposes the API server authorization to external services. Other resources in this group include:
+> SubjectAccessReview - Access review for any user, not only the current one. Useful for delegating authorization decisions to the API server.
 
 
 ##### Interaction flow diagram
