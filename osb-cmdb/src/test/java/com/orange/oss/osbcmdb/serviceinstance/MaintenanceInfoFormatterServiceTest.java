@@ -71,6 +71,17 @@ class MaintenanceInfoFormatterServiceTest {
 		maintenanceInfoFormatterService.validateAnyUpgradeRequest(updateServiceInstanceRequest);
 	}
 
+	@DisplayName("validates upgrade requests include valid maintenance info (when no plan specified)")
+	@Test
+	void test_validate_upgrade_request_no_plan_specified() {
+		//Given
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			anOsbCmdbInfoV1());
+		UpdateServiceInstanceRequest updateServiceInstanceRequest = UpdateServiceInstanceRequest.builder()
+			.build();
+		maintenanceInfoFormatterService.validateAnyUpgradeRequest(updateServiceInstanceRequest);
+	}
+
 	@DisplayName("validates upgrade requests include valid maintenance info")
 	@Test
 	void test_validate_create_request() {
@@ -234,6 +245,22 @@ class MaintenanceInfoFormatterServiceTest {
 		assertThat(isNoOpUpgradeBackingService).isFalse();
 	}
 
+	@DisplayName("an update request should NOT be a noop, when params requested (no plan update), even if backend has" +
+		" no MI")
+	@Test
+	void test_isNoOpUpgradeBackingService_with_params_without_plan() {
+		//Given
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			anOsbCmdbInfoV1());
+		UpdateServiceInstanceRequest updateServiceInstanceRequest = UpdateServiceInstanceRequest.builder()
+			.parameters(Collections.singletonMap("a-key", "a-value"))
+			.build();
+		//when
+		boolean isNoOpUpgradeBackingService = maintenanceInfoFormatterService
+			.isNoOpUpgradeBackingService(updateServiceInstanceRequest);
+		assertThat(isNoOpUpgradeBackingService).isFalse();
+	}
+
 	@DisplayName("an update request should NOT be a noop, when plan update requested, even if backend has no MI")
 	@Test
 	void test_isNoOpUpgradeBackingService_with_plan_update() {
@@ -251,6 +278,21 @@ class MaintenanceInfoFormatterServiceTest {
 		boolean isNoOpUpgradeBackingService = maintenanceInfoFormatterService
 			.isNoOpUpgradeBackingService(updateServiceInstanceRequest);
 		assertThat(isNoOpUpgradeBackingService).isFalse();
+	}
+
+	@DisplayName("Formats the request to send to backend service : case of a client K8S svcat request without MI/ plan")
+	@Test
+	void test_formatForBackendInstance_case0() {
+		//given an osb-cmdb configured with a bump
+		MaintenanceInfoFormatterService maintenanceInfoFormatterService = new MaintenanceInfoFormatterService(
+			anOsbCmdbInfoV1());
+		//when receiving a request made by a client from catalog
+		org.cloudfoundry.client.v2.MaintenanceInfo requestBackendServiceMi = maintenanceInfoFormatterService
+			.formatForBackendInstance(UpdateServiceInstanceRequest.builder()
+				.build());
+		//then no MI is passed to backend
+		assertThat(requestBackendServiceMi).isNull();
+		//actually this should previously be detected as a noop and update should not be requested to backend
 	}
 
 	@DisplayName("Formats the request to send to backend service : case of backend service has no Mi and osb-cmdb " +
