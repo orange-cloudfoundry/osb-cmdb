@@ -24,3 +24,6 @@ bbl-env-creds.sh
 bosh-env-*/
 *key.json
 secrets.yml
+orange-labs-cfenv.txt
+trace*.txt
+private*
