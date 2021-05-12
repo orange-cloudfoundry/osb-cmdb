@@ -202,8 +202,10 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		if (osbInterceptor != null && osbInterceptor.accept(request)) {
 			return osbInterceptor.createServiceInstance(request);
 		}
-		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
-			request.getServiceDefinitionId(), request.getPlanId());
+		//No need to validate mandatory service id and plan Id as sc-osb does it already
+		//See https://github.com/spring-cloud/spring-cloud-open-service-broker/blob
+		///7d374332419aad628ca76351fd53ca7e351c57de/spring-cloud-open-service-broker-core/src/main/java/org/springframework/cloud/servicebroker/controller/ServiceInstanceController.java#L111-L112
+
 		maintenanceInfoFormatterService.validateAnyCreateRequest(request);
 		String backingServiceName = request.getServiceDefinition().getName();
 		String backingServicePlanName = request.getPlan().getName();
@@ -213,7 +215,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			spacedTargetedOperations = getSpaceScopedOperations(backingServiceName);
 			//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 			String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
-			String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName,
+			String backingServicePlanId = fetchRequestedBackingServicePlanId(backingServiceName, backingServicePlanName,
 				spaceId);
 
 
@@ -305,9 +307,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return osbInterceptor.deleteServiceInstance(request);
 		}
 
-		//Validate mandatory service id and plan Id
-		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
-			request.getServiceDefinitionId(), request.getPlanId());
+		//No need to validate mandatory service id and plan Id as sc-osb does it already
 
 		String backingServiceInstanceName =
 			ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId());
@@ -475,12 +475,22 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			return osbInterceptor.updateServiceInstance(request);
 		}
 
-		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
-			request.getServiceDefinitionId(), request.getPlanId());
+		//No need to validate mandatory service id as sc-osb does it already
+		//However since planId params optional sc-osb does not yet reject planId not matching any known plan
+		validateServicePlanId(request.getPlan(), request.getPlanId());
+
 		maintenanceInfoFormatterService.validateAnyUpgradeRequest(request);
 
 		String backingServiceName = request.getServiceDefinition().getName();
-		String backingServicePlanName = request.getPlan().getName();
+		String requestedBackingServicePlanName;
+		if (request.getPlan() != null) {
+			//possibly receiving a plan update, or just CF CC_NG passing the current planid unchanged
+			//in case of param update
+			requestedBackingServicePlanName = request.getPlan().getName();
+		} else {
+			//Possibly a K8S svcat param update which is omitting the optional planId (as specs allows)
+			requestedBackingServicePlanName = null;
+		}
 		String backingServiceInstanceName = ServiceInstanceNameHelper
 			.truncateNameToCfMaxSize(request.getServiceInstanceId());
 
@@ -497,7 +507,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 		//Lookup guids necessary for low level api usage, and that CloudFoundryOperations hides in its response
 		String spaceId = getSpacedIdFromTargettedOperationsInternals(spacedTargetedOperations);
-		String backingServicePlanId = fetchBackingServicePlanId(backingServiceName, backingServicePlanName, spaceId);
+		String requestedBackingServicePlanId = fetchRequestedBackingServicePlanId(backingServiceName, requestedBackingServicePlanName, spaceId);
 
 		if (maintenanceInfoFormatterService.isNoOpUpgradeBackingService(request)) {
 			LOG.info("NoOp upgrade detected, returning early 200 OK");
@@ -531,7 +541,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			updateServiceInstanceResponse = client.serviceInstances()
 				.update(org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceRequest.builder()
 					.serviceInstanceId(existingBackingServiceInstance.getId())
-					.servicePlanId(backingServicePlanId)
+					.servicePlanId(requestedBackingServicePlanId) //possibly null
 					.parameters(formatParameters(metaData, request.getParameters()))
 					.maintenanceInfo(formattedForBackendInstanceMI)
 					.acceptsIncomplete(request.isAsyncAccepted())
@@ -581,6 +591,13 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		return Mono.just(responseBuilder.build());
 	}
 
+	protected void validateServicePlanId(Plan plan, String planId) {
+		if (planId !=null && plan == null) {
+			LOG.info("Invalid plan received with unknown id {}", planId);
+			throw new ServiceBrokerInvalidParametersException("Invalid plan received with unknown id:" + planId);
+		}
+	}
+
 	protected CmdbOperationState fromJson(String operation) {
 		try {
 			return OBJECT_MAPPER.readValue(operation, CmdbOperationState.class);
@@ -617,8 +634,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 	}
 
-	private String fetchBackingServicePlanId(String backingServiceName, String backingServicePlanName, String spaceId) {
-		//Inspired from first instrcutions of cf-java-client:
+	private String fetchRequestedBackingServicePlanId(String backingServiceName, String updatedBackingServicePlanName, String spaceId) {
+		if (updatedBackingServicePlanName == null) {
+			return null;
+		}
+		//Inspired from first instructions of cf-java-client:
 		// org.cloudfoundry.operations.services.DefaultServices.createInstance()
 		String backingServiceId = PaginationUtils
 			.requestClientV2Resources(page -> client.spaces()
@@ -641,11 +661,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.page(page)
 					.serviceId(backingServiceId)
 					.build()))
-			.filter(resource -> backingServicePlanName.equals(ResourceUtils.getEntity(resource).getName()))
+			.filter(resource -> updatedBackingServicePlanName.equals(ResourceUtils.getEntity(resource).getName()))
 			.single()
 			.map(ResourceUtils::getId)
 			.onErrorResume(NoSuchElementException.class,
-				t -> ExceptionUtils.illegalArgument("Service plan %s does not exist", backingServicePlanName))
+				t -> ExceptionUtils.illegalArgument("Service plan %s does not exist", updatedBackingServicePlanName))
 			.block();
 	}
 
@@ -849,8 +869,12 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						.build());
 
 				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
+					Plan requestedPlan = request.getPlan();
+					String requestedPlanName = requestedPlan == null ?
+						null :
+						requestedPlan.getName();
 					if (updatedSi.getService().equals(request.getServiceDefinition().getName()) &&
-						updatedSi.getPlan().equals(request.getPlan().getName())) {
+						updatedSi.getPlan().equals(requestedPlanName)) {
 						LOG.info("Concurrent update request has completed. " +
 							"Returning 200 OK");
 						//200 OK

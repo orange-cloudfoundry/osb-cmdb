@@ -46,9 +46,7 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 			return osbInterceptor.createServiceInstanceBinding(request);
 		}
 
-		//Validate mandatory service id and plan Id (even if plan is currently unused)
-		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
-			request.getServiceDefinitionId(), request.getPlanId());
+		//No need to validate mandatory service id and plan Id as sc-osb does it already
 
 		//Lookup corresponding service instance in the backend org to validate incoming request against security
 		// attacks passing forged service instance guid
@@ -98,9 +96,7 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 			return osbInterceptor.deleteServiceInstanceBinding(request);
 		}
 
-		//Validate mandatory service id and plan Id (even if plan is currently unused)
-		validateServiceDefinitionAndPlanIds(request.getServiceDefinition(), request.getPlan(),
-			request.getServiceDefinitionId(), request.getPlanId());
+		//No need to validate mandatory service id and plan Id as sc-osb does it already
 
 		//Lookup corresponding service instance to validate incoming request against security attacks passing
 		// forged service instance guid

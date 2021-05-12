@@ -9,6 +9,7 @@ import reactor.util.Loggers;
 
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerMaintenanceInfoConflictException;
 import org.springframework.cloud.servicebroker.model.catalog.MaintenanceInfo;
+import org.springframework.cloud.servicebroker.model.catalog.Plan;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInstanceRequest;
 import org.springframework.lang.Nullable;
@@ -76,7 +77,9 @@ public class MaintenanceInfoFormatterService {
 				.description(requestMaintenanceInfo.getDescription())
 				.build();
 		}
-		MaintenanceInfo brokeredServiceMI = request.getPlan().getMaintenanceInfo();
+		Plan requestedPlan = request.getPlan(); // may be null with svcat client, but we should have returned early
+		// since no maintenance info change requested
+		MaintenanceInfo brokeredServiceMI = requestedPlan.getMaintenanceInfo();
 		MaintenanceInfo inferredBackendMI = unmergeInfos(brokeredServiceMI);
 		if (DEFAULT_MISSING_BACKEND_MI.equals(inferredBackendMI)) {
 			return null;
@@ -114,7 +117,7 @@ public class MaintenanceInfoFormatterService {
 	 * Indicates whether the request is a pure upgrade request `cf update-service --upgrade` resulting from a version
 	 * bump introduced by osb-cmdb, and no backend version bump.
 	 *
-	 * @return False if the update request should be passed to tbe backend broker, true if backend update should be
+	 * @return False if the update request should be passed to the backend broker, true if backend update should be
 	 * 	skipped (i.e. noop)
 	 */
 	public boolean isNoOpUpgradeBackingService(UpdateServiceInstanceRequest request) {
@@ -124,7 +127,16 @@ public class MaintenanceInfoFormatterService {
 		if (!hasMaintenanceInfoChangeRequest(request)) {
 			return false;
 		}
-		MaintenanceInfo brokeredServiceMI = request.getPlan().getMaintenanceInfo();
+		Plan requestedPlan = request.getPlan();
+		if (requestedPlan == null) {
+			//Likely case of K8S service catalog client which is ommited service plan unless a plan upgrade is requested
+			//Svcat does not support maintenance info upgrade requests, so we always propagate the request to the
+			//backing service broker in this case
+			LOG.info("Update request received without plan. Assuming req from K8S svcat client and propagating to the" +
+					" backing broker");
+			return false;
+		}
+		MaintenanceInfo brokeredServiceMI = requestedPlan.getMaintenanceInfo();
 		MaintenanceInfo inferredBackendMI = unmergeInfos(brokeredServiceMI);
 		return inferredBackendMI.equals(DEFAULT_MISSING_BACKEND_MI);
 	}
@@ -133,7 +145,14 @@ public class MaintenanceInfoFormatterService {
 	 * Validates incoming USI request and rejects requests with unsupported maintenance info
 	 */
 	public void validateAnyUpgradeRequest(UpdateServiceInstanceRequest request) {
-		MaintenanceInfo catalogMi = request.getPlan().getMaintenanceInfo();
+		Plan requestPlan = request.getPlan();
+		if (requestPlan == null) {
+			//Case of a K8S svcat which is omitting the plan when plan change isn't requested.
+			//Since no plan change is requested, we don't need to validate that the plan matches the current
+			//plan (i.e. maintenance info match)
+			return;
+		}
+		MaintenanceInfo catalogMi = requestPlan.getMaintenanceInfo();
 		MaintenanceInfo requestedMi = request.getMaintenanceInfo();
 		validateRequestedMaintenanceInfo(requestedMi, catalogMi);
 	}
@@ -172,6 +191,7 @@ public class MaintenanceInfoFormatterService {
 				"client)");
 			return false;
 		}
+
 		if (request.getMaintenanceInfo() != null) {
 			hasMaintenanceInfoChangeRequest =
 				!request.getMaintenanceInfo().equals(request.getPreviousValues().getMaintenanceInfo());

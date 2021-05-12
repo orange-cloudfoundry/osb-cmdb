@@ -16,9 +16,6 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
-import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
-import org.springframework.cloud.servicebroker.model.catalog.Plan;
-import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
 
 public class AbstractOsbCmdbService {
 
@@ -66,7 +63,7 @@ public class AbstractOsbCmdbService {
 	}
 
 	protected CloudFoundryOperations getSpaceScopedOperations(String spaceName) {
-		createSpace(spaceName).block();
+		lookupOrCreateSpace(spaceName).block();
 
 		//We expect the builder to reuse most of Cf Java client internal objects and thus be lightweigth
 		return DefaultCloudFoundryOperations.builder()
@@ -85,20 +82,6 @@ public class AbstractOsbCmdbService {
 		return spaceId;
 	}
 
-	protected void validateServiceDefinitionAndPlanIds(ServiceDefinition serviceDefinition, Plan plan,
-		String serviceDefinitionId,
-		String planId) {
-		if (plan == null) {
-			LOG.info("Invalid plan received with unknown id {}", planId);
-			throw new ServiceBrokerInvalidParametersException("Invalid plan received with unknown id:" + planId);
-		}
-		if (serviceDefinition == null) {
-			LOG.info("Invalid service definition received with unknown id {}", serviceDefinitionId);
-			throw new ServiceBrokerInvalidParametersException(
-				"Invalid service definition received with unknown id:" + serviceDefinitionId);
-		}
-	}
-
 	private Mono<Void> addSpaceDeveloperRoleForCurrentUser(String orgName, String spaceName) {
 		return Mono.defer(() -> operations.userAdmin().setSpaceRole(SetSpaceRoleRequest.builder()
 			.spaceRole(SpaceRole.DEVELOPER)
@@ -111,7 +94,7 @@ public class AbstractOsbCmdbService {
 				.format("Error setting space developer role for space %s: %s", spaceName, e.getMessage()))));
 	}
 
-	private Mono<String> createSpace(String spaceName) {
+	private Mono<String> lookupOrCreateSpace(String spaceName) {
 		return getSpaceId(spaceName)
 			.switchIfEmpty(Mono.just(this.defaultOrg)
 				.flatMap(orgName -> getOrganizationId(orgName)
