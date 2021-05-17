@@ -98,7 +98,7 @@ configure(allprojects) {
 	}
 
 	dependencies {
-		testRuntimeOnly("io.spring.nohttp:nohttp:0.0.7")
+		testRuntimeOnly("io.spring.nohttp:nohttp:0.0.8")
 	}
 
 	if (project.hasProperty("springFrameworkVersion") || project.hasProperty("springBootVersion")) {
