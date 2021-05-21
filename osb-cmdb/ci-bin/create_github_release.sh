@@ -51,8 +51,9 @@ curl -o /dev/null -sH "$AUTH_HEADER" $GITHUB_REPO || { echo "Error: Invalid repo
 # create release
 printf "%bCreating GitHub release for tag $tag ...%b\n" "${YELLOW}" "${STD}"
 GITHUB_DATA='{"tag_name":"'$tag'","draft": false,"prerelease": true}'
-GITHUB_RELEASE="$GITHUB_API/repos/orange-cloudfoundry/osb-cmdb-spike/releases"
-echo "Github data: $GITHUB_DATA"
+GITHUB_RELEASE="$GITHUB_API/repos/orange-cloudfoundry/osb-cmdb/releases"
+echo "GITHUB_DATA: ${GITHUB_DATA}"
+echo "GITHUB_RELEASE: ${GITHUB_RELEASE}"
 sleep 10
 curl -X POST --silent --write-out '%{http_code}\n' --data "$GITHUB_DATA" -H "$AUTH_HEADER" $GITHUB_RELEASE
 #http_status=$(curl -X POST --silent --write-out '%{http_code}\n' --data "$GITHUB_DATA" -H "$AUTH_HEADER" $GITHUB_RELEASE)
