@@ -106,15 +106,6 @@ public class OpenServiceBrokerApiClient  {
 				"}\n");
 	}
 
-	public RequestSpecification serviceInstanceRequestWithoutPlan(String serviceDefinitionId) {
-		return serviceBrokerSpecification()
-			.body("{" +
-				"\"service_id\": \"" + serviceDefinitionId + "\"," +
-				"\"organization_guid\": \"" + ORG_ID + "\"," +
-				"\"space_guid\": \"" + SPACE_ID + "\"" +
-				"}\n");
-	}
-
 	public RequestSpecification serviceInstanceRequest(String serviceDefinitionId, String planId,
 		Map<String, Object> params) {
 		String stringParams = new JSONObject(params).toString();

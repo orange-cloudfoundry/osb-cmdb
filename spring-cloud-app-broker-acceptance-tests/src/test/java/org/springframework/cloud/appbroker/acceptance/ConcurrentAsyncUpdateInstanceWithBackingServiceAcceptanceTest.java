@@ -112,17 +112,6 @@ class ConcurrentAsyncUpdateInstanceWithBackingServiceAcceptanceTest extends Cmdb
 			.patch(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()
 			.statusCode(HttpStatus.ACCEPTED.value());
-
-		//When requesting a SVCAT concurrent update request to the same broker with the same instance id, service
-		// definition, and params, BUT NO PLAN_ID specified
-		//then it returns a 202 accepted status
-		given(brokerFixture.serviceInstanceRequestWithoutPlan(SERVICE_ID))
-			.when()
-			.patch(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
-			.then()
-			.statusCode(HttpStatus.ACCEPTED.value());
-
-
 	}
 
 	@AfterEach
