@@ -869,12 +869,9 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						.build());
 
 				case OsbApiConstants.LAST_OPERATION_STATE_SUCCEEDED:
-					Plan requestedPlan = request.getPlan();
-					String requestedPlanName = requestedPlan == null ?
-						null :
-						requestedPlan.getName();
+					Plan requestedPlan = request.getPlan(); // Might be null when invoked by svcat
 					if (updatedSi.getService().equals(request.getServiceDefinition().getName()) &&
-						updatedSi.getPlan().equals(requestedPlanName)) {
+						(requestedPlan == null || updatedSi.getPlan().equals(requestedPlan.getName())) ) {
 						LOG.info("Concurrent update request has completed. " +
 							"Returning 200 OK");
 						//200 OK
