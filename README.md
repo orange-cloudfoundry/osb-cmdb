@@ -493,7 +493,10 @@ By default, when propagating OSB calls to backing service brokers, osb-cmdb adds
       "brokered_service_context_organizationName": "osb-cmdb-brokered-services-org-client-0",
       "brokered_service_api_info_location": "api.redacted-domain.com/v2/info",
       "brokered_service_context_instanceName": "osb-cmdb-broker-0-smoketest-1600699922",
-      "brokered_service_client_name": "osb-cmdb-backend-services-org-client-1"
+      "brokered_service_client_name": "osb-cmdb-backend-services-org-client-1",
+      "brokered_service_context_organization_annotations": "{\"domain.com/org-key1\":\"org-value1\",\"domain.com/org-key2\":\"org-value2\"}",
+      "brokered_service_context_space_annotations": "{\"domain.com/space-key1\":\"space-value1\",\"domain.com/space-key2\":\"space-value2\"}",
+      "brokered_service_context_instance_annotations": "{\"domain.com/instance-key1\":\"instance-value1\",\"domain.com/instance-key2\":\"instance:-value2\"}"
     },
     "labels": {
       "brokered_service_instance_guid": "7d9235c5-242d-4b17-ac82-935f121ffd7f",

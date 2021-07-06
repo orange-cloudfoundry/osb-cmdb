@@ -13,17 +13,16 @@ public class AbstractMetadataFormatterService {
 	private final Logger logger = Loggers.getLogger(this.getClass());
 
 
-	private CfMetadataFormatter cfMetadataFormatter = new CfMetadataFormatter();
+	private final CfMetadataFormatter cfMetadataFormatter = new CfMetadataFormatter();
 
-	private K8SMetadataFormatter k8SMetadataFormatter = new K8SMetadataFormatter();
+	private final K8SMetadataFormatter k8SMetadataFormatter = new K8SMetadataFormatter();
 
 	protected MetaData setMetadata(ServiceBrokerRequest request, String serviceInstanceId, Context context) {
 
 		logger.debug("Assigning meta-data request from request={} id={} context={}", request, serviceInstanceId,
 			context);
 		if (context instanceof KubernetesContext) {
-			return k8SMetadataFormatter.setMetadata(request,
-				serviceInstanceId, context);
+			return k8SMetadataFormatter.setMetadata(request, serviceInstanceId, context);
 		}
 		else if (context instanceof CloudFoundryContext ||
 			context ==null // when no context is passed, default to CloudFoundry behavior which will only set the

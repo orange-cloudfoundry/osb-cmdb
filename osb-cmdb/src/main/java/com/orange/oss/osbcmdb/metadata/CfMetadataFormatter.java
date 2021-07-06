@@ -11,7 +11,8 @@ public class CfMetadataFormatter extends BaseMetadataFormatter {
 			String key = entry.getKey();
 			key = restoreOriginalOsbContextKeyNames(key);
 			String prefixedKey= "brokered_service_"+ prefix +"_" + key;
-			String value = entry.getValue().toString();
+			Object entryValue = entry.getValue();
+			String value = serializeNonStringValueToJson(key, entryValue);
 			if (key.contains("_guid") || key.contains("_id")) {
 				labels.put(prefixedKey, value);
 			} else {

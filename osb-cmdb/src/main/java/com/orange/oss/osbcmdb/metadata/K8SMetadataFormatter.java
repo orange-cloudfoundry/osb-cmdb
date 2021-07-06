@@ -2,12 +2,7 @@ package com.orange.oss.osbcmdb.metadata;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 public class K8SMetadataFormatter extends BaseMetadataFormatter {
-
-	private ObjectMapper objectMapper = new ObjectMapper();
 
 
 	@Override
@@ -16,19 +11,8 @@ public class K8SMetadataFormatter extends BaseMetadataFormatter {
 		for (Map.Entry<String, Object> entry : properties.entrySet()) {
 			String key = entry.getKey();
 			String prefixedKey= "brokered_service_"+ prefix +"_" + key;
-			String value;
-			if (entry.getValue() instanceof String) {
-				value = (String) entry.getValue();
-			} else {
-				//Serialize to Json non-string values
-				try {
-					value = objectMapper.writeValueAsString(entry.getValue());
-				}
-				catch (JsonProcessingException e) {
-					throw new IllegalArgumentException("Unable to serialize metadata key=" + key  + " value=" + entry.getValue() +
-						" as json:" + entry.getValue(), e);
-				}
-			}
+			Object entryValue = entry.getValue();
+			String value = serializeNonStringValueToJson(key, entryValue);
 			if (key.equals("namespace") || key.equals("instance_name") || key.equals("clusterid")|| // plain context
 				key.equals("uid") // originating identity
 			) {
@@ -38,4 +22,5 @@ public class K8SMetadataFormatter extends BaseMetadataFormatter {
 			}
 		}
 	}
+
 }
