@@ -20,8 +20,9 @@ import org.springframework.cloud.servicebroker.model.instance.UpdateServiceInsta
 
 public class UpdateServiceMetadataFormatterService extends AbstractMetadataFormatterService {
 
-	public MetaData formatAsMetadata(UpdateServiceInstanceRequest request) {
-		return setMetadata(request, request.getServiceInstanceId(), request.getContext());
+	public MetaData formatAsMetadata(UpdateServiceInstanceRequest request, boolean useSerializedStringForStructures) {
+		return setMetadata(request, request.getServiceInstanceId(), request.getContext(),
+			useSerializedStringForStructures);
 	}
 
 }

@@ -17,18 +17,20 @@ public class AbstractMetadataFormatterService {
 
 	private final K8SMetadataFormatter k8SMetadataFormatter = new K8SMetadataFormatter();
 
-	protected MetaData setMetadata(ServiceBrokerRequest request, String serviceInstanceId, Context context) {
+	protected MetaData setMetadata(ServiceBrokerRequest request, String serviceInstanceId, Context context,
+		boolean useSerializedStringForStructures) {
 
 		logger.debug("Assigning meta-data request from request={} id={} context={}", request, serviceInstanceId,
 			context);
 		if (context instanceof KubernetesContext) {
-			return k8SMetadataFormatter.setMetadata(request, serviceInstanceId, context);
+			return k8SMetadataFormatter.setMetadata(request, serviceInstanceId, context, useSerializedStringForStructures);
 		}
 		else if (context instanceof CloudFoundryContext ||
 			context ==null // when no context is passed, default to CloudFoundry behavior which will only set the
 			// instance guid as metadata
 		) {
-			return cfMetadataFormatter.setMetadata(request, serviceInstanceId, context);
+			return cfMetadataFormatter.setMetadata(request, serviceInstanceId, context,
+				useSerializedStringForStructures);
 		}
 		else {
 			logger.warn("Unsupported OSB context type={}, skipping associated metadata", context);

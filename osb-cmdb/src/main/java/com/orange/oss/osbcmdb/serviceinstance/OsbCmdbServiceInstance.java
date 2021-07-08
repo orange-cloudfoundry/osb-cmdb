@@ -221,7 +221,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 
 			CreateServiceInstanceResponseBuilder responseBuilder = CreateServiceInstanceResponse.builder();
 			String backingServiceInstanceInstanceId = null;
-			MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
+			MetaData flatMetaData = createServiceMetadataFormatterService.formatAsMetadata(request, true);
+			MetaData structuredMetaData = createServiceMetadataFormatterService.formatAsMetadata(request, false);
 			try {
 				rejectDuplicateServiceInstanceGuid(request, spacedTargetedOperations);
 
@@ -230,7 +231,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					.create(org.cloudfoundry.client.v2.serviceinstances.CreateServiceInstanceRequest.builder()
 						.name(ServiceInstanceNameHelper.truncateNameToCfMaxSize(request.getServiceInstanceId()))
 						.servicePlanId(backingServicePlanId)
-						.parameters(formatParameters(metaData, request.getParameters()))
+						.parameters(formatParameters(structuredMetaData, request.getParameters()))
 						.spaceId(spaceId)
 						.acceptsIncomplete(request.isAsyncAccepted())
 						.build())
@@ -271,7 +272,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			}
 			finally {
 				if (backingServiceInstanceInstanceId != null) {
-					updateServiceInstanceMetadata(backingServiceInstanceInstanceId, metaData);
+					updateServiceInstanceMetadata(backingServiceInstanceInstanceId, flatMetaData);
 				}
 			}
 
@@ -532,7 +533,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		 */
 
 		UpdateServiceInstanceResponseBuilder responseBuilder = UpdateServiceInstanceResponse.builder();
-		MetaData metaData = updateServiceMetadataFormatterService.formatAsMetadata(request);
+		MetaData flatMetaData = updateServiceMetadataFormatterService.formatAsMetadata(request,true);
+		MetaData structuredMetaData = updateServiceMetadataFormatterService.formatAsMetadata(request, false);
 
 		try {
 			org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceResponse updateServiceInstanceResponse;
@@ -542,7 +544,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				.update(org.cloudfoundry.client.v2.serviceinstances.UpdateServiceInstanceRequest.builder()
 					.serviceInstanceId(existingBackingServiceInstance.getId())
 					.servicePlanId(requestedBackingServicePlanId) //possibly null
-					.parameters(formatParameters(metaData, request.getParameters()))
+					.parameters(formatParameters(structuredMetaData, request.getParameters()))
 					.maintenanceInfo(formattedForBackendInstanceMI)
 					.acceptsIncomplete(request.isAsyncAccepted())
 					.build())
@@ -586,7 +588,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		finally {
 			//systematically try to update metadata (e.g. service instance rename) even if update failed
-			updateServiceInstanceMetadata(existingBackingServiceInstance.getId(), metaData);
+			updateServiceInstanceMetadata(existingBackingServiceInstance.getId(), flatMetaData);
 		}
 		return Mono.just(responseBuilder.build());
 	}

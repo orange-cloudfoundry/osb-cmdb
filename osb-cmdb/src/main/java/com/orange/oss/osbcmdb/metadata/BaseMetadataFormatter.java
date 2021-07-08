@@ -18,6 +18,10 @@ public abstract class BaseMetadataFormatter {
 	 */
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
+	protected abstract boolean isContextKeyImmutableToQualifyAsALabel(String key);
+
+	protected abstract String restoreOriginalOsbContextKeyNames(String key);
+
 	protected String serializeNonStringValueToJson(String key, Object entryValue) {
 		String value;
 		if (entryValue instanceof String) {
@@ -35,18 +39,36 @@ public abstract class BaseMetadataFormatter {
 		return value;
 	}
 
-	protected abstract void setLabelsAndAnnotations(Map<String, Object> properties, Map<String, String> annotations,
-			Map<String, String> labels, String prefix);
+	protected void setLabelsAndAnnotations(Map<String, Object> properties, Map annotations,
+		Map<String, String> labels, String prefix, boolean useSerializedStringForStructures) {
+		for (Map.Entry<String, Object> entry : properties.entrySet()) {
+			String key = entry.getKey();
+			key = restoreOriginalOsbContextKeyNames(key);
+			String prefixedKey= "brokered_service_"+ prefix +"_" + key;
+			Object objectValue = entry.getValue();
+			String jsonSerializedStringValue = serializeNonStringValueToJson(key, objectValue);
+			if (isContextKeyImmutableToQualifyAsALabel(key)) {
+				labels.put(prefixedKey, jsonSerializedStringValue);
+			} else {
+				if (useSerializedStringForStructures) {
+					annotations.put(prefixedKey, jsonSerializedStringValue);
+				} else {
+					annotations.put(prefixedKey, objectValue);
+				}
+			}
+		}
+	}
 
-	protected MetaData setMetadata(ServiceBrokerRequest request, String serviceInstanceId, Context context) {
+	protected MetaData setMetadata(ServiceBrokerRequest request, String serviceInstanceId, Context context,
+		boolean useSerializedStringForStructures) {
 
 		Map<String, String> annotations = new HashMap<>();
 		Map<String, String> labels = new HashMap<>();
 
 		setBrokeredServiceGuidLabel(serviceInstanceId, labels);
 		setApiInfoLocationAnnotation(request, annotations);
-		setContextMetadata(context, annotations, labels);
-		setOriginatingIdentityMetadata(request, annotations, labels);
+		setContextMetadata(context, annotations, labels, useSerializedStringForStructures);
+		setOriginatingIdentityMetadata(request, annotations, labels, useSerializedStringForStructures);
 
 		return MetaData.builder()
 			.annotations(annotations)
@@ -65,18 +87,20 @@ public abstract class BaseMetadataFormatter {
 		labels.put(BROKERED_SERVICE_INSTANCE_GUID, serviceInstanceId);
 	}
 
-	private void setContextMetadata(Context context, Map<String, String> annotations, Map<String, String> labels) {
+	private void setContextMetadata(Context context, Map<String, String> annotations, Map<String, String> labels,
+		boolean useSerializedStringForStructures) {
 		Map<String, Object> contextProperties =
 			context == null ? new HashMap<>() : context.getProperties();
-		setLabelsAndAnnotations(contextProperties, annotations, labels, "context");
+		setLabelsAndAnnotations(contextProperties, annotations, labels, "context", useSerializedStringForStructures);
 	}
 
 	private void setOriginatingIdentityMetadata(ServiceBrokerRequest request, Map<String, String> annotations,
-		Map<String, String> labels) {
+		Map<String, String> labels, boolean useSerializedStringForStructures) {
 		Context originatingIdentity = request.getOriginatingIdentity();
 		Map<String, Object> originatingIdentityProperties =
 			originatingIdentity == null ? new HashMap<>() : originatingIdentity.getProperties();
-		setLabelsAndAnnotations(originatingIdentityProperties, annotations, labels, "originating_identity");
+		setLabelsAndAnnotations(originatingIdentityProperties, annotations, labels, "originating_identity",
+			useSerializedStringForStructures);
 	}
 
 }

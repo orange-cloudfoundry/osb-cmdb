@@ -56,11 +56,15 @@
       * Conformant to JSON specifications which does not place restrictions on key names. See https://datatracker.ietf.org/doc/html/rfc7159#section-4 and https://stackoverflow.com/a/26592221/1484823 while this however present binding to most programming language types since . and / are likely unsupported characters in field names  
       * need to check that existing backing brokers won't break. 1/2 confirmed. pending 2nd broker
       * coab maps this as yaml structure which is still possible to process within paas-templates using grep/sed (yq is missing from coa containers)
-      * harder for osb-cmdb:
+      * harder impl for osb-cmdb:
          * annotations set by CF on service instances (in the osb-cmdb) only support key/cf won't support Json structure => need to preserve existing code for this
-         * x-osb-cmdb-param can use slightly different codebase to format context into the variable
-            * modify com.orange.oss.osbcmdb.metadata.MetaData to include both structured objects (same as currently) and new json serialized strings in a new distinct member
-    
+         * x-osb-cmdb-param can use slightly different codebase to format context into the variable. 
+         * prototyped multiple approaches to get feedback from the code   
+            * modify com.orange.oss.osbcmdb.metadata.MetaData to include both structured objects (same as currently) and new json serialized strings in a new distinct member: challenging on Jackson serialization where two distinct fields need to serialize with same name, without conflicting, and optionally be empty. 
+            * introduce new com.orange.oss.osbcmdb.metadata.StructuredMetaData with structured objects : duplicates most of the current code
+            * relax strong binding from com.orange.oss.osbcmdb.metadata.MetaData.annotations and pass a boolean flag down the call chain to select between serialized string or structured json.
+            * distinct FormatterService instance for serialized string or structured json.
+
 ```json
 {
   "x-osb-cmdb": {
