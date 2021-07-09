@@ -60,13 +60,13 @@ class CreateServiceMetadataFormatterServiceTest {
 		//given
 		HashMap<String, Object> organizationAnnotations = new HashMap<>();
 		organizationAnnotations.put("domain.com/org-key1", "org-value1");
-		organizationAnnotations.put("domain.com/org-key2", "org-value2");
+		organizationAnnotations.put("orange.com/overrideable-key", "org-value2");
 		HashMap<String, Object> spaceAnnotations = new HashMap<>();
 		spaceAnnotations.put("domain.com/space-key1", "space-value1");
-		spaceAnnotations.put("domain.com/space-key2", "space-value2");
+		spaceAnnotations.put("orange.com/overrideable-key", "space-value2");
 		HashMap<String, Object> instanceAnnotations = new HashMap<>();
 		instanceAnnotations.put("domain.com/instance-key1", "instance-value1");
-		instanceAnnotations.put("domain.com/instance-key2", "instance-value2");
+		instanceAnnotations.put("orange.com/overrideable-key", "instance-value2");
 		CreateServiceInstanceRequest request = CreateServiceInstanceRequest
 			.builder()
 			.serviceInstanceId("service-instance-id")
@@ -124,11 +124,13 @@ class CreateServiceMetadataFormatterServiceTest {
 			entry("brokered_service_context_instance_name", "instance-name-here"),
 			entry("brokered_service_api_info_location", "api.my-cf.org/v2/info"),
 			entry("brokered_service_context_organization_annotations",
-				"{\"domain.com/org-key1\":\"org-value1\",\"domain.com/org-key2\":\"org-value2\"}"),
+				"{\"orange.com/overrideable-key\":\"org-value2\",\"domain.com/org-key1\":\"org-value1\"}"),
 			entry("brokered_service_context_space_annotations",
-				"{\"domain.com/space-key1\":\"space-value1\",\"domain.com/space-key2\":\"space-value2\"}"),
+				"{\"orange.com/overrideable-key\":\"space-value2\",\"domain.com/space-key1\":\"space-value1\"}"),
 			entry("brokered_service_context_instance_annotations",
-				"{\"domain.com/instance-key1\":\"instance-value1\",\"domain.com/instance-key2\":\"instance-value2\"}")
+				"{\"orange.com/overrideable-key\":\"instance-value2\",\"domain" +
+					".com/instance-key1\":\"instance-value1\"}"),
+			entry("brokered_service_context_orange_overrideable", "instance-value2")
 		);
 	}
 
