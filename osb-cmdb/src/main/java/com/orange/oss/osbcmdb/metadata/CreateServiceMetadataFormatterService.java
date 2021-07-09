@@ -4,6 +4,6 @@ import org.springframework.cloud.servicebroker.model.instance.CreateServiceInsta
 
 public interface CreateServiceMetadataFormatterService {
 
-	MetaData formatAsMetadata(CreateServiceInstanceRequest request, boolean useSerializedStringForStructures);
+	MetaData formatAsMetadata(CreateServiceInstanceRequest request);
 
 }

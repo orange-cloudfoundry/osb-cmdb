@@ -24,9 +24,9 @@ public class CreateServiceMetadataFormatterServiceImpl extends AbstractMetadataF
 
 
 	@Override
-	public MetaData formatAsMetadata(CreateServiceInstanceRequest request, boolean useSerializedStringForStructures) {
+	public MetaData formatAsMetadata(CreateServiceInstanceRequest request) {
 		return setMetadata(request, request.getServiceInstanceId(),
-			request.getContext(), useSerializedStringForStructures);
+			request.getContext());
 	}
 
 }

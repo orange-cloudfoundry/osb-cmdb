@@ -7,7 +7,7 @@ public class CreateServiceMetadataFormatterServiceNoOp
 
 	@Override
 	public MetaData formatAsMetadata(
-		CreateServiceInstanceRequest request, boolean useSerializedStringForStructures) {
+		CreateServiceInstanceRequest request) {
 		return null;
 	}
 

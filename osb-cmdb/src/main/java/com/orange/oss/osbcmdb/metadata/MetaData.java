@@ -29,7 +29,7 @@ import static org.springframework.util.Assert.notNull;
 
 public class MetaData {
 
-	private Map annotations;
+	private Map<String, String> annotations;
 
 	private Map<String, String> labels;
 
@@ -43,9 +43,9 @@ public class MetaData {
 	}
 
 
-	public Map getAnnotations() { return annotations; }
+	public Map<String, String> getAnnotations() { return annotations; }
 
-	public void setAnnotations(Map annotations) { this.annotations = annotations; }
+	public void setAnnotations(Map<String, String> annotations) { this.annotations = annotations; }
 
 	public Map<String, String> getLabels() { return labels; }
 
@@ -72,7 +72,7 @@ public class MetaData {
 
 	public static final class Builder {
 
-		private final Map annotations = new HashMap<>();
+		private final Map<String, String> annotations = new HashMap<>();
 
 		private final Map<String, String> labels = new HashMap<>();
 
@@ -86,7 +86,7 @@ public class MetaData {
 			return this;
 		}
 
-		public Builder annotations(Map annotations) {
+		public Builder annotations(Map<String, String> annotations) {
 			if (!CollectionUtils.isEmpty(annotations)) {
 				this.annotations.putAll(annotations);
 			}
