@@ -18,10 +18,6 @@ public abstract class BaseMetadataFormatter {
 	 */
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
-	protected abstract boolean isContextKeyImmutableToQualifyAsALabel(String key);
-
-	protected abstract String restoreOriginalOsbContextKeyNames(String key);
-
 	protected String serializeNonStringValueToJson(String key, Object entryValue) {
 		String value;
 		if (entryValue instanceof String) {
@@ -39,21 +35,8 @@ public abstract class BaseMetadataFormatter {
 		return value;
 	}
 
-	protected void setLabelsAndAnnotations(Map<String, Object> properties, Map<String, String> annotations,
-		Map<String, String> labels, String prefix) {
-		for (Map.Entry<String, Object> entry : properties.entrySet()) {
-			String key = entry.getKey();
-			key = restoreOriginalOsbContextKeyNames(key);
-			String prefixedKey= "brokered_service_"+ prefix +"_" + key;
-			Object objectValue = entry.getValue();
-			String jsonSerializedStringValue = serializeNonStringValueToJson(key, objectValue);
-			if (isContextKeyImmutableToQualifyAsALabel(key)) {
-				labels.put(prefixedKey, jsonSerializedStringValue);
-			} else {
-				annotations.put(prefixedKey, jsonSerializedStringValue);
-			}
-		}
-	}
+	protected abstract void setLabelsAndAnnotations(Map<String, Object> properties, Map<String, String> annotations,
+			Map<String, String> labels, String prefix);
 
 	protected MetaData setMetadata(ServiceBrokerRequest request, String serviceInstanceId, Context context) {
 

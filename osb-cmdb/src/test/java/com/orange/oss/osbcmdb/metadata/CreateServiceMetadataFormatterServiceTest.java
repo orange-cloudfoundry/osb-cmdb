@@ -116,7 +116,8 @@ class CreateServiceMetadataFormatterServiceTest {
 			entry("brokered_service_instance_guid", "service-instance-id"),
 			entry("brokered_service_context_organization_guid", "organization-guid-here"),
 			entry("brokered_service_context_space_guid", "space-guid-here"),
-			entry("brokered_service_originating_identity_user_id", "user-id-here")
+			entry("brokered_service_originating_identity_user_id", "user-id-here"),
+			entry("brokered_service_context_orange_overrideable-key", "instance-value2")
 		);
 		assertThat(annotations).containsOnly(
 			entry("brokered_service_context_organization_name", "organization-name-here"),
@@ -129,8 +130,7 @@ class CreateServiceMetadataFormatterServiceTest {
 				"{\"orange.com/overrideable-key\":\"space-value2\",\"domain.com/space-key1\":\"space-value1\"}"),
 			entry("brokered_service_context_instance_annotations",
 				"{\"orange.com/overrideable-key\":\"instance-value2\",\"domain" +
-					".com/instance-key1\":\"instance-value1\"}"),
-			entry("brokered_service_context_orange_overrideable", "instance-value2")
+					".com/instance-key1\":\"instance-value1\"}")
 		);
 	}
 
