@@ -1,11 +1,11 @@
 ### Product requirements
 
 * P1: backward compatibility is preserved for existing Orange backing brokers
-* P1 orange corporate metadatas (e.g. app code) get propagated to backing brokers with precedence for CF profile: org/space/instance
-* P1: paas-templates coab model have default values including existing instances (i.e. without relying on coab-vars.yml to be updated for old instances)
-* P2 orange corporate metadatas get indexed in osb-cmdb to be queryable
-* P3 backing broker input validation remain simple for common/useful fields, including orange corporate metadata
-* P3 x-osb-cmdb param syntax is consistent / makes sense to backing service brokers
+* P1: orange corporate metadatas (e.g. app code) get propagated to backing brokers with precedence for CF profile: org/space/instance
+* P1: paas-templates coab model have defaulted osb-cmdb values including existing instances (i.e. without relying on coab-vars.yml to be updated for old instances)
+* P2: orange corporate metadatas get indexed in osb-cmdb to be queryable
+* P3: backing broker input validation remain simple for common/useful fields, including orange corporate metadata
+* P3: x-osb-cmdb param syntax is consistent / makes sense to backing service brokers
 * ~~P4 x-osb-cmdb param content have default values for all possible keys in cf and k8s profiles to avoid conditional field inclusion in brokers such as coab~~
 
 ### Implementation steps and design alternatives
@@ -388,4 +388,18 @@ for k8s
 
 This creates a 
 
-* [ ] [CF context annotations](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#cloud-foundry-context-object) and [K8S context annotations](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#kubernetes-context-object) to be stored in the CMDB as brokered service instance annotations
+* [x] [CF context annotations](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#cloud-foundry-context-object) and [K8S context annotations](https://github.com/openservicebrokerapi/servicebroker/blob/master/profile.md#kubernetes-context-object) to be stored in the CMDB as brokered service instance annotations
+
+
+### Default empty values for fields
+
+* [ ] new parameters.x-osb-cmdb.labels.brokered_service_context_platform
+* [ ] default empty values for all osb-fields in x-osb-cmdb
+   * Existing Context is passed for update-service-instance requests. 
+   * Alternatives: 
+     * hardcode all fields from a single static list
+       * Q: even orange annotations ?
+   * testing and spec
+     * extract list of expected properties in a distinct file ?
+   * test that for cf profile, k8s fields are empty
+   * test that for k8s profile, cf fields are empty 
