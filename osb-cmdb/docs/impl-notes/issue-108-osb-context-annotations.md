@@ -1,7 +1,8 @@
 ### Product requirements
 
 * P1: backward compatibility is preserved for existing Orange backing brokers
-* P1 orange corporate metadatas (e.g. app code) get propagated to applications with precedence for CF profile: org/space/instance
+* P1 orange corporate metadatas (e.g. app code) get propagated to backing brokers with precedence for CF profile: org/space/instance
+* P1: paas-templates coab model have default values including existing instances (i.e. without relying on coab-vars.yml to be updated for old instances)
 * P2 orange corporate metadatas get indexed in osb-cmdb to be queryable
 * P3 backing broker input validation remain simple for common/useful fields, including orange corporate metadata
 * P3 x-osb-cmdb param syntax is consistent / makes sense to backing service brokers
