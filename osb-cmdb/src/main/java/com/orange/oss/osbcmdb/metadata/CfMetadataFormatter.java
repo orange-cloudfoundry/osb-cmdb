@@ -1,8 +1,6 @@
 package com.orange.oss.osbcmdb.metadata;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -12,7 +10,15 @@ import static java.util.Arrays.asList;
 
 public class CfMetadataFormatter extends BaseMetadataFormatter {
 
+	public static final String BROKERED_SERVICE_CONTEXT_ORANGE = "brokered_service_context_orange_";
+
 	private final Logger logger = LoggerFactory.getLogger(getClass());
+
+	private CfAnnotationValidator annotationValidator;
+
+	public CfMetadataFormatter(CfAnnotationValidator annotationValidator) {
+		this.annotationValidator = annotationValidator;
+	}
 
 	@Override
 	protected void setLabelsAndAnnotations(Map<String, Object> properties, Map<String, String> annotations,
@@ -65,9 +71,11 @@ public class CfMetadataFormatter extends BaseMetadataFormatter {
 
 			final String WHITE_LISTED_ANNOTATIONS_PREFIX = "orange.com/";
 			if (annotationKey.startsWith(WHITE_LISTED_ANNOTATIONS_PREFIX)) {
-				String prefixTrimmedKey=
-					"brokered_service_context_orange_" + annotationKey.substring(WHITE_LISTED_ANNOTATIONS_PREFIX.length());
-				whiteListedPrecedenceAnnotations.put(prefixTrimmedKey, annotationValue);
+				String trimmedKey = annotationKey.substring(WHITE_LISTED_ANNOTATIONS_PREFIX.length());
+				String prefixedTrimmedKey=
+					BROKERED_SERVICE_CONTEXT_ORANGE + trimmedKey;
+				annotationValidator.validateOrangeAnnotationCanBeIndexedAsALabel(annotationKey, annotationValue, trimmedKey);
+				whiteListedPrecedenceAnnotations.put(prefixedTrimmedKey, annotationValue);
 			}
 		}
 	}

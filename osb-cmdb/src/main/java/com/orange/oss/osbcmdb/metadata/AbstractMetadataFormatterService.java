@@ -13,9 +13,15 @@ public class AbstractMetadataFormatterService {
 	private final Logger logger = Loggers.getLogger(this.getClass());
 
 
-	private final CfMetadataFormatter cfMetadataFormatter = new CfMetadataFormatter();
+	private final CfMetadataFormatter cfMetadataFormatter;
 
-	private final K8SMetadataFormatter k8SMetadataFormatter = new K8SMetadataFormatter();
+	private final K8SMetadataFormatter k8SMetadataFormatter;
+
+	public AbstractMetadataFormatterService(K8SMetadataFormatter k8SMetadataFormatter,
+		CfMetadataFormatter cfMetadataFormatter) {
+		this.cfMetadataFormatter = cfMetadataFormatter;
+		this.k8SMetadataFormatter = k8SMetadataFormatter;
+	}
 
 	protected MetaData setMetadata(ServiceBrokerRequest request, String serviceInstanceId, Context context) {
 

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.cloud.servicebroker.model.CloudFoundryContext;
 import org.springframework.cloud.servicebroker.model.KubernetesContext;
 import org.springframework.cloud.servicebroker.model.catalog.Plan;
@@ -15,8 +16,15 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CreateServiceMetadataFormatterServiceTest {
+
+	CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl(
+		new K8SMetadataFormatter(), new CfMetadataFormatter(new CfAnnotationValidator()));
+
+
 
 	@Test
 	void populates_expected_labels_and_annotations_for_null_profile() {
@@ -41,8 +49,6 @@ class CreateServiceMetadataFormatterServiceTest {
 				.build())
 			.parameters(new HashMap<>())
 			.build();
-
-		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
 		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
@@ -104,8 +110,6 @@ class CreateServiceMetadataFormatterServiceTest {
 			.apiInfoLocation("api.my-cf.org/v2/info")
 			.build();
 
-		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
-
 		//when
 		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);
 
@@ -132,6 +136,64 @@ class CreateServiceMetadataFormatterServiceTest {
 				"{\"orange.com/overrideable-key\":\"instance-value2\",\"domain" +
 					".com/instance-key1\":\"instance-value1\"}")
 		);
+	}
+
+	@Test
+	void rejects_orange_annotations_that_cannot_be_indexed_as_labels() {
+		//given
+		HashMap<String, Object> organizationAnnotations = new HashMap<>();
+		HashMap<String, Object> spaceAnnotations = new HashMap<>();
+		spaceAnnotations.put("orange.com/a-valid-key", "an invalid value with spaces");
+		HashMap<String, Object> instanceAnnotations = new HashMap<>();
+		CreateServiceInstanceRequest request = aCreateRequestWithAnnotations(organizationAnnotations, spaceAnnotations,
+			instanceAnnotations);
+
+		//when
+		ServiceBrokerInvalidParametersException exception = assertThrows(ServiceBrokerInvalidParametersException.class, () -> {
+			createServiceMetadataFormatterService.formatAsMetadata(request);
+		});
+
+		assertThat(exception.getMessage()).contains("due to violations to regex");
+	}
+
+	private CreateServiceInstanceRequest aCreateRequestWithAnnotations(HashMap<String, Object> organizationAnnotations,
+		HashMap<String, Object> spaceAnnotations, HashMap<String, Object> instanceAnnotations) {
+		return CreateServiceInstanceRequest
+			.builder()
+			.serviceInstanceId("service-instance-id")
+			.serviceDefinitionId("p-mysql" + "-id")
+			.planId("10mb" + "-id")
+			.serviceDefinition(ServiceDefinition
+				.builder()
+				.id("p-mysql" + "-id")
+				.name("p-mysql")
+				.plans(Plan.builder()
+					.id("10mb" + "-id")
+					.name("10mb")
+					.build())
+				.build())
+			.plan(Plan.builder()
+				.id("10mb" + "-id")
+				.name("10mb")
+				.build())
+			.parameters(new HashMap<>())
+			.context(CloudFoundryContext.builder()
+//				.property("organization_guid", "organization-guid-here")  // SCOSB mangles the original property name
+				.property("organizationGuid", "organization-guid-here")
+				.property("organization_name", "organization-name-here")
+//				.property("space_guid", "space-guid-here")
+				.property("spaceGuid", "space-guid-here")
+				.property("space_name", "space-name-here")
+				.property("instance_name", "instance-name-here")
+				.property("organization_annotations", organizationAnnotations)
+				.property("space_annotations", spaceAnnotations)
+				.property("instance_annotations", instanceAnnotations)
+				.build())
+			.originatingIdentity(CloudFoundryContext.builder()
+				.property("user_id", "user-id-here")
+				.build())
+			.apiInfoLocation("api.my-cf.org/v2/info")
+			.build();
 	}
 
 
@@ -169,8 +231,6 @@ class CreateServiceMetadataFormatterServiceTest {
 				.property("extra", singletonMap("mydata", asList("data1", "data3")))
 				.build())
 			.build();
-
-		CreateServiceMetadataFormatterService createServiceMetadataFormatterService = new CreateServiceMetadataFormatterServiceImpl();
 
 		//when
 		MetaData metaData = createServiceMetadataFormatterService.formatAsMetadata(request);

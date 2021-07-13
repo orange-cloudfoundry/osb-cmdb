@@ -471,7 +471,7 @@ E.jar:na]
 2021-07-13T11:23:18.58+0200 [APP/PROC/WEB/0] OUT             at reactor.core.publisher.FluxOnAssembly$OnAssemblySubscriber.onNext(FluxOnAssembly.java:387) ~[reactor-core-3.4.5.jar:3.4.5]
 2021-07-13T11:23:18.58+0200 [APP/PROC/WEB/0] OUT             at reactor.core.publisher.FluxMapFuseable$MapFuseableSubscriber.onNext(FluxMapFuseable.java:127) ~[reactor-core-3.4.5.jar:3.4.5]
 
-2021-07-13T11:23:18.59+0200 [APP/PROC/WEB/0] OUT 2021-07-13 09:23:18.589  INFO 11 --- [nio-8080-exec-4] c.o.o.o.s.OsbCmdbServiceInstance         : Inspecting exception caught org.cloudfoundry.client.v3.ClientV3Exception: CF-UnprocessableEntity(10008): Metadata label key error: 'brokered...' is greater than 63 characters, Metadata label value error: 'a key with spaces' contains invalid characters for possible concurrent dupl while handling request ServiceBrokerRequest{platformInstanceId='null', apiInfoLocation='api.nd-int-cfapi.itn.intraorange/v2/info', originatingIdentity=Context{platform='cloudfoundry', properties={user_id=0fff310e-552c-4014-9943-d7acd9875865}}', requestIdentity=6c916b5e-f6fb-4534-be29-8a23ea78f8b0}AsyncServiceBrokerRequest{asyncAccepted=true}AsyncParameterizedServiceInstanceRequest{parameters={}, context=Context{platform='cloudfoundry', properties={spaceGuid=1a603476-a3a1-4c32-8021-d2a7b9b7c6b4, spaceName=smoke-tests, organizationName=osb-cmdb-brokered-services-org-client-0, organization_annotations={orange.com/isprod=true, orange.com/orangecarto=6789}, instanceName=osb-cmdb-broker-0-smoketest-1626109221, space_annotations={orange.com/key-with-chars-incompatible-with-labels=a key with spaces, orange.com/isprod=true, orange.com/orangecarto=6789}, organizationGuid=c2169b61-9360-4d67-968c-575f3a10edf5, instance_annotations={}}}}CreateServiceInstanceRequest{serviceDefinitionId='b0300e6e-8f93-4309-bdee-01099f644b97', planId='477aef10-2433-4c5f-8a7a-46489f04e2fa', organizationGuid='c2169b61-9360-4d67-968c-575f3a10edf5', spaceGuid='1a603476-a3a1-4c32-8021-d2a7b9b7c6b4', serviceInstanceId='67ff79d3-14b6-4d4d-bf07-d811a9c1f4bd', maintenanceInfo='MaintenanceInfo{version='50.1.1+osb-cmdb.1.1.0', description='Dashboard url with backing service guids
+2021-07-13T11:23:18.59+0200 [APP/PROC/WEB/0] OUT 2021-07-13 09:23:18.589  INFO 11 --- [nio-8080-exec-4] c.o.o.o.s.OsbCmdbServiceInstance         : Inspecting exception caught org.cloudfoundry.client.v3.ClientV3Exception: CF-UnprocessableEntity(10008): Metadata label key error: 'brokered...' is greater than 63 characters, Metadata label value error: 'a key with spaces' contains invalid characters for possible concurrent dupl while handling request ServiceBrokerRequest{platformInstanceId='null', apiInfoLocation='api.redacted-domain.org/v2/info', originatingIdentity=Context{platform='cloudfoundry', properties={user_id=0fff310e-552c-4014-9943-d7acd9875865}}', requestIdentity=6c916b5e-f6fb-4534-be29-8a23ea78f8b0}AsyncServiceBrokerRequest{asyncAccepted=true}AsyncParameterizedServiceInstanceRequest{parameters={}, context=Context{platform='cloudfoundry', properties={spaceGuid=1a603476-a3a1-4c32-8021-d2a7b9b7c6b4, spaceName=smoke-tests, organizationName=osb-cmdb-brokered-services-org-client-0, organization_annotations={orange.com/isprod=true, orange.com/orangecarto=6789}, instanceName=osb-cmdb-broker-0-smoketest-1626109221, space_annotations={orange.com/key-with-chars-incompatible-with-labels=a key with spaces, orange.com/isprod=true, orange.com/orangecarto=6789}, organizationGuid=c2169b61-9360-4d67-968c-575f3a10edf5, instance_annotations={}}}}CreateServiceInstanceRequest{serviceDefinitionId='b0300e6e-8f93-4309-bdee-01099f644b97', planId='477aef10-2433-4c5f-8a7a-46489f04e2fa', organizationGuid='c2169b61-9360-4d67-968c-575f3a10edf5', spaceGuid='1a603476-a3a1-4c32-8021-d2a7b9b7c6b4', serviceInstanceId='67ff79d3-14b6-4d4d-bf07-d811a9c1f4bd', maintenanceInfo='MaintenanceInfo{version='50.1.1+osb-cmdb.1.1.0', description='Dashboard url with backing service guids
 2021-07-13T11:23:18.59+0200 [APP/PROC/WEB/0] OUT osb-cmdb now propagates dashboard url (instant upgrade, no downtime)'}'}
 
 2021-07-13T11:23:18.94+0200 [APP/PROC/WEB/0] OUT 2021-07-13 09:23:18.941 DEBUG 11 --- [or-http-epoll-2] cloudfoundry-client.operations           : FINISH Get Service Instance (onComplete/352 ms)
@@ -479,11 +479,16 @@ E.jar:na]
 ``` 
 
 Alternative fixes:
-* Perform input validation on annotations when converting them to labels
-* Perform validation on labels prior to saving them
-* Refine error handling on metadata update to not try to recover from this exception
-   * wrap into our own exception: subclass of ServiceBrokerException: OsbCmdbInternalErrorException
+* [x] Perform user-facing input validation on annotations when converting them to labels
+   * "orange.com/a-key" annotation found in context organization_annotations has unsupported value "space is not supported"
+      * reproduce in unit test
+   * "orange.com/a-very-long-key" annotation found in context organization_annotations is length longer than supported (i.e. max label - osb-cmdb key prefix)
+    
+* Perform validation on labels prior to saving them and fail with internal error
+  * MetaData object with javax validation constraints
+* [x] Refine error handling on metadata update to fail fast on this condition
+   * [x] wrap into our own exception: subclass of ServiceBrokerException: OsbCmdbInternalErrorException
       * might leak some underlying problem ? 
          * at least not in the current example `org.cloudfoundry.client.v3.ClientV3Exception: CF-UnprocessableEntity(10008): Metadata label key error: 'brokered...' is greater than 63 characters, Metadata label value error: 'a key with spaces' contains invalid characters`, still redact it
       * is insufficient to provide meaningful user-facing diagnostic
-    
+  * [ ] Add acceptance test    
