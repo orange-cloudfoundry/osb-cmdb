@@ -19,16 +19,18 @@ public class CfAnnotationValidator {
 		String userDefinedAnnotationValue,
 		String trimmedKey) {
 		//See https://docs.cloudfoundry.org/adminguide/metadata.html#reqs
+		String wrappedKey = BROKERED_SERVICE_CONTEXT_ORANGE + trimmedKey;
 		if (!trimmedKey.matches(LABEL_KEY_REGEX)) {
 			throw new ServiceBrokerInvalidParametersException("Annotation key \"" + userDefinedAnnotationKey + "\" " +
-				"can not be indexed in osb-cmdb as a label \"" + trimmedKey + "\" due to violations to regex " +
+				"can not be indexed in osb-cmdb as a label \"" + wrappedKey + "\" due" +
+				" to violations to regex " +
 				":" + LABEL_KEY_REGEX + " (please check maxsize for annotation key =" + (63- BROKERED_SERVICE_CONTEXT_ORANGE.length()) +
 				" chars)");
 		}
 		if (!userDefinedAnnotationValue.matches(LABEL_VALUE_REGEX)) {
 			throw new ServiceBrokerInvalidParametersException("Annotation key \"" + userDefinedAnnotationKey + "\" " +
 				"with value \"" + userDefinedAnnotationValue + "\" " +
-				"can not be indexed in osb-cmdb as a label \"" + trimmedKey + "\" due to violations to regex " +
+				"can not be indexed in osb-cmdb as a label \"" + wrappedKey + "\" due to value violation to regex " +
 				":" + LABEL_VALUE_REGEX);
 		}
 	}

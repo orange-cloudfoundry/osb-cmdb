@@ -153,7 +153,7 @@ class CreateServiceMetadataFormatterServiceTest {
 			createServiceMetadataFormatterService.formatAsMetadata(request);
 		});
 
-		assertThat(exception.getMessage()).contains("due to violations to regex");
+		assertThat(exception.getMessage()).contains("due to value violation to regex");
 	}
 
 	private CreateServiceInstanceRequest aCreateRequestWithAnnotations(HashMap<String, Object> organizationAnnotations,

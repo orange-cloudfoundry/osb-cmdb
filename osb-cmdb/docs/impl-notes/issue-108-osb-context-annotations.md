@@ -483,12 +483,36 @@ Alternative fixes:
    * "orange.com/a-key" annotation found in context organization_annotations has unsupported value "space is not supported"
       * reproduce in unit test
    * "orange.com/a-very-long-key" annotation found in context organization_annotations is length longer than supported (i.e. max label - osb-cmdb key prefix)
-    
-* Perform validation on labels prior to saving them and fail with internal error
+   * [x] End to end test
+      * [ ] Add acceptance test
+      * [x] Manual test
+```
+$ cf create-service noop-ondemand default osb-cmdb-broker-0-smoketest-1626184294 -b osb-cmdb-broker-0
+
+Creating service instance osb-cmdb-broker-0-smoketest-1626184294 in org osb-cmdb-brokered-services-org-client-0 / space smoke-tests as admin...
+
+Service broker error: Service broker parameters are invalid: Annotation key "orange.com/key-with-chars-incompatible-with-labels" with value "a key with spaces" can not be indexed in osb-cmdb as a label "key-with-chars-incompatible-with-labels" due to violations to regex :[a-z0-9A-Z\-_\.]{0,63}
+
+FAILED
+```    
+
+
+* ~~Perform validation on labels prior to saving them and fail with internal error~~  Overlaps with the 2 other supports.
   * MetaData object with javax validation constraints
 * [x] Refine error handling on metadata update to fail fast on this condition
    * [x] wrap into our own exception: subclass of ServiceBrokerException: OsbCmdbInternalErrorException
       * might leak some underlying problem ? 
          * at least not in the current example `org.cloudfoundry.client.v3.ClientV3Exception: CF-UnprocessableEntity(10008): Metadata label key error: 'brokered...' is greater than 63 characters, Metadata label value error: 'a key with spaces' contains invalid characters`, still redact it
       * is insufficient to provide meaningful user-facing diagnostic
+  * [x] Manual test
+```
+  $ cf create-service noop-ondemand default osb-cmdb-broker-0-smoketest-1626172686 -b osb-cmdb-broker-0
+
+Creating service instance osb-cmdb-broker-0-smoketest-1626172686 in org osb-cmdb-brokered-services-org-client-0 / space smoke-tests as admin...
+
+Service broker error: org.cloudfoundry.client.v3.ClientV3Exception: CF-UnprocessableEntity(10008): Metadata label key error: 'brokered...' is greater than 63 characters, Metadata label value error: 'a key with spaces' contains invalid characters
+
+FAILED
+```
   * [ ] Add acceptance test    
+    
