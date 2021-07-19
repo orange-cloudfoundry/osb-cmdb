@@ -265,6 +265,9 @@ public class CloudFoundryService {
 	public Mono<Void> deleteServiceInstance(String serviceInstanceName) {
 		return deleteServiceInstance(serviceInstanceName, Duration.ofSeconds(5*60));
 	}
+	public Mono<Void> deleteServiceInstanceWithoutCatchingException(String serviceInstanceName) {
+		return deleteServiceInstanceWithoutCatchingException(serviceInstanceName, Duration.ofSeconds(5*60));
+	}
 
 	public Mono<Void> deleteServiceInstance(String serviceInstanceName, Duration completionTimeout) {
 		return getServiceInstance(serviceInstanceName)
@@ -279,6 +282,18 @@ public class CloudFoundryService {
 				.onErrorResume(e -> Mono.empty()))
 			.doOnError(error -> LOG.warn("Error getting service instance " + serviceInstanceName + ": " + error))
 			.onErrorResume(e -> Mono.empty());
+	}
+
+	public Mono<Void> deleteServiceInstanceWithoutCatchingException(String serviceInstanceName, Duration completionTimeout) {
+		return getServiceInstance(serviceInstanceName)
+			.flatMap(si -> cloudFoundryOperations.services()
+				.deleteInstance(DeleteServiceInstanceRequest.builder()
+					.name(si.getName())
+					.completionTimeout(completionTimeout)
+					.build())
+				.doOnSuccess(item -> LOG.info("Deleted service instance " + serviceInstanceName))
+				.doOnError(
+					error -> LOG.error("Error deleting service instance " + serviceInstanceName + ": " + error)));
 	}
 
 	public Mono<Void> purgeServiceInstance(String serviceInstanceName) {

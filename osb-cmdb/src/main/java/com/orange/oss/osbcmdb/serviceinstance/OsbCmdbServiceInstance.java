@@ -808,11 +808,11 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						.build());
 
 				case "failed":
-					LOG.info("Backing service failed to delete with {}, flowing up the error to the osb " +
-							"client",
-						deletedSi.getMessage());
+					LOG.info("Backing service failed to delete with message {}, flowing up the original sync " +
+							"exception with message {} to the osb client",
+						deletedSi.getMessage(), originalException.getMessage());
 					//500 error
-					throw new ServiceBrokerException(deletedSi.getMessage());
+					throw new ServiceBrokerException(originalException.getMessage(), originalException);
 
 				default:
 					LOG.error("Unexpected last operation state:" + deletedSi.getStatus());
