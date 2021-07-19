@@ -245,7 +245,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				if (lastOperation == null) {
 					LOG.error("Unexpected missing last operation from CSI. Full response was {}",
 						createServiceInstanceResponse);
-					throw new OsbCmdbInternalErrorException("Internal CF protocol error");
+					throw new OsbCmdbServiceBrokerException("Internal CF protocol error");
 				}
 				boolean asyncProvisioning;
 				switch (lastOperation.getState()) {
@@ -263,10 +263,10 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					case OsbApiConstants.LAST_OPERATION_STATE_FAILED:
 						LOG.info("Backing service failed to provision with {}, flowing up the error to the osb client",
 							lastOperation);
-						throw new OsbCmdbInternalErrorException(redactExceptionMessage(lastOperation.getDescription()));
+						throw new OsbCmdbServiceBrokerException(redactExceptionMessage(lastOperation.getDescription()));
 					default:
 						LOG.error("Unexpected last operation state:" + lastOperation.getState());
-						throw new OsbCmdbInternalErrorException("Internal CF protocol error");
+						throw new OsbCmdbServiceBrokerException("Internal CF protocol error");
 				}
 				responseBuilder.async(asyncProvisioning);
 			}
@@ -371,7 +371,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 						LOG.info("Backing service failed to delete with {}, flowing up the error to the osb " +
 								"client",
 							deletedSi.getMessage());
-						throw new ServiceBrokerException(redactExceptionMessage(deletedSi.getMessage()));
+						throw new OsbCmdbServiceBrokerException(redactExceptionMessage(deletedSi.getMessage()));
 					default:
 						LOG.error("Unexpected last operation state:" + deletedSi.getStatus());
 						throw new ServiceBrokerException("Internal CF protocol error");
@@ -573,7 +573,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 					LOG.info("Backing service failed to update with {}, flowing up the error to the osb " +
 							"client",
 						lastOperation);
-					throw new ServiceBrokerException(redactExceptionMessage(lastOperation.getDescription()));
+					throw new OsbCmdbServiceBrokerException(redactExceptionMessage(lastOperation.getDescription()));
 				default:
 					LOG.error("Unexpected last operation state:" + lastOperation.getState());
 					throw new ServiceBrokerException("Internal CF protocol error");
@@ -615,7 +615,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		catch (JsonProcessingException e) {
 			LOG.error("Unable to json serialize {} caught {}", cmdbOperationState, e.toString());
-			throw new OsbCmdbInternalErrorException(e.getMessage(), e);
+			throw new OsbCmdbServiceBrokerException(e.getMessage(), e);
 		}
 	}
 
@@ -962,7 +962,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		}
 		catch (Exception e) {
 			LOG.error("Unable to lookup potential duplicates with label {}, caught {}", labelSelector, e);
-			throw new OsbCmdbInternalErrorException("Internal CF protocol error");
+			throw new OsbCmdbServiceBrokerException("Internal CF protocol error");
 		}
 		assert existingBackingServicesWithSameInstanceGuid != null;
 		return existingBackingServicesWithSameInstanceGuid;
@@ -990,7 +990,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			LOG.error("Unable to assign metadata to service instance with id={} annotations={} and labels={} " +
 					"Expecting input validation to happen earlier",
 				serviceInstanceId, metaData.getAnnotations(), metaData.getLabels(), e);
-			throw new OsbCmdbInternalErrorException(redactExceptionMessage(e.toString()), e);
+			throw new OsbCmdbServiceBrokerException(redactExceptionMessage(e.toString()), e);
 		}
 	}
 
