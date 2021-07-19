@@ -315,7 +315,7 @@ In order to provide traceability from backing services to brokered services, the
 
 Label name | Label value | Query usage | Read usage
 -- | -- | -- | --
-backing_service_instance_guid | backing-service-instance-guid | workaround lack of service instance read endpoint |  | 
+backing_service_instance_guid | backing-service-instance-guid | used internally by osb-cmdb as a workaround for lack of support for service instance read endpoint, in order to get service instance params |  | 
 brokered_service_instance_guid | brokered-service-guid | find a backend service by brokered-service-guid in all orgs/spaces | (redundant with backend service instance name)  | 
 brokered_service_context_organization_guid | brokered-service-meta-org-guid | find all backing services for a brokered_service_context_organization_guid | lookup org guid for a given backing service | 
 brokered_service_context_space_guid | brokered-service-meta-space-guid | find all backing services for a brokered-service-space-guid | lookup space guid for a given backing service | 
@@ -483,6 +483,8 @@ These annotations get propagated into service monitoring/alerts.
 
 By default, when propagating OSB calls to backing service brokers, osb-cmdb adds an extra `x-osb-cmdb` param to the [service instance provisionning call](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#provisioning) containing additional metadata matching the [inventory metadata](#metadata-attached-to-backing-services) and an additional `brokered_service_client_name` property identifying the calling osb client, whose value matches the name of the backing service instance organization name. This can be opted-out with the `osbcmdb.broker.propagateMetadataAsCustomParam=false` flag
 
+Note that by default, this `x-osb-cmdb` param isn't returned by the [service instance fetch endpoint](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#fetching-a-service-instance). This can be opted-out with `osbcmdb.broker.hideMetadataCustomParamInGetServiceInstanceEndpoint=false` flag
+
 ##### Example for CF profile
 
 ```json
@@ -493,18 +495,23 @@ By default, when propagating OSB calls to backing service brokers, osb-cmdb adds
       "brokered_service_context_organizationName": "osb-cmdb-brokered-services-org-client-0",
       "brokered_service_api_info_location": "api.redacted-domain.com/v2/info",
       "brokered_service_context_instanceName": "osb-cmdb-broker-0-smoketest-1600699922",
-      "brokered_service_client_name": "osb-cmdb-backend-services-org-client-1"
+      "brokered_service_client_name": "osb-cmdb-backend-services-org-client-1",
+      "brokered_service_context_organization_annotations": "{\"domain.com/org-key1\":\"org-value1\",\"orange.com/overrideable-key\":\"org-value2\"}",
+      "brokered_service_context_space_annotations": "{\"domain.com/space-key1\":\"space-value1\",\"domain.com/space-key2\":\"space-value2\"}",
+      "brokered_service_context_instance_annotations": "{\"domain.com/instance-key1\":\"instance-value1\",\"orange.com/overrideable-key\":\"instance-value2\"}"
     },
     "labels": {
       "brokered_service_instance_guid": "7d9235c5-242d-4b17-ac82-935f121ffd7f",
       "brokered_service_context_organization_guid": "c2169b61-9360-4d67-968c-575f3a10edf5",
       "brokered_service_originating_identity_user_id": "0d02117b-aa21-43e2-b35e-8ad6f8223519",
-      "brokered_service_context_space_guid": "1a603476-a3a1-4c32-8021-d2a7b9b7c6b4"
+      "brokered_service_context_space_guid": "1a603476-a3a1-4c32-8021-d2a7b9b7c6b4",
+      "brokered_service_context_orange_overrideable-key": "instance-value2"
     }
   }
 }
 ```
 
+Note that the CloudFoundry annotations with prefix "orange.com/" are automatically merged in precedence order (org/space/instance) into a key with the "orange.com/" prefix trimmed (`brokered_service_context_orange_overrideable-key` in the example below)
 
 ##### Example for K8S profile
 
@@ -524,7 +531,7 @@ By default, when propagating OSB calls to backing service brokers, osb-cmdb adds
 }
 ```
 
-Note that by default, this `x-osb-cmdb` param isn't returned by the [service instance fetch endpoint](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#fetching-a-service-instance). This can be opted-out with `osbcmdb.broker.hideMetadataCustomParamInGetServiceInstanceEndpoint=false` flag
+
 
 
 

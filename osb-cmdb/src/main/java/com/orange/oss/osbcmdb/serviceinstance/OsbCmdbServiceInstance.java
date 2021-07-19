@@ -28,6 +28,7 @@ import org.cloudfoundry.client.v2.spaces.GetSpaceRequest;
 import org.cloudfoundry.client.v2.spaces.GetSpaceResponse;
 import org.cloudfoundry.client.v2.spaces.ListSpaceServicesRequest;
 import org.cloudfoundry.client.v2.spaces.SpaceEntity;
+import org.cloudfoundry.client.v3.ClientV3Exception;
 import org.cloudfoundry.client.v3.Metadata;
 import org.cloudfoundry.client.v3.serviceinstances.ListServiceInstancesRequest;
 import org.cloudfoundry.client.v3.serviceinstances.ListServiceInstancesResponse;
@@ -974,15 +975,23 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 		LOG.debug("Assigning metadata to service instance with id={} annotations={} and labels={}",
 			serviceInstanceId, metaData.getAnnotations(), metaData.getLabels());
 
-		client.serviceInstancesV3()
-			.update(org.cloudfoundry.client.v3.serviceinstances.UpdateServiceInstanceRequest.builder()
-				.serviceInstanceId(serviceInstanceId)
-				.metadata(Metadata.builder()
-					.annotations(metaData.getAnnotations())
-					.labels(metaData.getLabels())
+		try {
+			client.serviceInstancesV3()
+				.update(org.cloudfoundry.client.v3.serviceinstances.UpdateServiceInstanceRequest.builder()
+					.serviceInstanceId(serviceInstanceId)
+					.metadata(Metadata.builder()
+						.annotations(metaData.getAnnotations())
+						.labels(metaData.getLabels())
+						.build())
 					.build())
-				.build())
-			.block();
+				.block();
+		}
+		catch (ClientV3Exception e) {
+			LOG.error("Unable to assign metadata to service instance with id={} annotations={} and labels={} " +
+					"Expecting input validation to happen earlier",
+				serviceInstanceId, metaData.getAnnotations(), metaData.getLabels(), e);
+			throw new OsbCmdbInternalErrorException(redactExceptionMessage(e.toString()), e);
+		}
 	}
 
 	private void updateServiceInstanceMetadata(String serviceInstanceId, MetaData metaData) {

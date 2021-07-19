@@ -2,7 +2,10 @@ package com.orange.oss.osbcmdb.serviceinstance;
 
 import java.time.Duration;
 
+import com.orange.oss.osbcmdb.metadata.CfAnnotationValidator;
+import com.orange.oss.osbcmdb.metadata.CfMetadataFormatter;
 import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
+import com.orange.oss.osbcmdb.metadata.K8SMetadataFormatter;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.organizations.ListOrganizationSpacesRequest;
@@ -167,7 +170,6 @@ class OsbCmdbServiceInstanceTest {
 	@BeforeEach
 	void setUp() {
 		String defaultOrg = "default-org";
-		String defaultSpace = "default-space";
 
 
 		given(cloudFoundryOperations.spaces()).willReturn(operationsSpaces);
@@ -177,9 +179,12 @@ class OsbCmdbServiceInstanceTest {
 		given(cloudFoundryClient.spaces()).willReturn(clientSpaces);
 		given(cloudFoundryClient.organizations()).willReturn(clientOrganizations);
 
+		CfAnnotationValidator annotationValidator = new CfAnnotationValidator();
 		osbCmdbServiceInstance = new OsbCmdbServiceInstance(cloudFoundryOperations,
 			cloudFoundryClient, defaultOrg, "userName", null,
-			new CreateServiceMetadataFormatterServiceImpl(), new UpdateServiceMetadataFormatterService(), true, true,
+			new CreateServiceMetadataFormatterServiceImpl(new K8SMetadataFormatter(),
+				new CfMetadataFormatter(annotationValidator)), new UpdateServiceMetadataFormatterService(
+			new K8SMetadataFormatter(), new CfMetadataFormatter(annotationValidator)), true, true,
 			new MaintenanceInfoFormatterService(null));
 	}
 

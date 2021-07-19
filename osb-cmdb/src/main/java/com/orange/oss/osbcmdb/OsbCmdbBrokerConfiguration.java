@@ -1,6 +1,9 @@
 package com.orange.oss.osbcmdb;
 
+import com.orange.oss.osbcmdb.metadata.CfAnnotationValidator;
+import com.orange.oss.osbcmdb.metadata.CfMetadataFormatter;
 import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl;
+import com.orange.oss.osbcmdb.metadata.K8SMetadataFormatter;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import com.orange.oss.osbcmdb.servicebinding.OsbCmdbServiceBinding;
 import com.orange.oss.osbcmdb.servicebinding.ServiceBindingInterceptor;
@@ -230,10 +233,13 @@ public class OsbCmdbBrokerConfiguration {
 			throw new IllegalArgumentException("With " + acceptanceTestsProfile + " profile, at least one interceptor" +
 				" profile should be defined to mock backing service broker");
 		}
+		CfAnnotationValidator annotationValidator = new CfAnnotationValidator();
 		return new OsbCmdbServiceInstance(cloudFoundryOperations, cloudFoundryClient,
 			targetProperties.getDefaultOrg(), targetProperties.getUsername(),
-			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(),
-			new UpdateServiceMetadataFormatterService(), osbCmdbBrokerProperties.isPropagateMetadataAsCustomParam(),
+			serviceInstanceInterceptor, new CreateServiceMetadataFormatterServiceImpl(new K8SMetadataFormatter(),
+			new CfMetadataFormatter(annotationValidator)),
+			new UpdateServiceMetadataFormatterService(new K8SMetadataFormatter(),
+				new CfMetadataFormatter(annotationValidator)), osbCmdbBrokerProperties.isPropagateMetadataAsCustomParam(),
 			osbCmdbBrokerProperties.isHideMetadataCustomParamInGetServiceInstanceEndpoint(),
 			maintenanceInfoFormatterService);
 	}

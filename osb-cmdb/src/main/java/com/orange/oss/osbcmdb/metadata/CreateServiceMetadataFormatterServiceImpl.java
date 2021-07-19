@@ -19,9 +19,13 @@ package com.orange.oss.osbcmdb.metadata;
 import org.springframework.cloud.servicebroker.model.instance.CreateServiceInstanceRequest;
 
 public class CreateServiceMetadataFormatterServiceImpl extends AbstractMetadataFormatterService
-	implements
-	CreateServiceMetadataFormatterService {
+	implements CreateServiceMetadataFormatterService {
 
+
+	public CreateServiceMetadataFormatterServiceImpl(K8SMetadataFormatter k8SMetadataFormatter,
+		CfMetadataFormatter cfMetadataFormatter) {
+		super(k8SMetadataFormatter, cfMetadataFormatter);
+	}
 
 	@Override
 	public MetaData formatAsMetadata(CreateServiceInstanceRequest request) {
