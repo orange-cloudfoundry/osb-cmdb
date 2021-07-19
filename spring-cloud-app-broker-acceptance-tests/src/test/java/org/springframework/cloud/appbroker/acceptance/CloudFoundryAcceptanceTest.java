@@ -446,6 +446,9 @@ abstract class CloudFoundryAcceptanceTest {
 	protected void deleteServiceInstance(String serviceInstanceName) {
 		blockingSubscribe(cloudFoundryService.deleteServiceInstance(serviceInstanceName));
 	}
+	protected void deleteServiceInstanceWithoutCatchingException(String serviceInstanceName) {
+		blockingSubscribe(cloudFoundryService.deleteServiceInstanceWithoutCatchingException(serviceInstanceName));
+	}
 	protected void purgeServiceInstance(String serviceInstanceName) {
 		LOG.info("Purging service instance with name {}", serviceInstanceName);
 		cloudFoundryService.purgeServiceInstance(serviceInstanceName).block();
