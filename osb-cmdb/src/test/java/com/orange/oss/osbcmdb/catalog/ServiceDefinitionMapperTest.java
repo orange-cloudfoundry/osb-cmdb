@@ -108,6 +108,7 @@ class ServiceDefinitionMapperTest {
 				.description("service-description")
 				.extra("{}")
 				.serviceBrokerName("broker-name")
+				.instancesRetrievable(true)
 				.build())
 			.build();
 	}
@@ -121,7 +122,7 @@ class ServiceDefinitionMapperTest {
 			.bindable(false)
 			.planUpdateable(false)
 			.bindingsRetrievable(false)
-			.instancesRetrievable(false)
+			.instancesRetrievable(true)
 			.tags(Collections.emptyList())
 			.plans(expectedPlans)
 			.metadata(Collections.emptyMap())
