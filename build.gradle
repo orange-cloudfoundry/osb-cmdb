@@ -43,7 +43,7 @@ ext {
 	springBootVersion = project.findProperty("springBootVersion") ?: "2.4.5"
 // osb-cmdb doesn't lock spring version and leaves it to springboot (unless meeting issues)
 //	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.11.RELEASE"
-	openServiceBrokerVersion = "3.3.0"
+	openServiceBrokerVersion = "3.3.1"
 	openServiceBrokerForkVersion = "576b86f31b89f1c0884d12f65947e01d401388f6"
 	springCredhubVersion = "2.1.1.RELEASE"
 	cfJavaClientVersion = "5.4.0.RELEASE"
