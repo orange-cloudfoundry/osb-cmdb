@@ -54,10 +54,11 @@ dependencies {
 // build the test broker from /src into a jar that the tests can deploy
 test.dependsOn assemble
 
-//fake a dummy main application to keep bootJar task happy
-bootJar {
-	mainClassName = 'fake.nomain.in.acceptance.test.Anymore'
-}
+// //fake a dummy main application to keep bootJar task happy
+// bootJar {
+// 	mainClassName = 'fake.nomain.in.acceptance.test.Anymore'
+//
+// }
 
 
 test {
