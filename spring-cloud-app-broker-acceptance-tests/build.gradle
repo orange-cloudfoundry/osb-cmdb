@@ -56,7 +56,8 @@ test.dependsOn assemble
 
 //fake a dummy main application to keep bootJar task happy
 bootJar {
-	mainClassName = 'fake.nomain.in.acceptance.test.Anymore'
+	mainClass = 'fake.nomain.in.acceptance.test.Anymore'
+
 }
 
 
