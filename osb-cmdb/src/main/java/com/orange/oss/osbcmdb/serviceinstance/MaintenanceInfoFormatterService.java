@@ -239,7 +239,9 @@ public class MaintenanceInfoFormatterService {
 	private void validateRequestedMaintenanceInfo(MaintenanceInfo requestedMi, MaintenanceInfo catalogMi) {
 		if (requestedMi != null && !Objects.equals(requestedMi.getVersion(), catalogMi.getVersion())) {
 			throw new ServiceBrokerMaintenanceInfoConflictException("unknown requested maintenance info: " + requestedMi
-				.getVersion() + " Currently supported maintenance info is: " + catalogMi.getVersion());
+				.getVersion() + " Currently supported maintenance info is: " + catalogMi.getVersion() + ". " +
+				"Potentially due to a stale copy of service catalog in client platform. " +
+				"Please check with platform owner whether the equivalent of \"cf update-service-broker\" was recently applied" );
 		}
 	}
 
