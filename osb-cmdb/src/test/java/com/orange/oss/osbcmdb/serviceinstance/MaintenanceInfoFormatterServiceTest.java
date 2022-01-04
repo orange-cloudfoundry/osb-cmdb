@@ -116,7 +116,7 @@ class MaintenanceInfoFormatterServiceTest {
 		.isInstanceOf(ServiceBrokerMaintenanceInfoConflictException.class);
 	}
 
-	@DisplayName("validates upgrade requests include invalid maintenance info")
+	@DisplayName("rejects create requests with invalid maintenance info")
 	@Test
 	void test_validate_conflicting_create_request() {
 		//Given
@@ -132,7 +132,11 @@ class MaintenanceInfoFormatterServiceTest {
 				.build())
 			.build();
 		assertThatThrownBy(() -> maintenanceInfoFormatterService.validateAnyCreateRequest(createServiceInstanceRequest))
-			.isInstanceOf(ServiceBrokerMaintenanceInfoConflictException.class);
+			.isInstanceOf(ServiceBrokerMaintenanceInfoConflictException.class)
+			.hasMessageContaining("Potentially due to a stale copy of service catalog in client platform. Please " +
+				"check with platform " +
+				"owner whether the equivalent of \"cf update-service-broker\" was recently applied")
+		;
 	}
 
 	/**
