@@ -56,6 +56,7 @@ public class PlanMapper extends BaseMapper {
 			.name(entity.getName())
 			.free(entity.getFree())
 			.bindable(entity.getBindable())
+			.planUpdateable(entity.getPlanUpdatable())
 			.description(entity.getDescription())
 			.metadata(toServiceMetaData(entity.getExtra()))
 			.maintenanceInfo(toMaintenanceInfo(entity.getMaintenanceInfo()));

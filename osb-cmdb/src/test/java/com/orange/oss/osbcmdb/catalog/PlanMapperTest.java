@@ -37,6 +37,7 @@ class PlanMapperTest {
 				.name("plan1")
 				.active(true)
 				.bindable(true)
+				.planUpdatable(false)
 				.description("description")
 				.extra("{\"displayName\":\"Big Bunny\"}")
 				.free(false)
@@ -53,6 +54,7 @@ class PlanMapperTest {
 			.entity(ServicePlanEntity.builder()
 				.name("plan2")
 				//.maintenanceInfo()  // case of missing MI
+				.planUpdatable(true)
 				.build())
 			.build(),
 		ServicePlanResource.builder()
@@ -94,12 +96,14 @@ class PlanMapperTest {
 		assertThat(plan1.getName()).isEqualTo("plan1");
 		assertThat(plan1.getDescription()).isEqualTo("description");
 		assertThat(plan1.isBindable()).isTrue();
+		assertThat(plan1.isPlanUpdateable()).isFalse();
 		assertThat(plan1.isFree()).isFalse();
 		assertThat(plan1.getMaintenanceInfo()).isEqualTo(expectedMergedPlan1MI);
 		assertThat(plan1.getId()).isEqualTo("plan-id");
 		assertPlanSerializesWithoutPollutingWithNulls(plan1);
 		Plan plan2 = plans.get(1);
 		assertThat(plan2.getName()).isEqualTo("plan2");
+		assertThat(plan2.isPlanUpdateable()).isTrue();
 		assertThat(plan2.getMaintenanceInfo()).isEqualTo(expectedDefaultCmdbMI);
 		assertPlanSerializesWithoutPollutingWithNulls(plan2);
 		Plan plan3 = plans.get(2);
