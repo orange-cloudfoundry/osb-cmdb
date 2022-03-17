@@ -18,6 +18,7 @@ package org.springframework.cloud.appbroker.acceptance;
 
 import java.time.Duration;
 
+import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
@@ -29,6 +30,7 @@ import org.springframework.http.HttpStatus;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("cmdb")
 class ConcurrentAsyncDeleteInstanceWithBackingServiceTest extends CmdbCloudFoundryAcceptanceTest {
@@ -83,6 +85,14 @@ class ConcurrentAsyncDeleteInstanceWithBackingServiceTest extends CmdbCloudFound
 		//was indeed updated, and has still its last operation as failed
 		assertThat(backingServiceInstance.getLastOperation()).isEqualTo("delete");
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("in progress");
+
+		//And the brokered service instance service instance fetch endpoint returns a 422 status when delete is
+		// in progress
+		ClientV2Exception exception = assertThrows(ClientV2Exception.class, () -> {
+			getServiceInstanceParams(brokeredServiceInstance.getId());
+		});
+		assertThat(exception.toString()).contains("CF-AsyncServiceInstanceOperationInProgress");
+
 
 		//When requesting a concurrent deprovision request to the same broker with the same instance id, service
 		// definition,

@@ -19,7 +19,7 @@ public class OsbCmdbBrokerProperties {
 
 
 	/**
-	 * Turn on to inspect X-Api-Info-Location to detect configuration mistakes from operator
+	 * Set to true to inspect X-Api-Info-Location to detect configuration mistakes from operator
 	 */
 	private boolean rejectRequestsWithNonMatchingXApiInfoLocationHeader = false;
 

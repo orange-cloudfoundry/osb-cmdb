@@ -20,17 +20,20 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.http.HttpStatus;
 
 import static io.restassured.RestAssured.given;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("cmdb")
 @Tag("k8s") //supports K8S
@@ -71,6 +74,13 @@ class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbC
 
 		// then the brokered service instance is returned and remains stalled "in progress"
 		assertThat(brokeredServiceInstance.getStatus()).isEqualTo("in progress");
+
+		//And the brokered service instance service instance fetch endpoint returns a 422 status when provisionning is
+		// in progress
+		ClientV2Exception exception = assertThrows(ClientV2Exception.class, () -> {
+			getServiceInstanceParams(brokeredServiceInstance.getId());
+		});
+		assertThat(exception.toString()).contains("CF-AsyncServiceInstanceOperationInProgress");
 
 		//When requesting a concurrent request to the same broker with the same instance id, service definition,
 		// plan and params

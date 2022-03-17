@@ -13,6 +13,7 @@ import com.orange.oss.osbcmdb.metadata.CreateServiceMetadataFormatterServiceImpl
 import com.orange.oss.osbcmdb.metadata.MetaData;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.client.v2.MaintenanceInfo;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationRequest;
 import org.cloudfoundry.client.v2.organizations.GetOrganizationResponse;
@@ -46,6 +47,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerConcurrencyException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
@@ -189,6 +191,14 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 	//				.serviceDefinitionId(brokeredServiceId)
 				return Mono.just(builder.build());
 			}
+		}
+		catch (ClientV2Exception e) {
+			LOG.info("Unable to process {}, caught: {}", request, e.toString(), e);
+			if (e.toString().contains("CF-AsyncServiceInstanceOperationInProgress")) {
+				throw new ServiceBrokerConcurrencyException("Osb-cmdb can't fetch service instance while being " +
+					"updated");
+			}
+			throw new ServiceInstanceDoesNotExistException(serviceInstanceId);
 		}
 		catch (Exception e) {
 			LOG.info("Unable to process {}, caught: {}", request, e.toString(), e);
