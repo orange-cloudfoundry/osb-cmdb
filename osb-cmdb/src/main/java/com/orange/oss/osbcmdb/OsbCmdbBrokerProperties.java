@@ -17,6 +17,19 @@ public class OsbCmdbBrokerProperties {
 	 */
 	private boolean hideMetadataCustomParamInGetServiceInstanceEndpoint = true;
 
+
+	/**
+	 * Turn on to inspect X-Api-Info-Location to detect configuration mistakes from operator
+	 */
+	private boolean rejectRequestsWithNonMatchingXApiInfoLocationHeader = false;
+
+	/**
+	 * Expected X-Api-Info-Location when {@link #rejectRequestsWithNonMatchingXApiInfoLocationHeader} is set
+	 * e.g."api.example.com/v2/info"
+	 */
+	private String expectedXApiInfoLocationHeader = null;
+
+
 	public boolean isHideMetadataCustomParamInGetServiceInstanceEndpoint() {
 		return hideMetadataCustomParamInGetServiceInstanceEndpoint;
 	}
@@ -32,6 +45,23 @@ public class OsbCmdbBrokerProperties {
 
 	public void setPropagateMetadataAsCustomParam(boolean propagateMetadataAsCustomParam) {
 		this.propagateMetadataAsCustomParam = propagateMetadataAsCustomParam;
+	}
+
+	public String getExpectedXApiInfoLocationHeader() {
+		return expectedXApiInfoLocationHeader;
+	}
+
+	public void setExpectedXApiInfoLocationHeader(String expectedXApiInfoLocationHeader) {
+		this.expectedXApiInfoLocationHeader = expectedXApiInfoLocationHeader;
+	}
+
+	public boolean isRejectRequestsWithNonMatchingXApiInfoLocationHeader() {
+		return rejectRequestsWithNonMatchingXApiInfoLocationHeader;
+	}
+
+	public void setRejectRequestsWithNonMatchingXApiInfoLocationHeader(
+		boolean rejectRequestsWithNonMatchingXApiInfoLocationHeader) {
+		this.rejectRequestsWithNonMatchingXApiInfoLocationHeader = rejectRequestsWithNonMatchingXApiInfoLocationHeader;
 	}
 
 }

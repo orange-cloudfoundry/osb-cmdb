@@ -136,17 +136,25 @@ public class CloudFoundryService {
 			.doOnError(error -> LOG.error("Error enabling access to service " + serviceName + ": " + error));
 	}
 
-	public Mono<Void> createServiceBroker(String brokerName, String testBrokerAppName) {
+	public Mono<Void> createServiceBroker(String brokerName, String testBrokerAppName,
+		boolean ignoreBrokerRegistrationErrors) {
 		return getApplicationRoute(testBrokerAppName)
-			.flatMap(url -> cloudFoundryOperations.serviceAdmin()
-				.create(CreateServiceBrokerRequest.builder()
-					.name(brokerName)
-					.username(BROKER_USERNAME)
-					.password(BROKER_PASSWORD)
-					.url(url)
-					.build())
-				.doOnSuccess(item -> LOG.info("Created service broker " + brokerName))
-				.doOnError(error -> LOG.error("Error creating service broker " + brokerName + ": " + error)));
+			.flatMap(url -> {
+				Mono<Void> registerBrokerMono = cloudFoundryOperations.serviceAdmin()
+					.create(CreateServiceBrokerRequest.builder()
+						.name(brokerName)
+						.username(BROKER_USERNAME)
+						.password(BROKER_PASSWORD)
+						.url(url)
+						.build())
+					.doOnSuccess(item -> LOG.info("Created service broker " + brokerName));
+				if (ignoreBrokerRegistrationErrors) {
+					return registerBrokerMono
+						.doOnError(error -> LOG.error("Error creating service broker " + brokerName + ": " + error));
+				} else {
+					return registerBrokerMono;
+				}
+			});
 	}
 
 	public Mono<Void> updateServiceBroker(String brokerName, String testBrokerAppName) {
@@ -779,6 +787,9 @@ public class CloudFoundryService {
 		Map<String, String> deployerVariables = new HashMap<>();
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "api-host",
 			cloudFoundryProperties.getApiHost());
+		// systematically configure expected x-api-info-location here since it is easier to derive it from CF API host
+		deployerVariables.put("osbcmdb.broker.expectedXApiInfoLocationHeader", cloudFoundryProperties.getApiHost() +
+			"/v2/info");
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "api-port",
 			String.valueOf(cloudFoundryProperties.getApiPort()));
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "default-org",

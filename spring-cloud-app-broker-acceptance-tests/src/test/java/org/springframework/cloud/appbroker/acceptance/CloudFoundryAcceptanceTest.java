@@ -194,7 +194,7 @@ abstract class CloudFoundryAcceptanceTest {
 		try {
 			Hooks.onOperatorDebug(); // get human readeable reactor stack traces
 			List<String> appBrokerProperties = getAppBrokerProperties(brokerProperties);
-			blockingSubscribe(initializeBroker(appBrokerProperties));
+			blockingSubscribe(initializeBroker(appBrokerProperties, true));
 		}
 		finally {
 			//This is useful to set a debugger breakpoint
@@ -207,7 +207,7 @@ abstract class CloudFoundryAcceptanceTest {
 		blockingSubscribe(updateBroker(appBrokerProperties));
 	}
 
-	private List<String> getAppBrokerProperties(BrokerProperties brokerProperties) {
+	protected List<String> getAppBrokerProperties(BrokerProperties brokerProperties) {
 		String[] openServiceBrokerProperties = {
 			"spring.cloud.openservicebroker.catalog.services[0].id=" + SERVICE_ID,
 			"spring.cloud.openservicebroker.catalog.services[0].name=" + appServiceName(),
@@ -273,6 +273,10 @@ abstract class CloudFoundryAcceptanceTest {
 	public void tearDown(TestInfo testInfo) {
 		cloudFoundryService.logAndVerifyRecentAppLogs(testBrokerAppName(), true).block();
 
+		cleanUpDefaultSpace();
+	}
+
+	protected void cleanUpDefaultSpace() {
 		blockingSubscribe(cloudFoundryService.getOrCreateDefaultOrganization()
 			.map(OrganizationSummary::getId)
 			.flatMap(orgId -> cloudFoundryService.getOrCreateDefaultSpace()
@@ -284,7 +288,7 @@ abstract class CloudFoundryAcceptanceTest {
 		);
 	}
 
-	private Mono<Void> initializeBroker(List<String> appBrokerProperties) {
+	protected Mono<Void> initializeBroker(List<String> appBrokerProperties, boolean ignoreBrokerRegistrationErrors) {
 		return cloudFoundryService
 			.getOrCreateDefaultOrganization()
 			.map(OrganizationSummary::getId)
@@ -300,7 +304,7 @@ abstract class CloudFoundryAcceptanceTest {
 					.then(cloudFoundryService
 						.pushBrokerApp(testBrokerAppName(), getTestBrokerAppPath(), brokerClientId(),
 							appBrokerProperties))
-					.then(cloudFoundryService.createServiceBroker(serviceBrokerName(), testBrokerAppName()))
+					.then(cloudFoundryService.createServiceBroker(serviceBrokerName(), testBrokerAppName(), ignoreBrokerRegistrationErrors))
 					.then(cloudFoundryService.enableServiceBrokerAccess(appServiceName()))
 					.then(cloudFoundryService.enableServiceBrokerAccess(backingServiceName()))))
 			.doOnRequest(l -> LOG.debug("START creating default org/space/pushing broker app/create broker/enable " +
@@ -617,7 +621,7 @@ abstract class CloudFoundryAcceptanceTest {
 		return Paths.get(acceptanceTestProperties.getBrokerAppPath(), "");
 	}
 
-	private <T> void blockingSubscribe(Mono<? super T> publisher) {
+	protected <T> void blockingSubscribe(Mono<? super T> publisher) {
 		publisher.block();
 		//Not clear with SCAB did not use block(), maybe because of static code analysis offenses.
 		//Side effect was that exception thrown were swallowed
