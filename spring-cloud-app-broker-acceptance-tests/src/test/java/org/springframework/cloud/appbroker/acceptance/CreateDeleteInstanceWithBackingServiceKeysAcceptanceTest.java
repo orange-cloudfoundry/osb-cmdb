@@ -65,9 +65,11 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		"logging.level.cloudfoundry-client.request=debug",
 		"logging.level.cloudfoundry-client.response=debug",
 		"logging.level.okhttp3=debug",
+		"logging.level.com.orange.oss.osbcmdb.serviceinstance.ApiInfoLocationHeaderFilter=trace",
 
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false",
+		"osbcmdb.rejectRequestsWithNonMatchingXApiInfoLocationHeader=true"
 	})
 	void deployAppsAndCreateServiceKeysOnBindService() throws InterruptedException {
 		// given a brokered service instance is created with some params

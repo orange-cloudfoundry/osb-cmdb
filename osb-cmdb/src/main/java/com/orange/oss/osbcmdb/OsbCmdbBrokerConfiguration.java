@@ -7,6 +7,7 @@ import com.orange.oss.osbcmdb.metadata.K8SMetadataFormatter;
 import com.orange.oss.osbcmdb.metadata.UpdateServiceMetadataFormatterService;
 import com.orange.oss.osbcmdb.servicebinding.OsbCmdbServiceBinding;
 import com.orange.oss.osbcmdb.servicebinding.ServiceBindingInterceptor;
+import com.orange.oss.osbcmdb.serviceinstance.ApiInfoLocationHeaderFilter;
 import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceInstance;
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
@@ -243,5 +244,13 @@ public class OsbCmdbBrokerConfiguration {
 			osbCmdbBrokerProperties.isHideMetadataCustomParamInGetServiceInstanceEndpoint(),
 			maintenanceInfoFormatterService);
 	}
+
+	@Bean
+	public ApiInfoLocationHeaderFilter apiInfoLocationHeaderFilter(OsbCmdbBrokerProperties osbCmdbBrokerProperties) {
+		return new ApiInfoLocationHeaderFilter(osbCmdbBrokerProperties.getExpectedXApiInfoLocationHeader(),
+			osbCmdbBrokerProperties.isRejectRequestsWithNonMatchingXApiInfoLocationHeader());
+	}
+
+
 
 }
