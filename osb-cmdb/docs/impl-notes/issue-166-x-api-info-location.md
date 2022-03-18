@@ -33,8 +33,8 @@ How to test ?
   - **environment variables not taken into account: typo/camel case**
 
 ```
-osbcmdb.expectedXApiInfoLocationHeader: invalid_value_set_to_fail_catalog_fetching
-osbcmdb.rejectRequestsWithNonMatchingXApiInfoLocationHeader: true
+osbcmdb.broker.expectedXApiInfoLocationHeader: invalid_value_set_to_fail_catalog_fetching
+osbcmdb.broker.rejectRequestsWithNonMatchingXApiInfoLocationHeader: true
 ```
 
 ## Draft User documentation

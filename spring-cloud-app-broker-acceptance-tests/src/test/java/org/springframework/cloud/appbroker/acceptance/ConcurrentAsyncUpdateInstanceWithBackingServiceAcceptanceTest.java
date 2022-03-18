@@ -18,6 +18,7 @@ package org.springframework.cloud.appbroker.acceptance;
 
 import java.time.Duration;
 
+import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
@@ -29,6 +30,7 @@ import org.springframework.http.HttpStatus;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("cmdb")
 class ConcurrentAsyncUpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
@@ -101,6 +103,16 @@ class ConcurrentAsyncUpdateInstanceWithBackingServiceAcceptanceTest extends Cmdb
 		assertThat(backingServiceInstance.getStatus()).isEqualTo("in progress");
 		assertThat(backingServiceInstance.getPlan()).isEqualTo(PLAN_NAME); //Updated Plan name only gets published
 		// once update is complete
+
+
+		//And the brokered service instance service instance fetch endpoint returns a 422 status when update is
+		// in progress
+		final ServiceInstance updatingBrokeredServiceInstance = brokeredServiceInstance;
+		ClientV2Exception exception = assertThrows(ClientV2Exception.class, () -> {
+			getServiceInstanceParams(updatingBrokeredServiceInstance.getId());
+		});
+		assertThat(exception.toString()).contains("CF-AsyncServiceInstanceOperationInProgress");
+
 
 
 		//When requesting a concurrent update request to the same broker with the same instance id, service
