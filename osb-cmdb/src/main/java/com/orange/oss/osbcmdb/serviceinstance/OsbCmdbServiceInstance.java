@@ -421,7 +421,7 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 				.block();
 		}
 		catch (Exception e) {
-			LOG.info("No such backing instance with guid {}, caught: {}" + backingServiceInstanceGuid, e.toString());
+			LOG.info("No such backing instance with guid {}, caught: {}", backingServiceInstanceGuid, e.toString());
 			getServiceInstanceException = e;
 			serviceInstanceResponse = null;
 		}
