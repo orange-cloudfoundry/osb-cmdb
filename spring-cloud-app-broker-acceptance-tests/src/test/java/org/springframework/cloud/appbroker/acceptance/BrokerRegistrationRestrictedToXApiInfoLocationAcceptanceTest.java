@@ -86,10 +86,4 @@ class BrokerRegistrationRestrictedToXApiInfoLocationAcceptanceTest extends CmdbC
 
 	}
 
-	@AfterEach
-	public void tearDown(TestInfo testInfo) {
-		//override to avoid failing on error log
-		cleanUpDefaultSpace();
-	}
-
 }
