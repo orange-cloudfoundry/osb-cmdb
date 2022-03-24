@@ -246,9 +246,14 @@ public class OsbCmdbBrokerConfiguration {
 	}
 
 	@Bean
-	public ApiInfoLocationHeaderFilter apiInfoLocationHeaderFilter(OsbCmdbBrokerProperties osbCmdbBrokerProperties) {
+	public ApiInfoLocationHeaderFilter apiInfoLocationHeaderFilter(OsbCmdbBrokerProperties osbCmdbBrokerProperties, CloudFoundryTargetProperties targetProperties) {
+
+		String apiHost = targetProperties.getApiHost();
+		if (! osbCmdbBrokerProperties.isWhiteListOsbCmdbCloudFoundryXApiInfoLocationHeader()) {
+			apiHost = "";
+		}
 		return new ApiInfoLocationHeaderFilter(osbCmdbBrokerProperties.getExpectedXApiInfoLocationHeader(),
-			osbCmdbBrokerProperties.isRejectRequestsWithNonMatchingXApiInfoLocationHeader());
+			osbCmdbBrokerProperties.isRejectRequestsWithNonMatchingXApiInfoLocationHeader(), apiHost);
 	}
 
 

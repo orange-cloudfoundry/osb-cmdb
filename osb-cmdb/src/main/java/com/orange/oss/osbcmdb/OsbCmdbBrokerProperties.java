@@ -23,6 +23,22 @@ public class OsbCmdbBrokerProperties {
 	 */
 	private boolean rejectRequestsWithNonMatchingXApiInfoLocationHeader = false;
 
+	public boolean isWhiteListOsbCmdbCloudFoundryXApiInfoLocationHeader() {
+		return whiteListOsbCmdbCloudFoundryXApiInfoLocationHeader;
+	}
+
+	public void setWhiteListOsbCmdbCloudFoundryXApiInfoLocationHeader(
+		boolean whiteListOsbCmdbCloudFoundryXApiInfoLocationHeader) {
+		this.whiteListOsbCmdbCloudFoundryXApiInfoLocationHeader = whiteListOsbCmdbCloudFoundryXApiInfoLocationHeader;
+	}
+
+	/**
+	 * Set to false to reject requests from the cloudfoundry used by osb-cmdb.
+	 * This is only useful for osb-cmdb acceptance tests in the BrokerRegistrationRestrictedToXApiInfoLocationAcceptanceTest
+	 */
+	private boolean whiteListOsbCmdbCloudFoundryXApiInfoLocationHeader = true;
+
+
 	/**
 	 * Expected X-Api-Info-Location when {@link #rejectRequestsWithNonMatchingXApiInfoLocationHeader} is set
 	 * e.g."api.example.com/v2/info"

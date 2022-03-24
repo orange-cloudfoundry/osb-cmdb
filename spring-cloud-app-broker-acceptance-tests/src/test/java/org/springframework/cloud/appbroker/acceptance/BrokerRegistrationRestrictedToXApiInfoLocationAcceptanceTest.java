@@ -71,7 +71,8 @@ class BrokerRegistrationRestrictedToXApiInfoLocationAcceptanceTest extends CmdbC
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false",
 		"osbcmdb.broker.rejectRequestsWithNonMatchingXApiInfoLocationHeader=true",
-		"osbcmdb.broker.expectedXApiInfoLocationHeader=invalid_value_set_to_fail_catalog_fetching"
+		"osbcmdb.broker.expectedXApiInfoLocationHeader=invalid_value_set_to_fail_catalog_fetching",
+		"osbcmdb.broker.whiteListOsbCmdbCloudFoundryXApiInfoLocationHeader=false"
 	})
 	void assertServiceBrokerRegistrationFailsFromInvalidXApiLocation() throws InterruptedException {
 
@@ -84,12 +85,6 @@ class BrokerRegistrationRestrictedToXApiInfoLocationAcceptanceTest extends CmdbC
 		assertThat(exception.getMessage()).contains("The service broker rejected the request. Status Code: 400 Bad " +
 			"Request");
 
-	}
-
-	@AfterEach
-	public void tearDown(TestInfo testInfo) {
-		//override to avoid failing on error log
-		cleanUpDefaultSpace();
 	}
 
 }
