@@ -7,7 +7,7 @@ jobs:
   build:
     working_directory: ~/osb-cmdb-spike
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: cimg/openjdk:8.0
     environment:
       # Configure the JVM and Gradle to avoid OOM errors
       _JAVA_OPTIONS: "-Xmx3g"
@@ -74,7 +74,7 @@ jobs:
   build_n_deploy:
     working_directory: ~/osb-cmdb-spike
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: cimg/openjdk:8.0
     steps:
       # TODO: factor out this code with the `build` workflow, possibly using yaml reference
       - checkout
@@ -144,7 +144,7 @@ jobs:
   release_to_github:
     working_directory: ~/osb-cmdb-spike
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: cimg/openjdk:8.0
     steps:
       - attach_workspace:
           at: ~/osb-cmdb-spike
