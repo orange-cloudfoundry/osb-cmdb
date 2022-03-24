@@ -71,7 +71,8 @@ class BrokerRegistrationRestrictedToXApiInfoLocationAcceptanceTest extends CmdbC
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false",
 		"osbcmdb.broker.rejectRequestsWithNonMatchingXApiInfoLocationHeader=true",
-		"osbcmdb.broker.expectedXApiInfoLocationHeader=invalid_value_set_to_fail_catalog_fetching"
+		"osbcmdb.broker.expectedXApiInfoLocationHeader=invalid_value_set_to_fail_catalog_fetching",
+		"osbcmdb.broker.whiteListOsbCmdbCloudFoundryXApiInfoLocationHeader=false"
 	})
 	void assertServiceBrokerRegistrationFailsFromInvalidXApiLocation() throws InterruptedException {
 

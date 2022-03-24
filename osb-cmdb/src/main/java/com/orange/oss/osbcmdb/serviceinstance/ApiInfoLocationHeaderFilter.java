@@ -29,6 +29,9 @@ public class ApiInfoLocationHeaderFilter extends HttpFilter  {
 
 	private boolean rejectRequestsWithNonMatchingXApiInfoLocationHeader;
 
+	/**
+	 * Might be empty "" in the case of osb-cmdb acceptance test
+	 */
 	private String localCloudfoundryApiHostToWhiteList;
 
 	/**
@@ -45,8 +48,10 @@ public class ApiInfoLocationHeaderFilter extends HttpFilter  {
 		this.rejectRequestsWithNonMatchingXApiInfoLocationHeader = rejectRequestsWithNonMatchingXApiInfoLocationHeader;
 		this.localCloudfoundryApiHostToWhiteList = localCloudfoundryApiHostToWhiteList;
 		LOG.info("Configuring ApiInfoLocationHeaderFilter with rejectRequestsWithNonMatchingXApiInfoLocationHeader={}" +
-			" and expectedXApiInfoLocationHeader={}", rejectRequestsWithNonMatchingXApiInfoLocationHeader,
-			expectedXApiInfoLocationHeader);
+			"expectedXApiInfoLocationHeader={} and localCloudfoundryApiHostToWhiteList={}",
+			rejectRequestsWithNonMatchingXApiInfoLocationHeader,
+			expectedXApiInfoLocationHeader,
+			localCloudfoundryApiHostToWhiteList);
 	}
 
 

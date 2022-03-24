@@ -29,7 +29,7 @@ class ApiInfoLocationHeaderFilterTest {
 	}
 
 	@Test
-	void always_accepts_backing_cloudfoundry_api_info_url() {
+	void accepts_backing_cloudfoundry_api_info_url() {
 		//given filter is configured to accept local cloudfoundry
 		ApiInfoLocationHeaderFilter apiInfoLocationHeaderFilter = new ApiInfoLocationHeaderFilter(
 			"a-distinct-api.domain.com/v2/info",
@@ -40,6 +40,20 @@ class ApiInfoLocationHeaderFilterTest {
 			"api.domain.org/v2/info", "a-distinct-api.domain.com/v2/info");
 		//then it is accepted
 		assertThat(actualShouldAcceptXApiInfoLocation).isEqualTo(true);
+	}
+
+	@Test
+	void rejects_backing_cloudfoundry_api_info_url_for_acceptance_tests() {
+		//given filter is configured to not accept local cloudfoundry by specifying an empty cloudfoundry api host
+		ApiInfoLocationHeaderFilter apiInfoLocationHeaderFilter = new ApiInfoLocationHeaderFilter(
+			"a-distinct-api.domain.com/v2/info",
+			true, "");
+
+		//When queried with local cloudfoundry v2/info
+		boolean actualShouldAcceptXApiInfoLocation = apiInfoLocationHeaderFilter.shouldAcceptXApiInfoLocation(
+			"api.domain.org/v2/info", "a-distinct-api.domain.com/v2/info");
+		//then it is rejected
+		assertThat(actualShouldAcceptXApiInfoLocation).isEqualTo(false);
 	}
 
 	@Test

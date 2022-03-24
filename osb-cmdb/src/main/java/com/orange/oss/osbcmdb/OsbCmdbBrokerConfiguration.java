@@ -247,8 +247,13 @@ public class OsbCmdbBrokerConfiguration {
 
 	@Bean
 	public ApiInfoLocationHeaderFilter apiInfoLocationHeaderFilter(OsbCmdbBrokerProperties osbCmdbBrokerProperties, CloudFoundryTargetProperties targetProperties) {
+
+		String apiHost = targetProperties.getApiHost();
+		if (! osbCmdbBrokerProperties.isWhiteListOsbCmdbCloudFoundryXApiInfoLocationHeader()) {
+			apiHost = "";
+		}
 		return new ApiInfoLocationHeaderFilter(osbCmdbBrokerProperties.getExpectedXApiInfoLocationHeader(),
-			osbCmdbBrokerProperties.isRejectRequestsWithNonMatchingXApiInfoLocationHeader(), targetProperties.getApiHost());
+			osbCmdbBrokerProperties.isRejectRequestsWithNonMatchingXApiInfoLocationHeader(), apiHost);
 	}
 
 
