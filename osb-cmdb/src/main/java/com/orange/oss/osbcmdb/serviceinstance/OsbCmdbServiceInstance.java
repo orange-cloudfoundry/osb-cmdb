@@ -947,7 +947,8 @@ public class OsbCmdbServiceInstance extends AbstractOsbCmdbService implements Se
 			LOG.info("Corresponding backing org id={} space name={}", backingOrganizationId, backingSpaceName);
 			if (!request.getServiceDefinition().getName().equals(backingSpaceName)) {
 				String msg = "Existing conflicting service in same backing org with different service "
-					+ "definition name: backingSpaceName=" + backingSpaceName
+					+ "definition name: requestServiceDefinitionName=" + request.getServiceDefinition().getName() +
+					" backingSpaceName=" + backingSpaceName
 					+ " additional metadata: " + serviceInstanceResource.getMetadata();
 				LOG.info(msg);
 				throw new ServiceInstanceExistsException(msg,
