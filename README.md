@@ -162,6 +162,10 @@ We observe wire traces such as
 
 Osb-cmdb exposes springboot [actuator http traces](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-features.html#production-ready-http-tracing) through the last 100 requests stored in memory. Load the following endpoint in your browser: `https://admin:password@osb-cmdb-broker-1.redacted-domain/actuator/httptrace`
 
+The payload contains Json which can be filtered using jq such as
+
+`curl https://admin:password@osb-cmdb-broker-1.redacted-domain/actuator/httptrace | jq '.traces[] | select (.request.method=="PUT")'`
+
 #### Accessing other production-ready actuator endpoints
 
 Load the following endpoint in your browser: `https://admin:password@osb-cmdb-broker-1.redacted-domain/actuator/` to get the currently list of actuator endpoints enabled.
