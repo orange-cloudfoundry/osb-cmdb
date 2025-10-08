@@ -70,6 +70,24 @@ dependencies {
 
 
 tasks.named('test') {
+
+	//Propagate tags from gradle command line to fine tune test selection
+	//See https://javabydeveloper.com/run-tag-specific-junit-5-tests-from-gradle-command/
+	String itagsProp = System.getProperty("includeTags")
+	String etagsProp = System.getProperty("excludeTags")
+
+
+	useJUnitPlatform{
+		if (itagsProp !=null) {
+			String[] itags = itagsProp.split(",");
+			includeTags  itags
+		}
+		if (etagsProp != null) {
+			String[] etags = etagsProp.split(",");
+			excludeTags  etags
+		}
+	}
+
 	useJUnitPlatform()
 
 }

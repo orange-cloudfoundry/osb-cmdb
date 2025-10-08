@@ -1,8 +1,10 @@
-* [ ] Compile sources
-  * [ ] import latest libraries
-    * osb
-    * cf-java-client
-  * [ ] copy source
-  * [ ] fix
-     * [ ] configure IDE for gradle
-     * [ ] fix missing servlet despite spring-boot-starter-web
+* [ ] Generate new gradle build from spring initializer
+  * [x] fix build for compilation
+  * [x] fix build for unit tests
+  * [ ] compile acceptance tests
+* [ ] use openrewrite to perform sequential stack migration ?   
+
+### Check tests pass
+
+Fix missing display of unit tests report in gradle output
+
