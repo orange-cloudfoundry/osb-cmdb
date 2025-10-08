@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orange.oss.osbcmdb.fixtures.CloudFoundryClientConfiguration;
 import com.orange.oss.osbcmdb.fixtures.TargetPropertiesConfiguration;
 import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -96,12 +95,12 @@ class DynamicServiceAutoConfigurationAcceptanceTest {
 	}
 
 
-	@Test
-	@Ignore
-		//Not yet implemented
-	void catalogFetchingFailuresThrowsException() {
-		//TODO: fail if the flux contains error events (was the case when Jackson was not configured to ignore
-	}
+//	@Test
+//	@Ignore
+//		//Not yet implemented
+//	void catalogFetchingFailuresThrowsException() {
+//		//TODO: fail if the flux contains error events (was the case when Jackson was not configured to ignore
+//	}
 
 
 	//should be ignored
