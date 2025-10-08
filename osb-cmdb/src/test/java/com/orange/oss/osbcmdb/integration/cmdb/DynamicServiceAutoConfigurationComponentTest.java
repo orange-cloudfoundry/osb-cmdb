@@ -18,7 +18,6 @@ import com.orange.oss.osbcmdb.integration.fixtures.CredHubStubFixture;
 import com.orange.oss.osbcmdb.integration.fixtures.OpenServiceBrokerApiFixture;
 import com.orange.oss.osbcmdb.integration.fixtures.UaaStubFixture;
 import com.orange.oss.osbcmdb.integration.fixtures.WiremockServerFixture;
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.doppler.DopplerClient;
 import org.cloudfoundry.operations.CloudFoundryOperations;
@@ -274,12 +273,12 @@ class DynamicServiceAutoConfigurationComponentTest {
 	}
 
 
-	@Test
-	@Ignore
-		//Not yet implemented
-	void catalogFetchingFailuresThrowsException() {
-		//TODO: fail if the flux contains error events (was the case when Jackson was not configured to ignore
-	}
+//	@Test
+//	@Ignore
+//		//Not yet implemented
+//	void catalogFetchingFailuresThrowsException() {
+//		//TODO: fail if the flux contains error events (was the case when Jackson was not configured to ignore
+//	}
 
 
 	public static class TargetPropertiesConfiguration {

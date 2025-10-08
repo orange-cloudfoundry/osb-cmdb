@@ -1,36 +1,36 @@
-/*
- * Copyright 2002-2020. the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.6.7'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
 
-buildscript {
-	repositories {
-		mavenCentral()
-		maven { url "https://plugins.gradle.org/m2/" }
-	}
+ext {
+// osb-cmdb doesn't lock spring version and leaves it to springboot (unless meeting issues)
+//	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.11.RELEASE"
+	openServiceBrokerVersion = "3.5.1"
+	cfJavaClientVersion = "5.14.0.RELEASE"
+	cfJavaClientForkedVersion = "0b299d2b792207b52a944d50aa459c247c564597"
+	junitPlatformLauncherVersion = "1.6.1"
+	wiremockVersion = "2.27.2"
+}
 
-	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(8)
 	}
 }
 
+repositories {
+	mavenCentral()
+	maven { url "https://plugins.gradle.org/m2/" }
+}
+
+version='1.9.0-SNAPSHOT'
+group = 'com.orange.oss'
 description = "Spring Cloud App Broker Acceptance Tests"
 
 // don't publish the jar for the acceptance tests project
 configurations.archives.artifacts.clear()
-
-apply plugin: 'org.springframework.boot'
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
@@ -43,8 +43,8 @@ dependencies {
 //	//transiently until updated cf-java-client gets released
 //	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-client-reactor:${cfJavaClientForkedVersion}")
 //	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-operations:${cfJavaClientForkedVersion}")
-	compile("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
-	compile("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
+	implementation("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
+	implementation("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
 	testImplementation("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}") //Just for OSB API constants
 //	testImplementation("com.github.spring-cloud.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
 //	testImplementation("com.github.orange-cloudfoundry.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
