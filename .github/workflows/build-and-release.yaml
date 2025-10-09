@@ -3,8 +3,11 @@ name: Java CI with Maven
 on:
   push:
     branches: [ "1.9.x" ]
+    tags:
+      - '**'
   pull_request:
     branches: [ "1.9.x" ]
+
 
 jobs:
   build:
