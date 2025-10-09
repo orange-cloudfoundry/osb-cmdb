@@ -15,6 +15,7 @@
 ### set up github action
 
 * trigger from push on 1.9-x branch
+* trigger from a tag: does not trigger, not clear why
 
 ### Check tests pass
 
