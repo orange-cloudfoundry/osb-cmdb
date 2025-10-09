@@ -14,9 +14,10 @@ ext {
 	wiremockVersion = "2.27.2"
 }
 
+version=1.9.0-SNAPSHOT
 group = 'com.orange.oss'
-version = '0.0.1-SNAPSHOT'
-description = 'Demo project for Spring Boot'
+description = 'Osb cmdb'
+
 
 java {
 	toolchain {
