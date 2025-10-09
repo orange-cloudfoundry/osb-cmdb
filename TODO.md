@@ -14,6 +14,8 @@
 
 ### set up github action
 
+* trigger from push on 1.9-x branch
+
 ### Check tests pass
 
 Fix missing display of unit tests report in gradle output
@@ -28,3 +30,4 @@ curl -LO https://github.com/orange-cloudfoundry/osb-cmdb/releases/download/v1.8.
 compare using intellij jar diff: mostly OK
 * some small (unreleased) bumps
 * missing git.properties file
+
