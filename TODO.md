@@ -4,9 +4,15 @@
   * [ ] compile acceptance tests
 * [ ] use openrewrite to perform sequential stack migration ?
 * [x] diff jar with latest
+   * [ ] fix missing git.properties
+* [ ] Push as 1.9-x branch
+* [ ] Set 1.9-x branch as default branch
 * [ ] set up github action
-* [ ] publish as github release
+* [ ] publish as github release: 1.9.0-SNAPSHOT
 * [ ] test E2E
+   * Paas-templates feature branch 
+
+### set up github action
 
 ### Check tests pass
 

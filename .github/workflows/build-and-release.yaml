@@ -1,0 +1,33 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "1.9.x" ]
+  pull_request:
+    branches: [ "1.9.x" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Spring Gradle Build Action
+        uses: spring-io/spring-gradle-build-action@v2
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Run tests and produce artefact
+        run: ./gradlew -DexcludeTags=AcceptanceTest,scab clean :osb-cmdb:check osb-cmdb:assemble
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Package
+          path: |
+            osb-cmdb/build/libs/*.jar
