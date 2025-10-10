@@ -34,7 +34,7 @@ jobs:
         with:
           name: Package
           path: |
-            osb-cmdb/build/libs/*.jar
+            osb-cmdb/build/reports/tests/**
 
       # see https://github.com/ncipollo/release-action
       - name: create github release
