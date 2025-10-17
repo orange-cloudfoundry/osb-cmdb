@@ -20,6 +20,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -116,6 +117,7 @@ public class CloudFoundryAppDeployerAutoConfiguration {
 			.apiHost(properties.getApiHost())
 			.port(Optional.ofNullable(properties.getApiPort()))
 			.skipSslValidation(properties.isSkipSslValidation())
+			.sslHandshakeTimeout(Duration.ofSeconds(60))
 			.secure(properties.isSecure())
 			.build();
 	}
