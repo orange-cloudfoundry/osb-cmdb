@@ -46,14 +46,14 @@ public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceIn
 	@Override
 	public boolean accept(GetLastServiceBindingOperationRequest request) {
 		return isScabAcceptanceTest(
-			request.getOriginatingIdentity(), // FIXME: not the expected context
+			request.getOriginatingIdentity(),
 			request.toString());
 	}
 
 	@Override
 	public boolean accept(GetServiceInstanceBindingRequest request) {
 		return isScabAcceptanceTest(
-			request.getOriginatingIdentity(), // FIXME: not the expected context
+			request.getOriginatingIdentity(),
 			request.toString());
 	}
 
