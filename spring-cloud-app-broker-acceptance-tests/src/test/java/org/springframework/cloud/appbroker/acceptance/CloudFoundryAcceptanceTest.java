@@ -189,6 +189,16 @@ abstract class CloudFoundryAcceptanceTest {
 		return appServiceName();
 	}
 
+	// Overriden by async subclass to modify expected status code for binding responses
+	protected boolean isSyncBinding() {
+		return true;
+	}
+
+	// Overriden by async subclass to modify expected status code for instance responses
+	protected boolean isSyncInstance() {
+		return true;
+	}
+
 	@BeforeEach
 	void setUp(TestInfo testInfo, BrokerProperties brokerProperties) {
 		try {
@@ -390,15 +400,14 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	protected void createServiceKey(String serviceKeyName, String serviceInstanceName, Map<String, Object> parameters) {
-		cloudFoundryService.createServiceKey(serviceKeyName, serviceInstanceName, parameters)
-			.then(getServiceInstanceMono(serviceInstanceName))
-			.flatMap(serviceInstance -> {
-				assertThat(serviceInstance.getStatus())
-					.withFailMessage("Create service instance failed:" + serviceInstance.getMessage())
-					.isEqualTo("succeeded");
-				return Mono.empty();
-			})
-			.block();
+		if (isSyncBinding()) {
+			cloudFoundryService.createServiceKey(serviceKeyName, serviceInstanceName, parameters)
+				.block();
+		} else {
+			cloudFoundryService.createAsyncServiceKey(serviceKeyName, serviceInstanceName, parameters)
+				.block();
+		}
+
 	}
 
 	public void updateServiceInstance(String serviceInstanceName, Map<String, Object> parameters) {
@@ -461,7 +470,7 @@ abstract class CloudFoundryAcceptanceTest {
 		cloudFoundryService.purgeServiceInstance(serviceInstanceName, spaceName).block();
 	}
 
-	protected void deleteServiceKey(String serviceKeyName, String serviceInstanceName) {
+	protected void deleteServiceKey(boolean isSyncBinding, String serviceKeyName, String serviceInstanceName) {
 		blockingSubscribe(cloudFoundryService.deleteServiceKey(serviceInstanceName, serviceKeyName));
 	}
 
@@ -492,11 +501,11 @@ abstract class CloudFoundryAcceptanceTest {
 		return cloudFoundryService.getServiceInstanceParams(serviceInstanceGuid).block();
 	}
 
-	protected ServiceKey getServiceKey(String serviceKeyName, String serviceInstanceName, String space) {
+	protected ServiceKey getServiceKey(boolean isSyncBinding, String serviceKeyName, String serviceInstanceName, String space) {
 		return getServiceKeyMono(serviceInstanceName, serviceKeyName, space).block();
 	}
 
-	protected ServiceKey getServiceKey(String serviceKeyName, String serviceInstanceName) {
+	protected ServiceKey getServiceKey(boolean isSyncBinding, String serviceKeyName, String serviceInstanceName) {
 		return getServiceKeyMono(serviceInstanceName, serviceKeyName).block();
 	}
 

@@ -20,16 +20,16 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * Checks support for an async backing service in create and delete.
- * Async service keys are not yet supported
+ * Checks support for an async backing service in create and delete instance.
+ * Use sync service keys
  */
 @Tag("cmdb")
-class CreateDeleteAsyncInstanceWithBackingServiceKeysAcceptanceTest extends
+class CreateDeleteAsyncInstanceWithSyncBackingServiceKeysAcceptanceTest extends
 	CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest {
 
-	private static final String SK_NAME = "sk-async-create-service-keys";
+	private static final String SK_NAME = "sk-async-create-sync-service-keys";
 
-	private static final String SUFFIX = "create-async-instance-with-service-keys";
+	private static final String SUFFIX = "create-async-instance-with-sync-service-keys";
 
 	@Override
 	protected String testSuffix() {
@@ -65,7 +65,7 @@ class CreateDeleteAsyncInstanceWithBackingServiceKeysAcceptanceTest extends
 	}
 
 	@Override
-	protected boolean isSync() {
+	protected boolean isSyncInstance() {
 		return false;
 	}
 

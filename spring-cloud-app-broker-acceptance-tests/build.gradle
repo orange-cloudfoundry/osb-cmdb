@@ -94,6 +94,14 @@ test {
 		}
 	}
 
+	filter {
+//		includeTestsMatching("*CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest")
+		includeTestsMatching("*CreateDeleteAsyncInstanceWithAsyncBackingServiceKeysAcceptanceTest")
+	}
+	testLogging {
+		outputs.upToDateWhen {false}
+		showStandardStreams(true) //
+	}
 }
 
 
