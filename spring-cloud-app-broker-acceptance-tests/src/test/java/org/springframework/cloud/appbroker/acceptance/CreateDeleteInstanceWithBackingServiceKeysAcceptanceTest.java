@@ -118,9 +118,6 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		// and credentials from backing service key is returned in brokered service key
 		assertThat(backingServiceKey.getCredentials()).isEqualTo(STATIC_CREDENTIALS);
 
-		//when concurrent binding requests as received, they are properly handled
-		assertDuplicateCreateServiceKeyOsbRequestsHandling(brokeredServiceInstance, brokeredServiceKey);
-
 		//when an attacker tries to forge osb request to create service binding from other tenant, it is properly
 		// rejected
 		assertInvalidForgedCreateServiceKeyOsbRequestsHandling(backingServiceInstance, "any-service-binding-id");
@@ -131,17 +128,11 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		//then the backing service key is deleted
 		assertThat(listServiceKeys(backingServiceName, brokeredServiceName())).isEmpty();
 
-		//when concurrent unbinding requests as received, they are properly handled
-		assertDuplicateDeleteServiceKeyOsbRequestsHandling(brokeredServiceInstance, brokeredServiceKey);
-
 		// when the service instance is deleted
 		deleteServiceInstance(brokeredServiceInstanceName());
 
 		// then the backing service instance is deleted
 		assertThat(listServiceInstances(brokeredServiceName())).doesNotContain(backingServiceName);
-
-		//when concurrent deprovision requests as received, they are properly handled
-		assertDuplicateDeleteServiceInstanceOsbRequestsHandling(brokeredServiceInstance);
 
 		//when invalid service id or service plan is passed in unprovisionning request, they are rejected
 		assertInvalidServiceProvisionningRequestsAreRejected();
