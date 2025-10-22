@@ -7,6 +7,7 @@ import java.time.Duration;
 
 import com.orange.oss.osbcmdb.AbstractOsbCmdbService;
 import org.cloudfoundry.client.CloudFoundryClient;
+import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.client.v2.servicekeys.CreateServiceKeyRequest;
 import org.cloudfoundry.client.v2.servicekeys.CreateServiceKeyResponse;
 import org.cloudfoundry.client.v3.Relationship;
@@ -16,6 +17,7 @@ import org.cloudfoundry.client.v3.jobs.GetJobResponse;
 import org.cloudfoundry.client.v3.jobs.JobState;
 import org.cloudfoundry.client.v3.servicebindings.CreateServiceBindingRequest;
 import org.cloudfoundry.client.v3.servicebindings.CreateServiceBindingResponse;
+import org.cloudfoundry.client.v3.servicebindings.DeleteServiceBindingRequest;
 import org.cloudfoundry.client.v3.servicebindings.GetServiceBindingDetailsRequest;
 import org.cloudfoundry.client.v3.servicebindings.GetServiceBindingDetailsResponse;
 import org.cloudfoundry.client.v3.servicebindings.ListServiceBindingsRequest;
@@ -31,7 +33,6 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
-import org.springframework.cloud.servicebroker.exception.ServiceInstanceBindingDoesNotExistException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest;
@@ -107,11 +108,14 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 				.build());
 		}
 		catch (Exception originalException) {
-			//Likely broker does not support async
-			LOG.info("Unable to create sync service binding, caught:" + originalException + " Trying async");
-
-			//FIXME. Inspect exception to only continue on async required
-			//OUT Caused by: org.cloudfoundry.client.v2.ClientV2Exception: CF-AsyncRequired(10001): This service plan requires client support for asynchronous service operations.
+			//Only proceed when receiving async required exception
+			if (isExceptionReportingAsyncRequired(originalException)) {
+				LOG.info("Unable to create sync service binding, caught:" + originalException + " Trying async");
+			}
+			else {
+				LOG.info("Unable to create service binding, caught:" + originalException);
+				throw redactExceptionAndWrapAsServiceBrokerException(originalException);
+			}
 		}
 
 
@@ -149,6 +153,19 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 			LOG.info("Unable to create async service binding, caught:" + originalException);
 			throw redactExceptionAndWrapAsServiceBrokerException(originalException);
 		}
+	}
+
+	private boolean isExceptionReportingAsyncRequired(Exception originalException) {
+		boolean asyncRequired=false;
+		if (originalException instanceof ClientV2Exception) {
+			ClientV2Exception clientV2Exception = (ClientV2Exception) originalException;
+			Integer clientV2ExceptionCode = clientV2Exception.getCode();
+			//OUT Caused by: org.cloudfoundry.client.v2.ClientV2Exception: CF-AsyncRequired(10001): This service plan requires client support for asynchronous service operations.
+			if (clientV2ExceptionCode != null && clientV2ExceptionCode.equals(10001)) {
+				asyncRequired=true;
+			}
+		}
+		return asyncRequired;
 	}
 
 	@Override
@@ -253,21 +270,23 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 		// forged service instance guid
 		CloudFoundryOperations spacedTargetedOperations = getSpaceScopedOperations(
 			request.getServiceDefinition().getName());
-		ServiceInstance existingSi = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
+		ServiceInstance backingServiceInstance = getCfServiceInstance(spacedTargetedOperations, request.getServiceInstanceId());
 
-		if (existingSi == null) {
+		if (backingServiceInstance == null) {
 			LOG.warn("No such service instance id={} to delete binding from, client error or attempt to delete " +
 					"binding from unauthorized service instance.",
 				request.getServiceInstanceId());
 			throw new ServiceInstanceDoesNotExistException(request.getServiceInstanceId());
 		}
 
-		//For now CF api V2 & V3 do not support async service bindings
+		//Try to use the v2 api to request a synchronous service binding deletion
+		String backingServiceInstanceName = backingServiceInstance.getName();
+		String backingServiceKeyName = request.getBindingId();
 		try {
 			spacedTargetedOperations.services()
 				.deleteServiceKey(org.cloudfoundry.operations.services.DeleteServiceKeyRequest.builder()
-					.serviceInstanceName(existingSi.getName())
-					.serviceKeyName(request.getBindingId())
+					.serviceInstanceName(backingServiceInstanceName)
+					.serviceKeyName(backingServiceKeyName)
 					.build())
 				.block();
 
@@ -276,72 +295,43 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 				.build());
 		}
 		catch (Exception e) {
-			LOG.info("Unable to delete backing service key with name={} from backing service instance name={} Got {}",
-				request.getBindingId(),
-				existingSi.getName(), e.toString(), e);
-			return handleUnbindException(request, spacedTargetedOperations, e);
+			if (isExceptionReportingAsyncRequired(e)) {
+				LOG.info("Unable to delete sync service binding, caught:" + e + " Trying async");
+			} else {
+				LOG.info(
+					"Unable to delete backing service key with name={} from backing service instance name={} Got {}",
+					backingServiceKeyName,
+					backingServiceInstanceName, e.toString(), e);
+				throw redactExceptionAndWrapAsServiceBrokerException(e);
+			}
 		}
 
-	}
-
-	public Mono<CreateServiceInstanceBindingResponse> handleBindException(CreateServiceInstanceBindingRequest request,
-		CloudFoundryOperations spacedTargetedOperations, Exception originalException) {
-		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ",
-			originalException, request);
-
-		ServiceKey existingServiceKey = null;
 		try {
-			existingServiceKey = spacedTargetedOperations.services().getServiceKey(GetServiceKeyRequest.builder()
-					.serviceInstanceName(request.getServiceInstanceId())
-					.serviceKeyName(request.getBindingId())
+			return spacedTargetedOperations.services()
+				.getServiceKey(GetServiceKeyRequest.builder()
+					.serviceKeyName(backingServiceKeyName)
+					.serviceInstanceName(backingServiceInstanceName)
 					.build())
-				.block();
-		}
-		catch (Exception exception) {
-			LOG.info("Unable to lookup potential service key dup, caught {}", exception.toString());
-		}
-		if (existingServiceKey != null) {
-			LOG.info("Service binding guid {} already exists and is backed by service key: {}, returning 200",
-				request.getBindingId(), existingServiceKey);
-			//In the future (with CAPI v3) compare params to return a 409 conflict in case of params mismatch
-			//Would need cf-java-client to support fetching service key params, which it
-			//does not yet do: it only return service key parameter url
-			// See https://github.com/cloudfoundry/cf-java-client/blob/4ce8018050f69619cc9e1eb61a8a7f5a36e2d5c7/cloudfoundry-client/src/main/java/org/cloudfoundry/client/v2/servicekeys/_ServiceKeyEntity.java#L69
-			return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
-				.credentials(existingServiceKey.getCredentials())
-				.bindingExisted(true)
-				.build());
-		}
-		LOG.info("Unable to lookup potential service key dup, flowing up original exception {}",
-			originalException.toString());
-		throw redactExceptionAndWrapAsServiceBrokerException(originalException);
+				.map(ServiceKey::getId)
+				.flatMap(serviceBindingId ->
+					client.serviceBindingsV3().delete(
+						DeleteServiceBindingRequest.builder()
+							.serviceBindingId(serviceBindingId)
+							.build())
+				)
+				.map(jobId ->
+					DeleteServiceInstanceBindingResponse.builder()
+						.async(true)
+						.operation(toJson(new CmdbOperationState(jobId, OsbOperation.DELETE)))
+						.build());
+		} catch (Exception originalException) {
+				LOG.info("Unable to create async service binding, caught:" + originalException);
+				throw redactExceptionAndWrapAsServiceBrokerException(originalException);
+			}
+
 	}
 
-	public Mono<DeleteServiceInstanceBindingResponse> handleUnbindException(DeleteServiceInstanceBindingRequest request,
-		CloudFoundryOperations spacedTargetedOperations, Exception originalException) {
-		LOG.info("Inspecting exception caught {} for possible concurrent dupl while handling request {} ",
-			originalException, request);
 
-		ServiceKey existingServiceKey = null;
-		try {
-			existingServiceKey = spacedTargetedOperations.services().getServiceKey(GetServiceKeyRequest.builder()
-					.serviceInstanceName(request.getServiceInstanceId())
-					.serviceKeyName(request.getBindingId())
-					.build())
-				.block();
-		}
-		catch (Exception exception) {
-			LOG.info("Unable to lookup potential service key dup, caught {}", exception.toString());
-		}
-		if (existingServiceKey != null) {
-			LOG.info("Service binding guid {} still exists and is backed by service key: {}, flowing up " +
-					"original exception {}",
-				request.getBindingId(), existingServiceKey, originalException);
-			throw redactExceptionAndWrapAsServiceBrokerException(originalException);
-		}
-		LOG.info("Assuming duplicate concurrent unbind request, returning 410 GONE");
-		throw new ServiceInstanceBindingDoesNotExistException(request.getBindingId());
-	}
 
 	protected CmdbOperationState fromJson(String operation) {
 		try {
