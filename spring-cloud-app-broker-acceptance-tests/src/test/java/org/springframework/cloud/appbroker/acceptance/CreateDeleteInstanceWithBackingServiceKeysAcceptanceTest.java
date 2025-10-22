@@ -122,7 +122,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		assertInvalidForgedCreateServiceKeyOsbRequestsHandling(backingServiceInstance, "any-service-binding-id");
 
 		//when a service key is deleted
-		deleteServiceKey(isSyncBinding(), getSkName(), brokeredServiceInstanceName());
+		deleteServiceKey(getSkName(), brokeredServiceInstanceName());
 
 		//then the backing service key is deleted
 		assertThat(listServiceKeys(backingServiceName, brokeredServiceName())).isEmpty();
