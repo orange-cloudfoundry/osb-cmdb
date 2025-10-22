@@ -115,7 +115,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		String backingServiceKeyName = brokeredServiceKey.getId();
 		assertThat(listServiceKeys(backingServiceName, brokeredServiceName())).containsOnly(backingServiceKeyName);
 		// and credentials from backing service key is returned in brokered service key
-		assertThat(getServiceKeyCredentials(backingServiceKeyName, backingServiceName)).isEqualTo(STATIC_CREDENTIALS);
+		assertThat(getServiceKeyCredentials(backingServiceKeyName, backingServiceName, brokeredServiceName())).isEqualTo(STATIC_CREDENTIALS);
 
 		//when an attacker tries to forge osb request to create service binding from other tenant, it is properly
 		// rejected
