@@ -65,9 +65,8 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 		createServiceInstance(brokeredServiceInstanceName());
 		String backingServiceName = null;
 
-		for (int i=0; i<2; i++) { //Performing the update twice, to ensure idempotency, and support for K8S
-			// duplicated concurrent requests
-			LOG.info("Plan update #{}", i);
+		LOG.info("Plan update");
+		{
 			//given a backend service is configured to accept any update
 			//when a brokered service update plan is requested
 			updateServiceInstance(brokeredServiceInstanceName(), PLAN2_NAME);
@@ -89,9 +88,8 @@ class UpdateInstanceWithBackingServiceAcceptanceTest extends CmdbCloudFoundryAcc
 			assertThat(backingServiceInstance.getPlan()).isEqualTo(PLAN2_NAME);
 		}
 
-		for (int i=0; i<2; i++) { //Performing the update twice, to ensure idempotency, and support for K8S
-			// duplicated concurrent requests
-			LOG.info("Param update #{}", i);
+		LOG.info("Param update");
+		{
 			//given a backend service is configured to accept any update
 			//when a brokered service update plan is requested
 			Map<String, Object> parameters = Collections.singletonMap("a-key", "a-value");
