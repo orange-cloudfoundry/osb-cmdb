@@ -46,6 +46,12 @@ public class BaseBackingSpaceInstanceInterceptor {
 			return false;
 		}
 		String spaceName = cloudFoundryContext.getSpaceName();
+		if (spaceName == null) {
+			LOG.info("No space specified in context {} Missing discriminant criteria to qualify as acceptance test " +
+				"w.r.t. default space {}, returning false", cloudFoundryContext, defaultSpaceName);
+			return false;
+		}
+
 		boolean isTest = ! spaceName.equals(defaultSpaceName);
 		LOG.debug("Accept: isTest={} for spaceName={} and request={}", isTest, spaceName, requestToString);
 		return isTest;
