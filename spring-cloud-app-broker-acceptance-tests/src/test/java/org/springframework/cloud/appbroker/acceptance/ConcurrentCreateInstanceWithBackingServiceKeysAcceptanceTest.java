@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.http.HttpStatus;
 
 import static io.restassured.RestAssured.given;
@@ -85,7 +84,7 @@ class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbC
 		//When requesting a concurrent request to the same broker with the same instance id, service definition,
 		// plan and params
 		//Then the duplicate is ignored as expected
-		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN_ID))
+		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN_ID, false))
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()
@@ -93,7 +92,7 @@ class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbC
 
 		//When requesting a concurrent request to the same broker with the different plan
 		// then get a 409
-		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN2_ID))
+		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN2_ID, false))
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()
@@ -104,7 +103,7 @@ class ConcurrentCreateInstanceWithBackingServiceKeysAcceptanceTest extends CmdbC
 
 		//noinspection UnnecessaryLocalVariable
 		String mismatchingServiceId = BACKING_SERVICE_ID; //The id of SCAB backing service that we don't use
-		given(brokerFixture.serviceInstanceRequest(mismatchingServiceId, BACKING_SERVICE_PLAN_ID))
+		given(brokerFixture.serviceInstanceRequest(mismatchingServiceId, BACKING_SERVICE_PLAN_ID, !isSyncInstance()))
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()

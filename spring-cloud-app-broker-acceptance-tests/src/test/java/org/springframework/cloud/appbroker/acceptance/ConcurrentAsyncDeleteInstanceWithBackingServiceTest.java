@@ -98,7 +98,7 @@ class ConcurrentAsyncDeleteInstanceWithBackingServiceTest extends CmdbCloudFound
 		// definition,
 		// plan and params
 		//then it returns a 202 accepted status
-		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN_ID))
+		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN_ID, false))
 			.when()
 			.delete(brokerFixture.deleteServiceInstanceUrl(SERVICE_ID, PLAN_ID), brokeredServiceInstance.getId())
 			.then()
