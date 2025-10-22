@@ -50,6 +50,7 @@ import org.cloudfoundry.client.v3.Relationship;
 import org.cloudfoundry.client.v3.Resource;
 import org.cloudfoundry.client.v3.ToOneRelationship;
 import org.cloudfoundry.client.v3.servicebindings.CreateServiceBindingRequest;
+import org.cloudfoundry.client.v3.servicebindings.DeleteServiceBindingRequest;
 import org.cloudfoundry.client.v3.servicebindings.GetServiceBindingDetailsRequest;
 import org.cloudfoundry.client.v3.servicebindings.GetServiceBindingDetailsResponse;
 import org.cloudfoundry.client.v3.servicebindings.ListServiceBindingsRequest;
@@ -551,6 +552,28 @@ public class CloudFoundryService {
 			.doOnSuccess(item -> LOG.info("Deleted service key " + serviceKeyName + " for instance " + serviceInstanceName))
 			.doOnError(error -> LOG.error("Error Deleting service key " + serviceKeyName
 				+ " for instance " + serviceInstanceName + ": " +  error));
+	}
+
+	public Mono<Void> deleteAsyncServiceKey(String serviceInstanceName, String serviceKeyName) {
+		return
+			getServiceKey(serviceInstanceName, serviceKeyName)
+				.map(ServiceKey::getId)
+			.flatMap(serviceBindingId ->
+					this.cloudFoundryClient.serviceBindingsV3()
+						.delete(
+							DeleteServiceBindingRequest.builder()
+								.serviceBindingId(serviceBindingId)
+								.build())
+				.flatMap(
+					jobId ->
+						JobUtils.waitForCompletion(
+							this.cloudFoundryClient,
+							Duration.ofMinutes(5),
+							jobId))
+				.doOnSuccess(item -> LOG.info("Deleted service key " + serviceKeyName + " for instance " + serviceInstanceName))
+				.doOnError(error -> LOG.error("Error Deleting service key " + serviceKeyName
+					+ " for instance " + serviceInstanceName + ": " +  error)));
+
 	}
 
 	public Mono<Void> updateServiceInstance(String serviceInstanceName, Map<String, Object> parameters) {

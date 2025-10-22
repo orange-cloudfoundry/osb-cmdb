@@ -472,8 +472,12 @@ abstract class CloudFoundryAcceptanceTest {
 		cloudFoundryService.purgeServiceInstance(serviceInstanceName, spaceName).block();
 	}
 
-	protected void deleteServiceKey(boolean isSyncBinding, String serviceKeyName, String serviceInstanceName) {
-		blockingSubscribe(cloudFoundryService.deleteServiceKey(serviceInstanceName, serviceKeyName));
+	protected void deleteServiceKey(String serviceKeyName, String serviceInstanceName) {
+		if (isSyncBinding()) {
+			blockingSubscribe(cloudFoundryService.deleteServiceKey(serviceInstanceName, serviceKeyName));
+		} else {
+			blockingSubscribe(cloudFoundryService.deleteAsyncServiceKey(serviceInstanceName, serviceKeyName));
+		}
 	}
 
 	protected List<String> listServiceInstances(String space) {
