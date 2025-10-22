@@ -10,8 +10,6 @@ import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstan
 import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstanceBindingResponse;
 import org.springframework.cloud.servicebroker.model.binding.GetLastServiceBindingOperationRequest;
 import org.springframework.cloud.servicebroker.model.binding.GetLastServiceBindingOperationResponse;
-import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceBindingRequest;
-import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceBindingResponse;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
 
 /**
@@ -22,6 +20,10 @@ import org.springframework.cloud.servicebroker.model.instance.OperationState;
  * Only accept OSB calls when space is a backing space, i.e. not the default space
  */
 public class AsyncSuccessfulCreateBackingServiceBindingInterceptor extends  BackingServiceBindingInterceptor {
+
+	public static final String CREATE = "create";
+
+	public static final String DELETE = "delete";
 
 	public AsyncSuccessfulCreateBackingServiceBindingInterceptor(String defaultSpaceName) {
 		super(defaultSpaceName);
@@ -37,7 +39,7 @@ public class AsyncSuccessfulCreateBackingServiceBindingInterceptor extends  Back
 		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
 			.async(true)
-			.operation("create")
+			.operation(CREATE)
 			.build());
 	}
 
@@ -50,7 +52,7 @@ public class AsyncSuccessfulCreateBackingServiceBindingInterceptor extends  Back
 		}
 		return Mono.just(DeleteServiceInstanceBindingResponse.builder()
 			.async(true)
-			.operation("delete")
+			.operation(DELETE)
 			.build());
 	}
 
@@ -60,7 +62,7 @@ public class AsyncSuccessfulCreateBackingServiceBindingInterceptor extends  Back
 		return Mono.just(GetLastServiceBindingOperationResponse.builder()
 			.description(this.getClass().getSimpleName())
 			.operationState(OperationState.SUCCEEDED)
-			.deleteOperation("delete".equals(request.getOperation()))
+			.deleteOperation(DELETE.equals(request.getOperation()))
 			.build());
 	}
 
