@@ -138,10 +138,11 @@ public class CloudFoundryService {
 		this.cloudFoundryProperties = cloudFoundryProperties;
 	}
 
-	public Mono<Void> enableServiceBrokerAccess(String serviceName) {
+	public Mono<Void> enableServiceBrokerAccess(String serviceName, String organizationName) {
 		return cloudFoundryOperations.serviceAdmin()
 			.enableServiceAccess(EnableServiceAccessRequest.builder()
 				.serviceName(serviceName)
+				.organizationName(organizationName)
 				.build())
 			.doOnSuccess(item -> LOG.info("Enabled access to service " + serviceName))
 			.doOnError(error -> LOG.error("Error enabling access to service " + serviceName + ": " + error));
@@ -509,8 +510,7 @@ public class CloudFoundryService {
 
 	}
 
-	public Flux<Map<String, Object>> getAsyncServiceKeyCredentials(String serviceKeyName, String serviceInstanceName,
-			Map<String, Object> parameters) {
+	public Flux<Map<String, Object>> getAsyncServiceKeyCredentials(String serviceKeyName, String serviceInstanceName) {
 		return requestV3ListServiceBindings(this.cloudFoundryClient, serviceInstanceName)
 			.map(Resource::getId)
 			.flatMap(serviceBindingId -> requestV3GetServiceBindingCredentials(this.cloudFoundryClient,

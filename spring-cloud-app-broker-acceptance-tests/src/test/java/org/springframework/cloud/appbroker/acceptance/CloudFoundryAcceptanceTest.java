@@ -299,6 +299,7 @@ abstract class CloudFoundryAcceptanceTest {
 	}
 
 	protected Mono<Void> initializeBroker(List<String> appBrokerProperties, boolean ignoreBrokerRegistrationErrors) {
+		String organizationName = cloudFoundryProperties.getDefaultOrg();
 		return cloudFoundryService
 			.getOrCreateDefaultOrganization()
 			.map(OrganizationSummary::getId)
@@ -315,8 +316,8 @@ abstract class CloudFoundryAcceptanceTest {
 						.pushBrokerApp(testBrokerAppName(), getTestBrokerAppPath(), brokerClientId(),
 							appBrokerProperties))
 					.then(cloudFoundryService.createServiceBroker(serviceBrokerName(), testBrokerAppName(), ignoreBrokerRegistrationErrors))
-					.then(cloudFoundryService.enableServiceBrokerAccess(appServiceName()))
-					.then(cloudFoundryService.enableServiceBrokerAccess(backingServiceName()))))
+					.then(cloudFoundryService.enableServiceBrokerAccess(appServiceName(), organizationName))
+					.then(cloudFoundryService.enableServiceBrokerAccess(backingServiceName(), organizationName))))
 			.doOnRequest(l -> LOG.debug("START creating default org/space/pushing broker app/create broker/enable " +
 					"broker access"))
 			.doOnSuccess(l -> LOG.debug("FINISHED default org/space/pushing broker app/create broker/enable broker access"));
