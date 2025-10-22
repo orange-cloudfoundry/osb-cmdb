@@ -871,7 +871,8 @@ public class CloudFoundryService {
 
 	private Map<String, String> appBrokerDeployerEnvironmentVariables(String brokerClientId) {
 		Map<String, String> deployerVariables = new HashMap<>();
-		deployerVariables.put("JBP_LOG_LEVEL", "DEBUG");
+		//When needed, enable java-buildpack debug to diagnose staging issues, see https://github.com/cloudfoundry/java-buildpack/blob/main/docs/debugging-the-buildpack.md
+		//deployerVariables.put("JBP_LOG_LEVEL", "DEBUG");
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "api-host",
 			cloudFoundryProperties.getApiHost());
 		// systematically configure expected x-api-info-location here since it is easier to derive it from CF API host
