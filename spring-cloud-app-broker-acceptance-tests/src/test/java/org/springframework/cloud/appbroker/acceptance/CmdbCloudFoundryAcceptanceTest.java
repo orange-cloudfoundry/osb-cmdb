@@ -42,9 +42,13 @@ public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAccepta
 
 	}
 
-	protected Map<String, Object> getServiceKeyCredentials(String backingServiceKeyName, String backingServiceName) {
-		return getServiceKey(isSyncBinding(), backingServiceKeyName, backingServiceName,
-			brokeredServiceName()).getCredentials();
+	protected Map<String, Object> getServiceKeyCredentials(String backingServiceKeyName, String backingServiceName,
+		String space) {
+		if (isSyncBinding()) {
+			return getServiceKey(isSyncBinding(), backingServiceKeyName, backingServiceName, space).getCredentials();
+		} else {
+			return cloudFoundryService.getAsyncServiceKeyCredentials(backingServiceKeyName, backingServiceName).blockFirst();
+		}
 	}
 
 
