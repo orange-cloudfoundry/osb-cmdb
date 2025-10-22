@@ -141,7 +141,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 	}
 
 	private void assertInvalidGetServiceInstanceAreRejected(String backingServiceInstanceId) {
-		given(brokerFixture.serviceInstanceRequest())
+		given(brokerFixture.serviceInstanceRequest(false))
 			.when()
 			.get(brokerFixture.createServiceInstanceUrl(), "an-invalid-id")
 			.then()
@@ -165,7 +165,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 
 		// when the service instance is deleted without unbinding
 		int expectedStatusCode = isSyncInstance() ? HttpStatus.OK.value(): HttpStatus.ACCEPTED.value();
-		given(brokerFixture.serviceInstanceRequest())
+		given(brokerFixture.serviceInstanceRequest(!isSyncInstance()  || !isSyncBinding()))
 			.when()
 			.delete(brokerFixture.deleteServiceInstanceUrl(),brokeredServiceInstance.getId())
 			.then()
@@ -184,7 +184,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 	private void assertInvalidServiceProvisionningRequestsAreRejected() {
 		//When requesting an invalid create request with invalid plan id
 		//then it returns a 400 Bad request
-		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, "invalid-plan-id"))
+		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, "invalid-plan-id", !isSyncInstance()))
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), "a-fake_id")
 			.then()
@@ -192,7 +192,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 
 		//When requesting an invalid create request with invalid service definition id
 		//then it returns a 400 Bad request
-		given(brokerFixture.serviceInstanceRequest("invalid-service-id", PLAN_ID))
+		given(brokerFixture.serviceInstanceRequest("invalid-service-id", PLAN_ID, !isSyncInstance()))
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), "a-fake_id")
 			.then()
@@ -202,7 +202,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 	private void assertDuplicateCreateServiceInstanceOsbRequestsHandling(ServiceInstance brokeredServiceInstance) {
 		//When requesting a concurrent request to the same broker with the same instance id, service definition,
 		// plan and params
-		given(brokerFixture.serviceInstanceRequest())
+		given(brokerFixture.serviceInstanceRequest(false))
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()
@@ -252,7 +252,7 @@ class CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest extends CmdbCloud
 		// definition,
 		// plan and params
 		// when the service instance is deleted
-		given(brokerFixture.serviceInstanceRequest())
+		given(brokerFixture.serviceInstanceRequest(false))
 			.when()
 			.delete(brokerFixture.deleteServiceInstanceUrl(),brokeredServiceInstance.getId())
 			.then()

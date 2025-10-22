@@ -62,7 +62,7 @@ class CreateInstanceWithBackingServiceSyncTimeoutAcceptanceTest extends CmdbClou
 	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
 		// given a brokered service instance is created
 		// and a backing service is asked to hang for 2 mins and trigger CF 60s sync timeout
-		String responseString = given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN_ID))
+		String responseString = given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN_ID, false))
 			.when()
 			.put(brokerFixture.createServiceInstanceUrl(), "a-random-service-instance-guid")
 			//then it fails after CF API timeout (60s) with

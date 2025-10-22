@@ -79,7 +79,7 @@ class ConcurrentAsyncUpdateInstanceWithBackingServiceAcceptanceTest extends Cmdb
 
 		//When requesting an invalid update request to the same broker and invalid plan id
 		//then it returns a 400 Bad request
-		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, "invalid-plan-id"))
+		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, "invalid-plan-id", !isSyncInstance()))
 			.when()
 			.patch(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()
@@ -119,7 +119,7 @@ class ConcurrentAsyncUpdateInstanceWithBackingServiceAcceptanceTest extends Cmdb
 		// definition,
 		// plan and params
 		//then it returns a 202 accepted status
-		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN2_ID))
+		given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN2_ID, false))
 			.when()
 			.patch(brokerFixture.createServiceInstanceUrl(), brokeredServiceInstance.getId())
 			.then()

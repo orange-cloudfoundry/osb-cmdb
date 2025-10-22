@@ -88,19 +88,21 @@ public class OpenServiceBrokerApiClient  {
 			"&plan_id=" + planId;
 	}
 
-	public RequestSpecification serviceInstanceRequest() {
-		return serviceInstanceRequest(this.planId);
+	public RequestSpecification serviceInstanceRequest(boolean acceptsIncomplete) {
+		return serviceInstanceRequest(this.planId, acceptsIncomplete);
 	}
 
-	public RequestSpecification serviceInstanceRequest(String planId) {
-		return serviceInstanceRequest(this.serviceDefinitionId, planId);
+	public RequestSpecification serviceInstanceRequest(String planId, boolean acceptsIncomplete) {
+		return serviceInstanceRequest(this.serviceDefinitionId, planId, acceptsIncomplete);
 	}
 
-	public RequestSpecification serviceInstanceRequest(String serviceDefinitionId, String planId) {
+	public RequestSpecification serviceInstanceRequest(String serviceDefinitionId, String planId,
+		boolean acceptsIncomplete) {
 		return serviceBrokerSpecification()
 			.body("{" +
 				"\"service_id\": \"" + serviceDefinitionId + "\"," +
 				"\"plan_id\": \"" + planId + "\"," +
+				"\"accepts_incomplete\": \"" + acceptsIncomplete + "\"," +
 				"\"organization_guid\": \"" + ORG_ID + "\"," +
 				"\"space_guid\": \"" + SPACE_ID + "\"" +
 				"}\n");
@@ -229,7 +231,7 @@ public class OpenServiceBrokerApiClient  {
 			do {
 				//noinspection BusyWait
 				Thread.sleep(TimeUnit.SECONDS.toMillis(5));
-				state = given(serviceInstanceRequest())
+				state = given(serviceInstanceRequest(false))
 					.when()
 					.get(getLastInstanceOperationUrl(), serviceInstanceId)
 					.then()
