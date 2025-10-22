@@ -227,6 +227,7 @@ abstract class CloudFoundryAcceptanceTest {
 			"spring.cloud.openservicebroker.catalog.services[0].plan_updateable=true",
 			"spring.cloud.openservicebroker.catalog.services[0].allow_context_updates=true",
 			"spring.cloud.openservicebroker.catalog.services[0].instances_retrievable=true",
+			"spring.cloud.openservicebroker.catalog.services[0].bindings_retrievable=true",
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].id=" + PLAN_ID,
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].name=" + PLAN_NAME,
 			"spring.cloud.openservicebroker.catalog.services[0].plans[0].bindable=true",
