@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
  */
 @Tag("cmdb")
 class CreateDeleteAsyncInstanceWithAsyncBackingServiceKeysAcceptanceTest extends
-	CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest {
+	AbstractCreateDeleteInstanceWithBackingServiceKeysAcceptanceTest {
 
 	private static final String SK_NAME = "sk-async-create-async-service-keys";
 
