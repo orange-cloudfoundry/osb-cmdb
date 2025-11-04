@@ -46,6 +46,17 @@ import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperRequest;
 import org.cloudfoundry.client.v2.spaces.AssociateSpaceDeveloperResponse;
 import org.cloudfoundry.client.v2.spaces.ListSpaceServicesRequest;
 import org.cloudfoundry.client.v2.spaces.RemoveSpaceDeveloperRequest;
+import org.cloudfoundry.client.v3.Relationship;
+import org.cloudfoundry.client.v3.Resource;
+import org.cloudfoundry.client.v3.ToOneRelationship;
+import org.cloudfoundry.client.v3.servicebindings.CreateServiceBindingRequest;
+import org.cloudfoundry.client.v3.servicebindings.DeleteServiceBindingRequest;
+import org.cloudfoundry.client.v3.servicebindings.GetServiceBindingDetailsRequest;
+import org.cloudfoundry.client.v3.servicebindings.GetServiceBindingDetailsResponse;
+import org.cloudfoundry.client.v3.servicebindings.ListServiceBindingsRequest;
+import org.cloudfoundry.client.v3.servicebindings.ServiceBinding;
+import org.cloudfoundry.client.v3.servicebindings.ServiceBindingRelationships;
+import org.cloudfoundry.client.v3.servicebindings.ServiceBindingType;
 import org.cloudfoundry.client.v3.serviceinstances.ListServiceInstancesRequest;
 import org.cloudfoundry.client.v3.serviceinstances.ListServiceInstancesResponse;
 import org.cloudfoundry.client.v3.serviceinstances.ServiceInstanceResource;
@@ -87,6 +98,7 @@ import org.cloudfoundry.operations.spaces.CreateSpaceRequest;
 import org.cloudfoundry.operations.spaces.SpaceSummary;
 import org.cloudfoundry.operations.spaces.Spaces;
 import org.cloudfoundry.util.ExceptionUtils;
+import org.cloudfoundry.util.JobUtils;
 import org.cloudfoundry.util.PaginationUtils;
 import org.cloudfoundry.util.ResourceUtils;
 import org.slf4j.Logger;
@@ -127,10 +139,11 @@ public class CloudFoundryService {
 		this.cloudFoundryProperties = cloudFoundryProperties;
 	}
 
-	public Mono<Void> enableServiceBrokerAccess(String serviceName) {
+	public Mono<Void> enableServiceBrokerAccess(String serviceName, String organizationName) {
 		return cloudFoundryOperations.serviceAdmin()
 			.enableServiceAccess(EnableServiceAccessRequest.builder()
 				.serviceName(serviceName)
+				.organizationName(organizationName)
 				.build())
 			.doOnSuccess(item -> LOG.info("Enabled access to service " + serviceName))
 			.doOnError(error -> LOG.error("Error enabling access to service " + serviceName + ": " + error));
@@ -185,6 +198,9 @@ public class CloudFoundryService {
 
 	public Mono<Void> pushBrokerApp(String appName, Path appPath, String brokerClientId,
 		List<String> appBrokerProperties) {
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("pushingBrokerApp with path {} and properties {}", appPath, appBrokerProperties);
+		}
 		return cloudFoundryOperations.applications()
 			.pushManifest(PushApplicationManifestRequest.builder()
 				.manifest(ApplicationManifest.builder()
@@ -207,7 +223,7 @@ public class CloudFoundryService {
 			.map(LogMessage::toString)
 			.doOnNext(l  -> LOG.debug("{}", l))
 			.doOnComplete(()  -> LOG.debug("log stream completed"))
-			.doOnError(error -> LOG.debug("Error getting logs for app " + appName + " : " + error))
+			.doOnError(error -> LOG.debug("Error getting logs for app " + appName + " : " + error, error))
 			.onErrorResume(e -> {
 				LOG.error("Unable to log and assert broker logs {}", e.toString());
 				return Mono.empty();
@@ -456,6 +472,77 @@ public class CloudFoundryService {
 				+ " for instance " + serviceInstanceName + ": " +  error));
 	}
 
+
+	public Mono<Void> createAsyncServiceKey(String serviceKeyName, String serviceInstanceName,
+			Map<String, Object> parameters) {
+		// inspiration from https://github.com/cloudfoundry/cf-java-client/blob/e0a94c6bf975bb24ccde50bae2499e38a127675c/integration-test/src/test/java/org/cloudfoundry/client/v3/ServiceBindingsTest.java#L86
+
+		return
+		getServiceInstance(serviceInstanceName)
+		.flatMap(serviceInstance ->
+			this.cloudFoundryClient.serviceBindingsV3()
+				.create(
+					CreateServiceBindingRequest.builder()
+						.type(ServiceBindingType.KEY)
+						.name(serviceKeyName)
+						.parameters(parameters)
+						.relationships(
+							ServiceBindingRelationships
+								.builder()
+								.serviceInstance(
+									ToOneRelationship
+										.builder()
+										.data(
+											Relationship
+												.builder()
+												.id(
+													serviceInstance.getId())
+												.build())
+										.build())
+								.build())
+						.build())
+				.map(response -> response.getJobId().get()))
+		.flatMap(
+				jobId ->
+					JobUtils.waitForCompletion(
+						this.cloudFoundryClient,
+						Duration.ofMinutes(5),
+						jobId));
+
+	}
+
+	public Flux<Map<String, Object>> getAsyncServiceKeyCredentials(String serviceKeyName, String serviceInstanceName) {
+		return requestV3ListServiceBindings(this.cloudFoundryClient, serviceInstanceName)
+			.map(Resource::getId)
+			.flatMap(serviceBindingId -> requestV3GetServiceBindingCredentials(this.cloudFoundryClient,
+				serviceBindingId));
+	}
+
+
+	private static Mono<Map<String, Object>> requestV3GetServiceBindingCredentials(
+		CloudFoundryClient cloudFoundryClient, final String serviceBindingId) {
+		return cloudFoundryClient
+					.serviceBindingsV3()
+					.getDetails(
+						GetServiceBindingDetailsRequest.builder()
+							.serviceBindingId(serviceBindingId)
+							.build())
+			.map(GetServiceBindingDetailsResponse::getCredentials);
+	}
+
+	private static Flux<? extends ServiceBinding> requestV3ListServiceBindings(
+		CloudFoundryClient cloudFoundryClient, String serviceInstanceName) {
+		return PaginationUtils.requestClientV3Resources(
+			page ->
+				cloudFoundryClient
+					.serviceBindingsV3()
+					.list(
+						ListServiceBindingsRequest.builder()
+							.page(page)
+							.serviceInstanceName(serviceInstanceName)
+							.build()));
+	}
+
 	public Mono<Void> deleteServiceKey(String serviceInstanceName, String serviceKeyName) {
 		return cloudFoundryOperations.services()
 			.deleteServiceKey(DeleteServiceKeyRequest.builder()
@@ -465,6 +552,28 @@ public class CloudFoundryService {
 			.doOnSuccess(item -> LOG.info("Deleted service key " + serviceKeyName + " for instance " + serviceInstanceName))
 			.doOnError(error -> LOG.error("Error Deleting service key " + serviceKeyName
 				+ " for instance " + serviceInstanceName + ": " +  error));
+	}
+
+	public Mono<Void> deleteAsyncServiceKey(String serviceInstanceName, String serviceKeyName) {
+		return
+			getServiceKey(serviceInstanceName, serviceKeyName)
+				.map(ServiceKey::getId)
+			.flatMap(serviceBindingId ->
+					this.cloudFoundryClient.serviceBindingsV3()
+						.delete(
+							DeleteServiceBindingRequest.builder()
+								.serviceBindingId(serviceBindingId)
+								.build())
+				.flatMap(
+					jobId ->
+						JobUtils.waitForCompletion(
+							this.cloudFoundryClient,
+							Duration.ofMinutes(5),
+							jobId))
+				.doOnSuccess(item -> LOG.info("Deleted service key " + serviceKeyName + " for instance " + serviceInstanceName))
+				.doOnError(error -> LOG.error("Error Deleting service key " + serviceKeyName
+					+ " for instance " + serviceInstanceName + ": " +  error)));
+
 	}
 
 	public Mono<Void> updateServiceInstance(String serviceInstanceName, Map<String, Object> parameters) {
@@ -580,7 +689,7 @@ public class CloudFoundryService {
 				.serviceInstanceName(serviceInstanceName)
 				.build())
 			.doOnSuccess(item -> LOG.info("Got service key " + serviceKeyName + " for service instance " + serviceInstanceName))
-			.doOnError(error -> LOG.error("Error getting service key " + serviceKeyName + " for service instance " + serviceInstanceName + ": " + error));
+			.doOnError(error -> LOG.error("Error getting service key " + serviceKeyName + " for service instance " + serviceInstanceName + ": " + error, error));
 	}
 
 	public Mono<List<ApplicationSummary>> getApplications() {
@@ -785,6 +894,8 @@ public class CloudFoundryService {
 
 	private Map<String, String> appBrokerDeployerEnvironmentVariables(String brokerClientId) {
 		Map<String, String> deployerVariables = new HashMap<>();
+		//When needed, enable java-buildpack debug to diagnose staging issues, see https://github.com/cloudfoundry/java-buildpack/blob/main/docs/debugging-the-buildpack.md
+		//deployerVariables.put("JBP_LOG_LEVEL", "DEBUG");
 		deployerVariables.put(DEPLOYER_PROPERTY_PREFIX + "api-host",
 			cloudFoundryProperties.getApiHost());
 		// systematically configure expected x-api-info-location here since it is easier to derive it from CF API host

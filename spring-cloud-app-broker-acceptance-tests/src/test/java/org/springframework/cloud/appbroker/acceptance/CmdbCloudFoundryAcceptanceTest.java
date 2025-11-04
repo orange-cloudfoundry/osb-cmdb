@@ -1,13 +1,11 @@
 package org.springframework.cloud.appbroker.acceptance;
 
-import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Hooks;
 
 import org.springframework.cloud.appbroker.acceptance.fixtures.osb.OpenServiceBrokerApiClient;
 
@@ -42,6 +40,15 @@ public abstract class CmdbCloudFoundryAcceptanceTest extends CloudFoundryAccepta
 		assertThat(labels).isNotEmpty();
 		assertThat(annotations).contains(entry(BROKERED_SERVICE_CLIENT_NAME, cloudFoundryProperties.getDefaultOrg()));
 
+	}
+
+	protected Map<String, Object> getServiceKeyCredentials(String backingServiceKeyName, String backingServiceName,
+		String space) {
+		if (isSyncBinding()) {
+			return getServiceKey(isSyncBinding(), backingServiceKeyName, backingServiceName, space).getCredentials();
+		} else {
+			return cloudFoundryService.getAsyncServiceKeyCredentials(backingServiceKeyName, backingServiceName).blockFirst();
+		}
 	}
 
 

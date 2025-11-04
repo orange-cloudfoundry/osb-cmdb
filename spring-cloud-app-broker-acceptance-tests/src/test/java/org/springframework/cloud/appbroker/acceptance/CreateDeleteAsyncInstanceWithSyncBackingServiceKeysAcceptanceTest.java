@@ -18,25 +18,26 @@ package org.springframework.cloud.appbroker.acceptance;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import org.springframework.http.HttpStatus;
-
-import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Assertions.assertThat;
-
+/**
+ * Checks support for an async backing service in create and delete instance.
+ * Use sync service keys
+ */
 @Tag("cmdb")
-class CreateInstanceWithBackingServiceSyncTimeoutAcceptanceTest extends CmdbCloudFoundryAcceptanceTest {
+class CreateDeleteAsyncInstanceWithSyncBackingServiceKeysAcceptanceTest extends
+	AbstractCreateDeleteInstanceWithBackingServiceKeysAcceptanceTest {
 
-	private static final String SUFFIX = "create-instance-with-sync-backing-timeout";
+	private static final String SK_NAME = "sk-async-create-sync-service-keys";
+
+	private static final String SUFFIX = "create-async-instance-with-sync-service-keys";
 
 	@Override
 	protected String testSuffix() {
 		return SUFFIX;
 	}
 
-	private static final Logger LOG = LoggerFactory.getLogger(CreateInstanceWithBackingServiceSyncTimeoutAcceptanceTest.class);
+	@Override
+	public String getSkName() { return SK_NAME; } // avoid race conditions among concurrent subclasses tests
 
 	@Test
 	@AppBrokerTestProperties({
@@ -46,8 +47,7 @@ class CreateInstanceWithBackingServiceSyncTimeoutAcceptanceTest extends CmdbClou
 		"spring.security.user.password=password",
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
-		// control backing service response: have it sync timeout after 2 mins
-		"spring.profiles.active=acceptanceTests,SyncTimeoutCreateBackingSpaceInstanceInterceptor",
+		"spring.profiles.active=acceptanceTests,AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 //		"logging.level.cloudfoundry-client.wire=trace",
@@ -59,19 +59,14 @@ class CreateInstanceWithBackingServiceSyncTimeoutAcceptanceTest extends CmdbClou
 		"logging.level.com.orange.oss.osbcmdb=debug",
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
-	void aFailedBackingService_is_reported_as_a_last_operation_state_failed() {
-		// given a brokered service instance is created
-		// and a backing service is asked to hang for 2 mins and trigger CF 60s sync timeout
-		String responseString = given(brokerFixture.serviceInstanceRequest(SERVICE_ID, PLAN_ID, false))
-			.when()
-			.put(brokerFixture.createServiceInstanceUrl(), "a-random-service-instance-guid")
-			//then it fails after CF API timeout (60s) with
-			.then()
-			.statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
-			.extract()
-			.asString();
-		assertThat(responseString).contains("CF-HttpClientTimeout"); //response include some diagnostics
-		assertThat(responseString).doesNotContain("https"); //but response is redacted
+	void deployAppsAndCreateServiceKeysOnBindService() throws InterruptedException {
+		//Same code, just different interceptor in annotation
+		super.deployAppsAndCreateServiceKeysOnBindService();
+	}
+
+	@Override
+	protected boolean isSyncInstance() {
+		return false;
 	}
 
 }

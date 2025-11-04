@@ -16,6 +16,7 @@
 
 package com.orange.oss.osbcmdb;
 
+import com.orange.oss.osbcmdb.servicebinding.ServiceBindingInterceptor;
 import com.orange.oss.osbcmdb.serviceinstance.MaintenanceInfoFormatterService;
 import com.orange.oss.osbcmdb.serviceinstance.ServiceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.ASyncFailedCreateBackingSpaceInstanceInterceptor;
@@ -25,6 +26,7 @@ import com.orange.oss.osbcmdb.testfixtures.ASyncStalledDeleteBackingSpaceInstanc
 import com.orange.oss.osbcmdb.testfixtures.ASyncStalledUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncFailedUpdateBackingSpaceInstanceInterceptor;
+import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulCreateBackingServiceBindingInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.AsyncSuccessfulUpdateBackingSpaceInstanceInterceptor;
 import com.orange.oss.osbcmdb.testfixtures.SyncFailedCreateBackingSpaceInstanceInterceptor;
@@ -117,6 +119,24 @@ class OsbCmdbBrokerConfigurationTest {
 				assertThat(context)
 					.getBean(ServiceInstanceInterceptor.class)
 					.isInstanceOf(SyncSuccessfulBackingSpaceInstanceInterceptor.class);
+			});
+	}
+
+	@Test
+	void syncSuccessfulBackingSpaceInstanceAndAsyncBindingInterceptorIsCreatedWithAssociatedProfile() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.profiles.active=acceptanceTests,SyncSuccessfulBackingSpaceInstanceInterceptor,AsyncSuccessfulCreateBackingServiceBindingInterceptor"
+			)
+			.withPropertyValues(requiredProperties())
+			.run((context) -> {
+				assertThat(context).hasSingleBean(ServiceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceInstanceInterceptor.class)
+					.isInstanceOf(SyncSuccessfulBackingSpaceInstanceInterceptor.class);
+				assertThat(context)
+					.getBean(ServiceBindingInterceptor.class)
+					.isInstanceOf(AsyncSuccessfulCreateBackingServiceBindingInterceptor.class);
 			});
 	}
 

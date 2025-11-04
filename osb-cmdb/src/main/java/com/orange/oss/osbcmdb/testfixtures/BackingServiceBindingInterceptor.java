@@ -13,6 +13,12 @@ import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstan
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingResponse;
 import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstanceBindingRequest;
 import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstanceBindingResponse;
+import org.springframework.cloud.servicebroker.model.binding.GetLastServiceBindingOperationRequest;
+import org.springframework.cloud.servicebroker.model.binding.GetLastServiceBindingOperationResponse;
+import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceAppBindingResponse;
+import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceBindingRequest;
+import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceBindingResponse;
+import org.springframework.cloud.servicebroker.model.instance.OperationState;
 
 /**
  * Supports intercepting OSB service provisionning calls, mainly for acceptance test purposes. Reuses prototypes from
@@ -38,6 +44,16 @@ public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceIn
 	}
 
 	@Override
+	public boolean accept(GetLastServiceBindingOperationRequest request) {
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+	}
+
+	@Override
+	public boolean accept(GetServiceInstanceBindingRequest request) {
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+	}
+
+	@Override
 	public boolean accept(DeleteServiceInstanceBindingRequest request) {
 		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
 	}
@@ -48,6 +64,21 @@ public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceIn
 		CreateServiceInstanceBindingRequest request) {
 		provisionnedInstanceGuids.add(request.getServiceInstanceId());
 		return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
+			.credentials(CREDENTIALS)
+			.build());
+	}
+
+	@Override
+	public Mono<GetLastServiceBindingOperationResponse> getLastOperation(
+		GetLastServiceBindingOperationRequest request) {
+		return Mono.just(GetLastServiceBindingOperationResponse.builder()
+			.operationState(OperationState.SUCCEEDED)
+			.build());
+	}
+
+	@Override
+	public Mono<GetServiceInstanceBindingResponse> getServiceInstanceBinding(GetServiceInstanceBindingRequest request) {
+		return Mono.just(GetServiceInstanceAppBindingResponse.builder()
 			.credentials(CREDENTIALS)
 			.build());
 	}

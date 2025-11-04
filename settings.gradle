@@ -1,4 +1,3 @@
-rootProject.name = "osb-cmdb"
-
-include "spring-cloud-app-broker-acceptance-tests"
-include "osb-cmdb"
+rootProject.name = 'osbcmdb-root'
+include 'osb-cmdb'
+include 'spring-cloud-app-broker-acceptance-tests'

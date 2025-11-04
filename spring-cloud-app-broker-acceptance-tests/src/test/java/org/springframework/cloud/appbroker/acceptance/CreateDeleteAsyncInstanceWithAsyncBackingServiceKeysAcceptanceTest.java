@@ -20,16 +20,16 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * Checks support for an async backing service in create and delete.
- * Async service keys are not yet supported
+ * Checks support for an async backing service in create and delete instance.
+ * Use async service keys
  */
 @Tag("cmdb")
-class CreateDeleteAsyncInstanceWithBackingServiceKeysAcceptanceTest extends
-	CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest {
+class CreateDeleteAsyncInstanceWithAsyncBackingServiceKeysAcceptanceTest extends
+	AbstractCreateDeleteInstanceWithBackingServiceKeysAcceptanceTest {
 
-	private static final String SK_NAME = "sk-async-create-service-keys";
+	private static final String SK_NAME = "sk-async-create-async-service-keys";
 
-	private static final String SUFFIX = "create-async-instance-with-service-keys";
+	private static final String SUFFIX = "create-async-instance-with-async-service-keys";
 
 	@Override
 	protected String testSuffix() {
@@ -47,7 +47,7 @@ class CreateDeleteAsyncInstanceWithBackingServiceKeysAcceptanceTest extends
 		"spring.security.user.password=password",
 		"osbcmdb.admin.user=admin",
 		"osbcmdb.admin.password=password",
-		"spring.profiles.active=acceptanceTests,AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor",
+		"spring.profiles.active=acceptanceTests,AsyncSuccessfulCreateUpdateDeleteBackingSpaceInstanceInterceptor,AsyncSuccessfulCreateBackingServiceBindingInterceptor",
 		//cf java client wire traces
 		"logging.level.cloudfoundry-client.wire=debug",
 //		"logging.level.cloudfoundry-client.wire=trace",
@@ -65,8 +65,6 @@ class CreateDeleteAsyncInstanceWithBackingServiceKeysAcceptanceTest extends
 	}
 
 	@Override
-	protected boolean isSync() {
-		return false;
-	}
+	protected boolean isSyncBinding() { return false; }
 
 }

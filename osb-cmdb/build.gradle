@@ -1,98 +1,101 @@
-/*
- * Copyright 2002-2019. the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-buildscript {
-	repositories {
-		mavenCentral()
-		maven { url "https://plugins.gradle.org/m2/" }
-	}
-
-	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-	}
-}
-
 plugins {
-	id "com.gorylenko.gradle-git-properties" version "2.3.2"
+	id 'java'
+	id 'org.springframework.boot' version '2.6.6' // As a workaround to https://github.com/netty/netty/issues/12343
+	id 'io.spring.dependency-management' version '1.1.7'
+	id "com.gorylenko.gradle-git-properties" version "2.5.3"
 }
-
-description = "Osb Cmdb"
-
-// don't publish the jar for the acceptance tests project
-configurations.archives.artifacts.clear()
 
 ext {
+// osb-cmdb doesn't lock spring version and leaves it to springboot (unless meeting issues)
+//	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.11.RELEASE"
+	openServiceBrokerVersion = "3.5.1"
+	cfJavaClientVersion = "5.14.0.RELEASE"
+	cfJavaClientForkedVersion = "0b299d2b792207b52a944d50aa459c247c564597"
+	junitPlatformLauncherVersion = "1.6.1"
 	wiremockVersion = "2.27.2"
 }
 
-apply plugin: 'org.springframework.boot'
+version='1.9.0-SNAPSHOT'
+group = 'com.orange.oss'
+description = 'Osb cmdb'
+
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+}
+
+// See https://docs.spring.io/spring-boot/gradle-plugin/packaging.html#packaging-executable.configuring.main-class
+springBoot {
+	mainClass = 'com.orange.oss.osbcmdb.OsbCmdbApplication'
+}
+
+repositories {
+	mavenCentral()
+}
 
 dependencies {
-	compile("org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}")
-	//transiently use fork built by jitpack, see https://jitpack.io/docs/BUILDING/#multi-module-projects
-//	compile("com.github.orange-cloudfoundry.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
-//	compile("com.github.spring-cloud.spring-cloud-open-service-broker:spring-cloud-starter-open-service-broker:${openServiceBrokerForkVersion}")
-	implementation ("org.springframework.boot:spring-boot-starter-actuator")
-	compile("org.springframework.boot:spring-boot-starter-webflux")
-	compile("org.springframework.boot:spring-boot-starter-security")
-	compile("org.springframework.boot:spring-boot-starter-web")
-    compile("org.springframework.boot:spring-boot-starter-actuator")
-	compile("org.apache.commons:commons-text:1.9")
-//	transiently until updated cf-java-client gets released
-//	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-client-reactor:${cfJavaClientForkedVersion}")
-//	compile("com.github.cloudfoundry.cf-java-client:cloudfoundry-operations:${cfJavaClientForkedVersion}")
-	compile("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
-	compile("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
-	compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2")
-	compile("de.skuzzle:semantic-version:2.1.1")
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation "org.springframework.cloud:spring-cloud-starter-open-service-broker:${openServiceBrokerVersion}"
+	implementation("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
+	implementation("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
+	implementation("org.apache.commons:commons-text:1.9")
+	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2")
+	implementation("de.skuzzle:semantic-version:2.1.1")
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher:${junitPlatformLauncherVersion}"
 
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-	testCompile("org.junit.jupiter:junit-jupiter-api")
+	testImplementation("org.junit.jupiter:junit-jupiter-api")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		//See https://github.com/junit-team/junit5/issues/2105#issuecomment-609077749
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
-	testCompile("org.springframework.security:spring-security-test")
-	testCompile("io.projectreactor:reactor-test")
-	testCompile("org.assertj:assertj-core")
+	testImplementation("org.springframework.security:spring-security-test")
+	testImplementation("io.projectreactor:reactor-test")
+	testImplementation("org.assertj:assertj-core")
 	//For custom workflows
 	testImplementation("org.mockito:mockito-core")
 	testImplementation("org.mockito:mockito-junit-jupiter")
 	testImplementation("io.rest-assured:rest-assured")
 	testImplementation("com.github.tomakehurst:wiremock:${wiremockVersion}")
+
+
 }
 
-// build the test broker from /src into a jar that the tests can deploy
-test.dependsOn assemble
 
-
-
-test {
-	maxParallelForks = Runtime.runtime.availableProcessors() - 1 ?: 1
-
-//	// Only run the tests if acceptanceTests is specified
-//	onlyIf {
-//		project.hasProperty("acceptanceTests")
-//	}
+tasks.named('test', Test) {
 
 	//Propagate tags from gradle command line to fine tune test selection
 	//See https://javabydeveloper.com/run-tag-specific-junit-5-tests-from-gradle-command/
 	String itagsProp = System.getProperty("includeTags")
 	String etagsProp = System.getProperty("excludeTags")
 
+	//See https://stackoverflow.com/a/36130467/1484823 and https://docs.gradle.org/current/userguide/java_testing.html
+	testLogging {
+		events "passed", "failed", "skipped", "standardError"
+		showCauses true
+		showExceptions true
+		showStackTraces true
+
+		afterSuite { desc, result ->
+			if (!desc.parent) { // will match the outermost suite
+				def output = "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped)"
+				def startItem = '|  ', endItem = '  |'
+				def repeatLength = startItem.length() + output.length() + endItem.length()
+				println('\n' + ('-' * repeatLength) + '\n' + startItem + output + endItem + '\n' + ('-' * repeatLength))
+			}
+		}
+
+	}
 
 	useJUnitPlatform{
 		if (itagsProp !=null) {
@@ -105,26 +108,11 @@ test {
 		}
 	}
 
+	useJUnitPlatform()
 
-	systemProperty "tests.broker-app-path", "${buildDir}/libs/osb-cmdb.jar"
-	// Pass relevant java properties to the test task
-	systemProperties << System.properties.findAll {
-		//
-		it.key.startsWith("spring.") || it.key.startsWith("osbcmdb.")|| it.key.startsWith("debug")
-	}
 }
 
 gitProperties {
 	extProperty = 'gitProps' // git properties will be put in a map at project.ext.gitProps
 }
 generateGitProperties.outputs.upToDateWhen { false } // make sure the generateGitProperties task always executes (even when git.properties is not changed)
-
-//Add SCM information to jar.
-//See https://github.com/n0mer/gradle-git-properties#other-usages
-bootJar {
-	manifest {
-		attributes(
-			'SCM-Revision': "${-> project.ext.gitProps['git.commit.id.describe']} with message ${-> project.ext.gitProps['git.commit.message.short']} from branch=${-> project.ext.gitProps['git.branch']} user.name=${-> project.ext.gitProps['git.commit.user.name']} at time=${-> project.ext.gitProps['git.commit.time']}"  // Use GString lazy evaluation to delay until git properties are populated
-		)
-	}
-}

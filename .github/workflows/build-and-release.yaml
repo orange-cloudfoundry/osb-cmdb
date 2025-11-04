@@ -1,0 +1,53 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "1.9.x" ]
+    tags:
+      - '*'
+  workflow_dispatch:
+
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Spring Gradle Build Action
+        uses: spring-io/spring-gradle-build-action@v2
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Run tests and produce artefact
+        id: test-and-build
+        run: ./gradlew -DexcludeTags=AcceptanceTest,scab clean :osb-cmdb:check osb-cmdb:assemble
+
+      - name: Upload Jar as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Package
+          path: |
+            osb-cmdb/build/reports/tests/**
+
+      # see https://github.com/ncipollo/release-action
+      - name: create github release
+        id: create-github-release
+        if: github.ref_type == 'tag'
+        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1.20.0
+        with:
+          tag: ${{ github.ref_name }}
+          draft: false
+          allowUpdates: true # > indicates if we should update a release if it already exists.
+          omitDraftDuringUpdate: true # > Indicates if the draft flag should be omitted during updates. The draft flag will still be applied for newly created releases. This will preserve the existing draft state during updates.
+          generateReleaseNotes: true
+          artifacts: osb-cmdb/build/libs/*.jar
+          artifactContentType: application/java-archive
+          removeArtifacts: true
+          artifactErrorsFailBuild: true
