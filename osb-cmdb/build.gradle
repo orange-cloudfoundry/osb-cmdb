@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '2.6.6' // As a workaround to https://github.com/netty/netty/issues/12343
 	id 'io.spring.dependency-management' version '1.1.7'
+	id "com.gorylenko.gradle-git-properties" version "2.5.3"
 }
 
 ext {
@@ -110,3 +111,8 @@ tasks.named('test', Test) {
 	useJUnitPlatform()
 
 }
+
+gitProperties {
+	extProperty = 'gitProps' // git properties will be put in a map at project.ext.gitProps
+}
+generateGitProperties.outputs.upToDateWhen { false } // make sure the generateGitProperties task always executes (even when git.properties is not changed)
