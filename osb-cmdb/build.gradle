@@ -15,7 +15,7 @@ ext {
 	wiremockVersion = "2.27.2"
 }
 
-version='1.9.0-SNAPSHOT'
+version='1.9.0'
 group = 'com.orange.oss'
 description = 'Osb cmdb'
 

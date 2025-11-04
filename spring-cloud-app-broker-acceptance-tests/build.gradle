@@ -25,7 +25,7 @@ repositories {
 	maven { url "https://plugins.gradle.org/m2/" }
 }
 
-version='1.9.0-SNAPSHOT'
+version='1.9.0'
 group = 'com.orange.oss'
 description = "Spring Cloud App Broker Acceptance Tests"
 
