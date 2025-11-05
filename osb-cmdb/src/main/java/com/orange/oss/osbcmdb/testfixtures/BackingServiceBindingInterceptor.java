@@ -8,6 +8,8 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerAsyncRequiredException;
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingRequest;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceBindingResponse;
@@ -24,7 +26,7 @@ import org.springframework.cloud.servicebroker.model.instance.OperationState;
  * Supports intercepting OSB service provisionning calls, mainly for acceptance test purposes. Reuses prototypes from
  * {@link org.springframework.cloud.servicebroker.service.ServiceInstanceBindingService}
  * <p>
- * By default, behaves like noop
+ * By default, behaves like SYNC-ONLY noop
  */
 public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceInterceptor implements
 	ServiceBindingInterceptor {
@@ -40,22 +42,25 @@ public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceIn
 
 	@Override
 	public boolean accept(CreateServiceInstanceBindingRequest request) {
-		return isScabAcceptanceTest(request.getContext(), request.toString());
+		return isScabAcceptanceTest(request.getContext(), request.toString(), request.getClass());
 	}
 
 	@Override
 	public boolean accept(GetLastServiceBindingOperationRequest request) {
-		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString(),
+			request.getClass());
 	}
 
 	@Override
 	public boolean accept(GetServiceInstanceBindingRequest request) {
-		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString(),
+			request.getClass());
 	}
 
 	@Override
 	public boolean accept(DeleteServiceInstanceBindingRequest request) {
-		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString(),
+			request.getClass());
 	}
 
 
@@ -63,30 +68,35 @@ public class BackingServiceBindingInterceptor extends BaseBackingSpaceInstanceIn
 	public Mono<CreateServiceInstanceBindingResponse> createServiceInstanceBinding(
 		CreateServiceInstanceBindingRequest request) {
 		provisionnedInstanceGuids.add(request.getServiceInstanceId());
-		return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
+		CreateServiceInstanceAppBindingResponse response = CreateServiceInstanceAppBindingResponse.builder()
+			.async(false)
 			.credentials(CREDENTIALS)
-			.build());
+			.build();
+		LOG.info("Retuning {}", response);
+		return Mono.just(response);
 	}
 
 	@Override
 	public Mono<GetLastServiceBindingOperationResponse> getLastOperation(
 		GetLastServiceBindingOperationRequest request) {
-		return Mono.just(GetLastServiceBindingOperationResponse.builder()
-			.operationState(OperationState.SUCCEEDED)
-			.build());
+		return Mono.error(new ServiceBrokerException("interceptor returnes sync responses, unexpected " +
+			"getLastOperation request"));
 	}
 
 	@Override
 	public Mono<GetServiceInstanceBindingResponse> getServiceInstanceBinding(GetServiceInstanceBindingRequest request) {
-		return Mono.just(GetServiceInstanceAppBindingResponse.builder()
-			.credentials(CREDENTIALS)
-			.build());
+		return Mono.error(new ServiceBrokerException("interceptor returned sync binding, unexpected " +
+			"getServiceInstanceBinding request"));
 	}
 
 	@Override
 	public Mono<DeleteServiceInstanceBindingResponse> deleteServiceInstanceBinding(
 		DeleteServiceInstanceBindingRequest request) {
-		return Mono.just(DeleteServiceInstanceBindingResponse.builder().build());
+		DeleteServiceInstanceBindingResponse response = DeleteServiceInstanceBindingResponse.builder()
+			.async(false)
+			.build();
+		LOG.info("Retuning {}", response);
+		return Mono.just(response);
 	}
 
 }
