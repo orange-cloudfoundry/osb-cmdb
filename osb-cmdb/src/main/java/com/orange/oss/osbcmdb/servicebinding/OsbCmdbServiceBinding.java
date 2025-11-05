@@ -198,63 +198,56 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 			return client.serviceBindingsV3()
 				.create(createServiceBindingRequest)
 				.flatMap(createServiceBindingResponse -> {
-					if (createServiceBindingResponse.getJobId().isPresent()) {
-						String jobId = createServiceBindingResponse.getJobId().get();
-						LOG.info("Backing broker returned async binding job id {}", jobId);
+					if (!createServiceBindingResponse.getJobId().isPresent()) {
+						return Mono.error(
+							new ServiceBrokerException("service binding response without jobid"));
+					}
+					String jobId = createServiceBindingResponse.getJobId().get();
+					LOG.info("Backing broker returned async binding job id {}", jobId);
 
-						if (! createServiceBindingResponse.getServiceBinding().isPresent()) {
-							return Mono.error(
-								new ServiceBrokerException("service binding response without jobid nor binding id"));
-						}
-						ServiceBindingResource serviceBindingResource = createServiceBindingResponse.getServiceBinding()
-							.get();
+					if (! createServiceBindingResponse.getServiceBinding().isPresent()) {
+						return Mono.error(
+							new ServiceBrokerException("service binding response without binding id"));
+					}
+					ServiceBindingResource serviceBindingResource = createServiceBindingResponse.getServiceBinding()
+						.get();
 
-						return
-							JobUtils.waitForCompletion(
-								client,
-								Duration.ofMillis(1), //no retry
-								jobId)
-							.onErrorResume(throwable -> Mono.empty())
-							.then(Mono.defer(() -> client
-								.serviceBindingsV3()
-								.getDetails(GetServiceBindingDetailsRequest.builder()
-									.serviceBindingId(serviceBindingResource.getId())
-									.build())
-								.doOnNext(r -> LOG.info("CreateServiceInstanceAppBindingResponse details: {}", r))
-							.flatMap(r -> {
-								if (r.getCredentials() == null) {
-									if (!asyncAccepted) {
-										return Mono.error(
-											new ServiceBrokerAsyncRequiredException("osb-cmdb backing " +
-												"broker async and async not supported in request"));
-									}
-									return client
-										.serviceBindingsV3()
-										.getDetails(GetServiceBindingDetailsRequest.builder()
-											.serviceBindingId(serviceBindingResource.getId())
-											.build())
-										.doOnNext(
-											r -> LOG.info("CreateServiceInstanceAppBindingResponse details: {}", r))
-										.map(r -> {
-											//Return 202 Accepted, and let OSB client do the polling
-											return CreateServiceInstanceAppBindingResponse.builder()
-												.async(true)
-												.build();
-										});
-								} else {
-									//Return 201 Created
-									return CreateServiceInstanceAppBindingResponse.builder()
-										.async(false)
-										.credentials(r.getCredentials())
-										.build();
+					return client
+							.serviceBindingsV3()
+							.getDetails(GetServiceBindingDetailsRequest.builder()
+								.serviceBindingId(serviceBindingResource.getId())
+								.build())
+							.doOnNext(r -> LOG.info("CreateServiceInstanceAppBindingResponse details: {}", r))
+						.flatMap(r -> {
+							if (r.getCredentials() == null) {
+								if (!asyncAccepted) {
+									return Mono.error(
+										new ServiceBrokerAsyncRequiredException("osb-cmdb backing " +
+											"broker async and async not supported in request"));
 								}
-							};
-					}
+								return client
+									.serviceBindingsV3()
+									.getDetails(GetServiceBindingDetailsRequest.builder()
+										.serviceBindingId(serviceBindingResource.getId())
+										.build())
+									.doOnNext(
+										re -> LOG.info("CreateServiceInstanceAppBindingResponse details: {}", re))
+									.map(rb -> {
+										//Return 202 Accepted, and let OSB client do the polling
+										return CreateServiceInstanceAppBindingResponse.builder()
+											.async(true)
+											.build();
+									});
+							} else {
+								//Return 201 Created
+								return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
+									.async(false)
+									.credentials(r.getCredentials())
+									.build());
+							}
+						});
 				});
 
-					}
-					else
-				});
 		}
 		catch (Exception originalException) {
 			LOG.info("Unable to create async service binding, caught:" + originalException);
