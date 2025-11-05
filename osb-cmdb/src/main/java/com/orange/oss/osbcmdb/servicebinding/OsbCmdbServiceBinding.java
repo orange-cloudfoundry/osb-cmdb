@@ -201,41 +201,59 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 					if (createServiceBindingResponse.getJobId().isPresent()) {
 						String jobId = createServiceBindingResponse.getJobId().get();
 						LOG.info("Backing broker returned async binding job id {}", jobId);
-						if (!asyncAccepted) {
-							//Client is not supporting
-							if (! createServiceBindingResponse.getServiceBinding().isPresent()) {
-								return Mono.error(
-									new ServiceBrokerException("backing osb-cmdb broker requires async"));
-							}
+
+						if (! createServiceBindingResponse.getServiceBinding().isPresent()) {
+							return Mono.error(
+								new ServiceBrokerException("service binding response without jobid nor binding id"));
 						}
-						//Return 202 Accepted, and let OSB client do the polling
-						return Mono.just(
-							CreateServiceInstanceAppBindingResponse.builder()
-								.async(true)
-								.operation(toJson(new CmdbOperationState(jobId, OsbOperation.CREATE)))
-								.build());
-					}
-					else if (createServiceBindingResponse.getServiceBinding().isPresent()) {
 						ServiceBindingResource serviceBindingResource = createServiceBindingResponse.getServiceBinding()
 							.get();
-						return client
-							.serviceBindingsV3()
-							.getDetails(GetServiceBindingDetailsRequest.builder()
-								.serviceBindingId(serviceBindingResource.getId())
-								.build())
-							.doOnNext(r -> LOG.info("CreateServiceInstanceAppBindingResponse details: {}", r))
-							.map(r -> {
-								//Return 201 Created
-								return CreateServiceInstanceAppBindingResponse.builder()
-									.async(false)
-									.credentials(r.getCredentials())
-									.build();
-							});
+
+						return
+							JobUtils.waitForCompletion(
+								client,
+								Duration.ofMillis(1), //no retry
+								jobId)
+							.onErrorResume(throwable -> Mono.empty())
+							.then(Mono.defer(() -> client
+								.serviceBindingsV3()
+								.getDetails(GetServiceBindingDetailsRequest.builder()
+									.serviceBindingId(serviceBindingResource.getId())
+									.build())
+								.doOnNext(r -> LOG.info("CreateServiceInstanceAppBindingResponse details: {}", r))
+							.flatMap(r -> {
+								if (r.getCredentials() == null) {
+									if (!asyncAccepted) {
+										return Mono.error(
+											new ServiceBrokerAsyncRequiredException("osb-cmdb backing " +
+												"broker async and async not supported in request"));
+									}
+									return client
+										.serviceBindingsV3()
+										.getDetails(GetServiceBindingDetailsRequest.builder()
+											.serviceBindingId(serviceBindingResource.getId())
+											.build())
+										.doOnNext(
+											r -> LOG.info("CreateServiceInstanceAppBindingResponse details: {}", r))
+										.map(r -> {
+											//Return 202 Accepted, and let OSB client do the polling
+											return CreateServiceInstanceAppBindingResponse.builder()
+												.async(true)
+												.build();
+										});
+								} else {
+									//Return 201 Created
+									return CreateServiceInstanceAppBindingResponse.builder()
+										.async(false)
+										.credentials(r.getCredentials())
+										.build();
+								}
+							};
 					}
-					else {
-						return Mono.error(
-							new ServiceBrokerException("service binding response without jobid nor binding id"));
+				});
+
 					}
+					else
 				});
 		}
 		catch (Exception originalException) {
