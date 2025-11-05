@@ -23,15 +23,20 @@ import org.cloudfoundry.client.v3.servicebindings.GetServiceBindingDetailsRespon
 import org.cloudfoundry.client.v3.servicebindings.ListServiceBindingsRequest;
 import org.cloudfoundry.client.v3.servicebindings.ListServiceBindingsResponse;
 import org.cloudfoundry.client.v3.servicebindings.ServiceBindingRelationships;
+import org.cloudfoundry.client.v3.servicebindings.ServiceBindingResource;
 import org.cloudfoundry.client.v3.servicebindings.ServiceBindingType;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.services.GetServiceKeyRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.operations.services.ServiceKey;
+import org.cloudfoundry.util.JobUtils;
+import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerAsyncRequiredException;
+import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.springframework.cloud.servicebroker.model.binding.CreateServiceInstanceAppBindingResponse;
@@ -66,7 +71,7 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 
 	@Override
 	public Mono<CreateServiceInstanceBindingResponse> createServiceInstanceBinding(
-		CreateServiceInstanceBindingRequest request) {
+		final CreateServiceInstanceBindingRequest request) {
 		if (osbInterceptor != null && osbInterceptor.accept(request)) {
 			return osbInterceptor.createServiceInstanceBinding(request);
 		}
@@ -87,6 +92,17 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 				"instance guid associated with requested instance_id of type service_id))");
 		}
 
+
+		return createServiceBindingCapiv3OBlocked(request, existingSi);
+
+
+//		return createServiceBindingCapiV2(request, existingSi);
+
+	}
+
+	@NotNull
+	private Mono<CreateServiceInstanceBindingResponse> createServiceBindingCapiV2(
+		CreateServiceInstanceBindingRequest request, ServiceInstance existingSi) {
 		//Try to use the v2 api to request a synchronous service binding creation
 		try {
 			CreateServiceKeyResponse createServiceKeyResponse = client.serviceKeys()
@@ -148,6 +164,79 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 				.async(true)
 				.operation(toJson(new CmdbOperationState(jobId, OsbOperation.CREATE)))
 				.build());
+		}
+		catch (Exception originalException) {
+			LOG.info("Unable to create async service binding, caught:" + originalException);
+			throw redactExceptionAndWrapAsServiceBrokerException(originalException);
+		}
+	}
+
+	/**
+	 * Currently blocked attempt to use capi v3 only calls: JobId is always returned
+	 */
+	@NotNull
+	private Mono<CreateServiceInstanceBindingResponse> createServiceBindingCapiv3OBlocked(
+		CreateServiceInstanceBindingRequest request, ServiceInstance existingSi) {
+		try {
+			final boolean asyncAccepted = request.isAsyncAccepted();
+			//Ask for async binding creation. No async opt-out is supported in CAPI v3,
+			// see http://v3-apidocs.cloudfoundry.org/version/3.203.0/index.html#asynchronous-operations
+			// > Unlike V2, clients cannot opt-in for asynchronous responses from endpoints.
+			CreateServiceBindingRequest createServiceBindingRequest = CreateServiceBindingRequest.builder()
+				.relationships(
+					ServiceBindingRelationships.builder()
+						.serviceInstance(
+							ToOneRelationship.builder()
+								.data(Relationship.builder().id(existingSi.getId()).build())
+								.build())
+						.build())
+				.type(ServiceBindingType.KEY)
+				.parameters(request.getParameters())
+				.name(request.getBindingId())
+				.build();
+
+			return client.serviceBindingsV3()
+				.create(createServiceBindingRequest)
+				.flatMap(createServiceBindingResponse -> {
+					if (createServiceBindingResponse.getJobId().isPresent()) {
+						String jobId = createServiceBindingResponse.getJobId().get();
+						LOG.info("Backing broker returned async binding job id {}", jobId);
+						if (!asyncAccepted) {
+							//Client is not supporting
+							if (! createServiceBindingResponse.getServiceBinding().isPresent()) {
+								return Mono.error(
+									new ServiceBrokerException("backing osb-cmdb broker requires async"));
+							}
+						}
+						//Return 202 Accepted, and let OSB client do the polling
+						return Mono.just(
+							CreateServiceInstanceAppBindingResponse.builder()
+								.async(true)
+								.operation(toJson(new CmdbOperationState(jobId, OsbOperation.CREATE)))
+								.build());
+					}
+					else if (createServiceBindingResponse.getServiceBinding().isPresent()) {
+						ServiceBindingResource serviceBindingResource = createServiceBindingResponse.getServiceBinding()
+							.get();
+						return client
+							.serviceBindingsV3()
+							.getDetails(GetServiceBindingDetailsRequest.builder()
+								.serviceBindingId(serviceBindingResource.getId())
+								.build())
+							.doOnNext(r -> LOG.info("CreateServiceInstanceAppBindingResponse details: {}", r))
+							.map(r -> {
+								//Return 201 Created
+								return CreateServiceInstanceAppBindingResponse.builder()
+									.async(false)
+									.credentials(r.getCredentials())
+									.build();
+							});
+					}
+					else {
+						return Mono.error(
+							new ServiceBrokerException("service binding response without jobid nor binding id"));
+					}
+				});
 		}
 		catch (Exception originalException) {
 			LOG.info("Unable to create async service binding, caught:" + originalException);
