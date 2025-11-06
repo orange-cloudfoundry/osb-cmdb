@@ -22,6 +22,7 @@ import org.cloudfoundry.client.v3.servicebindings.GetServiceBindingDetailsReques
 import org.cloudfoundry.client.v3.servicebindings.GetServiceBindingDetailsResponse;
 import org.cloudfoundry.client.v3.servicebindings.ListServiceBindingsRequest;
 import org.cloudfoundry.client.v3.servicebindings.ListServiceBindingsResponse;
+import org.cloudfoundry.client.v3.servicebindings.ServiceBinding;
 import org.cloudfoundry.client.v3.servicebindings.ServiceBindingRelationships;
 import org.cloudfoundry.client.v3.servicebindings.ServiceBindingResource;
 import org.cloudfoundry.client.v3.servicebindings.ServiceBindingType;
@@ -30,7 +31,9 @@ import org.cloudfoundry.operations.services.GetServiceKeyRequest;
 import org.cloudfoundry.operations.services.ServiceInstance;
 import org.cloudfoundry.operations.services.ServiceKey;
 import org.cloudfoundry.util.JobUtils;
+import org.cloudfoundry.util.PaginationUtils;
 import org.jetbrains.annotations.NotNull;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
@@ -171,6 +174,19 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 		}
 	}
 
+	private static Flux<? extends ServiceBinding> requestListServiceBindings(
+		CloudFoundryClient cloudFoundryClient, String serviceInstanceName) {
+		return PaginationUtils.requestClientV3Resources(
+			page ->
+				cloudFoundryClient
+					.serviceBindingsV3()
+					.list(
+						ListServiceBindingsRequest.builder()
+							.page(page)
+							.serviceInstanceName(serviceInstanceName)
+							.build()));
+	}
+
 	/**
 	 * Currently blocked attempt to use capi v3 only calls: JobId is always returned
 	 */
@@ -197,6 +213,14 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 
 			return client.serviceBindingsV3()
 				.create(createServiceBindingRequest)
+				.map(response -> response.getJobId().get())
+				.flatMap(
+					jobId ->
+						JobUtils.waitForCompletion(
+							client, Duration.ofSeconds(5), jobId))
+				.thenMany(requestListServiceBindings(client, existingSi.getName()))
+				.single();
+
 				.flatMap(createServiceBindingResponse -> {
 					if (!createServiceBindingResponse.getJobId().isPresent()) {
 						return Mono.error(
