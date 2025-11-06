@@ -245,7 +245,12 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 							.async(true)
 							.operation(toJson(new CmdbOperationState(response.getJobId().get(), OsbOperation.CREATE)))
 							.build();
+					})
+					.cast(CreateServiceInstanceBindingResponse.class)
+					.doOnSuccess(next -> {
+						LOG.info("async not accepted, returning {}", next);
 					});
+
 			}
 
 		}
