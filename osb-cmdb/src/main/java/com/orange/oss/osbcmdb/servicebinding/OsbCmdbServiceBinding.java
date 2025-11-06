@@ -235,7 +235,13 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 						CreateServiceInstanceAppBindingResponse.builder()
 							.credentials(serviceBindingDetailsResponse.getCredentials())
 							.build())
-					;
+					.cast(CreateServiceInstanceBindingResponse.class)
+					.doOnRequest(next -> {
+						LOG.info("Start CSK with async not accepted");
+					})
+					.doOnSuccess(next -> {
+						LOG.info("End CSK with async not accepted, returning {}", next);
+					});
 			} else {
 				return client.serviceBindingsV3()
 					.create(createServiceBindingRequest)
@@ -245,10 +251,6 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 							.async(true)
 							.operation(toJson(new CmdbOperationState(response.getJobId().get(), OsbOperation.CREATE)))
 							.build();
-					})
-					.cast(CreateServiceInstanceBindingResponse.class)
-					.doOnSuccess(next -> {
-						LOG.info("async not accepted, returning {}", next);
 					});
 
 			}
