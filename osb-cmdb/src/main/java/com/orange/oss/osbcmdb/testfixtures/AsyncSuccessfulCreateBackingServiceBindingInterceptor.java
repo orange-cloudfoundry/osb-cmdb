@@ -12,6 +12,9 @@ import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstan
 import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstanceBindingResponse;
 import org.springframework.cloud.servicebroker.model.binding.GetLastServiceBindingOperationRequest;
 import org.springframework.cloud.servicebroker.model.binding.GetLastServiceBindingOperationResponse;
+import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceAppBindingResponse;
+import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceBindingRequest;
+import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceBindingResponse;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
 
 /**
@@ -78,5 +81,10 @@ public class AsyncSuccessfulCreateBackingServiceBindingInterceptor extends  Back
 			.build());
 	}
 
-
+	@Override
+	public Mono<GetServiceInstanceBindingResponse> getServiceInstanceBinding(GetServiceInstanceBindingRequest request) {
+		return Mono.just(GetServiceInstanceAppBindingResponse.builder()
+			.credentials(CREDENTIALS)
+			.build());
+	}
 }
