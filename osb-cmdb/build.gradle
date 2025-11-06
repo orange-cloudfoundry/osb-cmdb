@@ -26,6 +26,15 @@ java {
 	}
 }
 
+// Skip generation of osb-cmdb-<version>plain.jar which may be picked by error
+// Source - https://stackoverflow.com/questions/67663728/spring-boot-2-5-0-generates-plain-jar-file-can-i-remove-it
+// Posted by Tien Do Nam
+// Retrieved 11/5/2025, License - CC-BY-SA 4.0
+jar {
+	enabled = false
+}
+
+
 // See https://docs.spring.io/spring-boot/gradle-plugin/packaging.html#packaging-executable.configuring.main-class
 springBoot {
 	mainClass = 'com.orange.oss.osbcmdb.OsbCmdbApplication'
