@@ -6,13 +6,14 @@ source ~/.osb-cmdb.env
 
 build() {
   ./gradlew ${gradle_proxy_config} clean assemble osb-cmdb:bootJar -x test
+#  ./gradlew ${gradle_proxy_config} assemble osb-cmdb:bootJar -x test
 }
 
 rename_jar_file_to_be_predicable() {
   #See inspiration from http://tldp.org/LDP/abs/html/globbingref.html
   #IFS="$(printf '\n\t')"   # Remove space.
 
-  for file in ${PWD}/osb-cmdb/build/libs/osb-cmdb-*-SNAPSHOT.jar ; do         # Use ./* ... NEVER bare *
+  for file in ${PWD}/osb-cmdb/build/libs/osb-cmdb-*.jar ; do         # Use ./* ... NEVER bare *
 
     echo "copying $file into $PWD/osb-cmdb/build/libs/osb-cmdb.jar"
 

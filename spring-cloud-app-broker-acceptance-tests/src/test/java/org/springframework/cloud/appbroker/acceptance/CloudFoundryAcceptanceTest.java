@@ -282,9 +282,9 @@ abstract class CloudFoundryAcceptanceTest {
 
 	@AfterEach
 	public void tearDown(TestInfo testInfo) {
-		cloudFoundryService.logAndVerifyRecentAppLogs(testBrokerAppName(), true).block();
-
-		cleanUpDefaultSpace();
+//		cloudFoundryService.logAndVerifyRecentAppLogs(testBrokerAppName(), true).block();
+//
+//		cleanUpDefaultSpace();
 	}
 
 	protected void cleanUpDefaultSpace() {

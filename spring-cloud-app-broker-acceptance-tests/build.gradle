@@ -97,6 +97,7 @@ test {
 	filter {
 //		includeTestsMatching("*CreateDeleteInstanceWithBackingServiceKeysAcceptanceTest")
 		includeTestsMatching("*CreateDeleteAsyncInstanceWithAsyncBackingServiceKeysAcceptanceTest")
+		includeTestsMatching("*CreateDeleteAsyncInstanceWithSyncBackingServiceKeysAcceptanceTest")
 	}
 	testLogging {
 		outputs.upToDateWhen {false}
