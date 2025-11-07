@@ -6,6 +6,7 @@ import com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceBrokerException;
 import java.time.Duration;
 
 import com.orange.oss.osbcmdb.AbstractOsbCmdbService;
+import java.util.function.Function;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.client.v2.servicekeys.CreateServiceKeyRequest;
@@ -36,7 +37,6 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
-import org.springframework.cloud.servicebroker.exception.ServiceBrokerAsyncRequiredException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerException;
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerInvalidParametersException;
 import org.springframework.cloud.servicebroker.exception.ServiceInstanceDoesNotExistException;
@@ -186,7 +186,8 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 							.name(serviceBindingName)
 							.build()))
 					.single()
-					.map(ServiceBindingResource::getId);
+					.map(ServiceBindingResource::getId)
+			.switchIfEmpty(Mono.error(new ServiceBrokerException("Unable to list created service binding")));
 	}
 
 	/**
@@ -215,6 +216,8 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 				.build();
 
 			if (!asyncAccepted) {
+				//Async not accepted, try to synchronously peek async job for completion and return credentials
+				//If backing broker does not support async, i.e. if job is'nt complete immediately, then error.
 				return client.serviceBindingsV3()
 					.create(createServiceBindingRequest)
 					.map(response -> response.getJobId().get())
@@ -222,18 +225,13 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 						jobId ->
 							JobUtils.waitForCompletion(client, Duration.ofSeconds(5), jobId))
 					.then(requestSingleListServiceBindingsId(client, existingSi.getName(), serviceBindingName))
-					.switchIfEmpty(Mono.error(new ServiceBrokerException("Unable to list created service binding")))
-					.flatMap(serviceBindingId ->
-						client
-							.serviceBindingsV3()
-							.getDetails(
-								GetServiceBindingDetailsRequest.builder()
-									.serviceBindingId(serviceBindingId)
-									.build()))
-					.switchIfEmpty(Mono.error(new ServiceBrokerException("Unable to get service binding details")))
-					.map(serviceBindingDetailsResponse ->
+					.flatMap(requestServiceBindingDetails())
+					.map(GetServiceBindingDetailsResponse::getCredentials)
+					.switchIfEmpty(Mono.error(new ServiceBrokerException("Missing credentials in returned " +
+						"backing service key")))
+					.map(credentials ->
 						CreateServiceInstanceAppBindingResponse.builder()
-							.credentials(serviceBindingDetailsResponse.getCredentials())
+							.credentials(credentials)
 							.build())
 					.cast(CreateServiceInstanceBindingResponse.class)
 					.doOnRequest(next -> {
@@ -260,6 +258,18 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 			LOG.info("Unable to create async service binding, caught:" + originalException);
 			throw redactExceptionAndWrapAsServiceBrokerException(originalException);
 		}
+	}
+
+	@NotNull
+	private Function<String, Mono<? extends GetServiceBindingDetailsResponse>> requestServiceBindingDetails() {
+		return serviceBindingId ->
+			client
+				.serviceBindingsV3()
+				.getDetails(
+					GetServiceBindingDetailsRequest.builder()
+						.serviceBindingId(serviceBindingId)
+						.build())
+			.switchIfEmpty(Mono.error(new ServiceBrokerException("Unable to get service binding details")));
 	}
 
 	private boolean isExceptionReportingAsyncRequired(Exception originalException) {
