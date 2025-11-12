@@ -6,7 +6,6 @@ import com.orange.oss.osbcmdb.serviceinstance.OsbCmdbServiceBrokerException;
 import java.time.Duration;
 
 import com.orange.oss.osbcmdb.AbstractOsbCmdbService;
-import java.util.function.Function;
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.ClientV2Exception;
 import org.cloudfoundry.client.v2.servicekeys.CreateServiceKeyRequest;
@@ -94,12 +93,13 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 		}
 
 
-		return createServiceBindingCapiv3OBlocked(request, existingSi);
+		return createServiceBindingCapiv3OPocToOptimize(request, existingSi);
 
 
 //		return createServiceBindingCapiV2(request, existingSi);
 
 	}
+
 
 	@NotNull
 	private Mono<CreateServiceInstanceBindingResponse> createServiceBindingCapiV2(
@@ -173,7 +173,7 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 	}
 
 
-	private static Mono<String> requestSingleListServiceBindingsId(
+	private static Mono<String> fetchSingleListServiceBindingsIdOrError(
 		CloudFoundryClient cloudFoundryClient, String serviceInstanceName, String serviceBindingName) {
 		return PaginationUtils.requestClientV3Resources(
 			page ->
@@ -194,7 +194,7 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 	 * Currently blocked attempt to use capi v3 only calls: JobId is always returned
 	 */
 	@NotNull
-	private Mono<CreateServiceInstanceBindingResponse> createServiceBindingCapiv3OBlocked(
+	private Mono<CreateServiceInstanceBindingResponse> createServiceBindingCapiv3OPocToOptimize(
 		CreateServiceInstanceBindingRequest request, ServiceInstance existingSi) {
 		try {
 			final boolean asyncAccepted = request.isAsyncAccepted();
@@ -221,17 +221,29 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 				return client.serviceBindingsV3()
 					.create(createServiceBindingRequest)
 					.map(response -> response.getJobId().get())
-					.flatMap(
-						jobId ->
-							JobUtils.waitForCompletion(client, Duration.ofSeconds(5), jobId))
-					.then(requestSingleListServiceBindingsId(client, existingSi.getName(), serviceBindingName))
-					.flatMap(requestServiceBindingDetails())
+					.flatMap(jobId -> JobUtils.waitForCompletion(client, Duration.ofSeconds(5), jobId))
+					//FIXME: emit AsyncRequired exception if job isn't complete after 5 s
+					.then(fetchSingleListServiceBindingsIdOrError(client, existingSi.getName(), serviceBindingName))
+					.flatMap(serviceBindingId ->
+						client
+							.serviceBindingsV3()
+							.getDetails(
+								GetServiceBindingDetailsRequest.builder()
+									.serviceBindingId(serviceBindingId)
+									.build())
+							.switchIfEmpty(
+								CreateServiceInstanceAppBindingResponse.builder()
+								.async(true)
+								.operation(toJson(new CmdbOperationState(response.getJobId().get(), OsbOperation.CREATE)))
+								.build()))
 					.map(GetServiceBindingDetailsResponse::getCredentials)
 					.switchIfEmpty(Mono.error(new ServiceBrokerException("Missing credentials in returned " +
 						"backing service key")))
 					.map(credentials ->
 						CreateServiceInstanceAppBindingResponse.builder()
 							.credentials(credentials)
+
+
 							.build())
 					.cast(CreateServiceInstanceBindingResponse.class)
 					.doOnRequest(next -> {
@@ -241,6 +253,8 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 						LOG.info("End CSK with async not accepted, returning {}", next);
 					});
 			} else {
+				// TODO: to preserve sync UX for backing brokers supporting sync bindings, should first try to
+				//  perform sync actions as above, and only use the following as a fallback
 				return client.serviceBindingsV3()
 					.create(createServiceBindingRequest)
 					// return 202 Accepted
@@ -258,18 +272,6 @@ public class OsbCmdbServiceBinding extends AbstractOsbCmdbService implements Ser
 			LOG.info("Unable to create async service binding, caught:" + originalException);
 			throw redactExceptionAndWrapAsServiceBrokerException(originalException);
 		}
-	}
-
-	@NotNull
-	private Function<String, Mono<? extends GetServiceBindingDetailsResponse>> requestServiceBindingDetails() {
-		return serviceBindingId ->
-			client
-				.serviceBindingsV3()
-				.getDetails(
-					GetServiceBindingDetailsRequest.builder()
-						.serviceBindingId(serviceBindingId)
-						.build())
-			.switchIfEmpty(Mono.error(new ServiceBrokerException("Unable to get service binding details")));
 	}
 
 	private boolean isExceptionReportingAsyncRequired(Exception originalException) {
