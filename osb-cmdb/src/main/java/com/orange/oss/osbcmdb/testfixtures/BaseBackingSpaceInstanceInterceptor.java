@@ -38,7 +38,7 @@ public class BaseBackingSpaceInstanceInterceptor {
 		this.defaultSpaceName = defaultSpaceName;
 	}
 
-	protected boolean isScabAcceptanceTest(Context context, String requestToString) {
+	protected boolean isScabAcceptanceTest(Context context, String requestToString, Class requestClass) {
 		CloudFoundryContext cloudFoundryContext = (CloudFoundryContext) context;
 		if (context == null) {
 			LOG.info("No context specified in request, assuming not an acceptance test sending OSB request with a " +
@@ -53,14 +53,21 @@ public class BaseBackingSpaceInstanceInterceptor {
 		}
 
 		boolean isTest = ! spaceName.equals(defaultSpaceName);
-		LOG.debug("Accept: isTest={} for spaceName={} and request={}", isTest, spaceName, requestToString);
+		LOG.debug("Accept: isTest={} for interceptor={} spaceName={} requestClass={} request={}",
+			isTest,
+			this.getClass().getSimpleName(),
+			spaceName,
+			requestClass.getSimpleName(),
+			requestToString);
 		return isTest;
 	}
 
-	protected boolean isServiceGuidPreviousProvisionnedByUs(String serviceInstanceId, String requestToString) {
+	protected boolean isServiceGuidPreviousProvisionnedByUs(String serviceInstanceId, String requestToString,
+		Class requestClass) {
 		boolean isGuidPreviouslyProvisionnedByUs = provisionnedInstanceGuids.contains(serviceInstanceId);
-		LOG.debug("Accept: isServiceGuidPreviousProvisionnedByUs={} for serviceInstanceId={} and request={}",
-			isGuidPreviouslyProvisionnedByUs, serviceInstanceId, requestToString);
+		LOG.debug("Accept: isServiceGuidPreviousProvisionnedByUs={} for serviceInstanceId={} and " +
+				"requestClass={} request={}",
+			isGuidPreviouslyProvisionnedByUs, serviceInstanceId, requestClass.getSimpleName(), requestToString);
 		return isGuidPreviouslyProvisionnedByUs;
 	}
 

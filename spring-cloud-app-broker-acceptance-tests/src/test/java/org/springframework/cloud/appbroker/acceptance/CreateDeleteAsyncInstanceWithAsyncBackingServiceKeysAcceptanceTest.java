@@ -60,7 +60,7 @@ class CreateDeleteAsyncInstanceWithAsyncBackingServiceKeysAcceptanceTest extends
 		"osbcmdb.dynamic-catalog.enabled=false",
 	})
 	void deployAppsAndCreateServiceKeysOnBindService() throws InterruptedException {
-		//Same code, just different interceptor in annotation
+		//Same code, just different interceptor in annotation, with an extra asyncbinding binding interceptor
 		super.deployAppsAndCreateServiceKeysOnBindService();
 	}
 

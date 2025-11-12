@@ -34,27 +34,30 @@ public class BaseServiceInstanceBackingSpaceInstanceInterceptor extends BaseBack
 
 	@Override
 	public boolean accept(CreateServiceInstanceRequest request) {
-		return isScabAcceptanceTest(request.getContext(), request.toString());
+		return isScabAcceptanceTest(request.getContext(), request.toString(), request.getClass());
 	}
 
 	@Override
 	public boolean accept(GetLastServiceOperationRequest request) {
-		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString(),
+			request.getClass());
 	}
 
 	@Override
 	public boolean accept(GetServiceInstanceRequest request) {
-		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString(),
+			request.getClass());
 	}
 
 	@Override
 	public boolean accept(DeleteServiceInstanceRequest request) {
-		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString());
+		return isServiceGuidPreviousProvisionnedByUs(request.getServiceInstanceId(), request.toString(),
+			request.getClass());
 	}
 
 	@Override
 	public boolean accept(UpdateServiceInstanceRequest request) {
-		return isScabAcceptanceTest(request.getContext(), request.toString());
+		return isScabAcceptanceTest(request.getContext(), request.toString(), request.getClass());
 	}
 
 	@Override

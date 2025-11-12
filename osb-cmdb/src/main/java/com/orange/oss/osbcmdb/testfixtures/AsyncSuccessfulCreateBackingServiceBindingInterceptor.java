@@ -1,5 +1,7 @@
 package com.orange.oss.osbcmdb.testfixtures;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.servicebroker.exception.ServiceBrokerAsyncRequiredException;
@@ -10,6 +12,9 @@ import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstan
 import org.springframework.cloud.servicebroker.model.binding.DeleteServiceInstanceBindingResponse;
 import org.springframework.cloud.servicebroker.model.binding.GetLastServiceBindingOperationRequest;
 import org.springframework.cloud.servicebroker.model.binding.GetLastServiceBindingOperationResponse;
+import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceAppBindingResponse;
+import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceBindingRequest;
+import org.springframework.cloud.servicebroker.model.binding.GetServiceInstanceBindingResponse;
 import org.springframework.cloud.servicebroker.model.instance.OperationState;
 
 /**
@@ -25,6 +30,9 @@ public class AsyncSuccessfulCreateBackingServiceBindingInterceptor extends  Back
 
 	public static final String DELETE = "delete";
 
+	private static final Logger LOG = LoggerFactory.getLogger(AsyncSuccessfulCreateBackingServiceBindingInterceptor.class);
+
+	
 	public AsyncSuccessfulCreateBackingServiceBindingInterceptor(String defaultSpaceName) {
 		super(defaultSpaceName);
 	}
@@ -37,10 +45,12 @@ public class AsyncSuccessfulCreateBackingServiceBindingInterceptor extends  Back
 				"expecting accept_incomplete=true ");
 		}
 		provisionnedInstanceGuids.add(request.getServiceInstanceId());
-		return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
+		CreateServiceInstanceAppBindingResponse response = CreateServiceInstanceAppBindingResponse.builder()
 			.async(true)
 			.operation(CREATE)
-			.build());
+			.build();
+		LOG.info("Returning async response: CreateServiceInstanceAppBindingResponse={}", response);
+		return Mono.just(response);
 	}
 
 	@Override
@@ -59,6 +69,11 @@ public class AsyncSuccessfulCreateBackingServiceBindingInterceptor extends  Back
 	@Override
 	public Mono<GetLastServiceBindingOperationResponse> getLastOperation(
 		GetLastServiceBindingOperationRequest request) {
+
+		if (DELETE.equals(request.getOperation())) {
+			//Clean up guid (although a leak has no impact for the interceptor just used once)
+			provisionnedInstanceGuids.remove(request.getServiceInstanceId());
+		}
 		return Mono.just(GetLastServiceBindingOperationResponse.builder()
 			.description(this.getClass().getSimpleName())
 			.operationState(OperationState.SUCCEEDED)
@@ -66,5 +81,10 @@ public class AsyncSuccessfulCreateBackingServiceBindingInterceptor extends  Back
 			.build());
 	}
 
-
+	@Override
+	public Mono<GetServiceInstanceBindingResponse> getServiceInstanceBinding(GetServiceInstanceBindingRequest request) {
+		return Mono.just(GetServiceInstanceAppBindingResponse.builder()
+			.credentials(CREDENTIALS)
+			.build());
+	}
 }
