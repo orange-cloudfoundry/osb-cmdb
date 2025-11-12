@@ -2,7 +2,10 @@ package com.orange.oss.osbcmdb;
 
 import org.cloudfoundry.client.CloudFoundryClient;
 import org.cloudfoundry.client.v2.organizations.ListOrganizationSpacesRequest;
-import org.cloudfoundry.client.v2.spaces.CreateSpaceRequest;
+import org.cloudfoundry.client.v3.Relationship;
+import org.cloudfoundry.client.v3.ToOneRelationship;
+import org.cloudfoundry.client.v3.spaces.CreateSpaceRequest;
+import org.cloudfoundry.client.v3.spaces.SpaceRelationships;
 import org.cloudfoundry.operations.CloudFoundryOperations;
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.operations.organizations.OrganizationDetail;
@@ -98,8 +101,14 @@ public class AbstractOsbCmdbService {
 		return getSpaceId(spaceName)
 			.switchIfEmpty(Mono.just(this.defaultOrg)
 				.flatMap(orgName -> getOrganizationId(orgName)
-					.flatMap(orgId -> client.spaces().create(CreateSpaceRequest.builder()
-						.organizationId(orgId)
+					.flatMap(orgId -> client.spacesV3().create(CreateSpaceRequest.builder()
+						.relationships(SpaceRelationships.builder()
+							.organization(ToOneRelationship.builder()
+								.data(Relationship.builder()
+									.
+									.build())
+								.build())
+							.build())organizationId(orgId)
 						.name(spaceName)
 						.build())
 						.doOnSuccess(response -> LOG.info("Created space {}", spaceName))
