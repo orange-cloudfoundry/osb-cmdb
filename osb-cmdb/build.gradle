@@ -8,7 +8,7 @@ plugins {
 ext {
 // osb-cmdb doesn't lock spring version and leaves it to springboot (unless meeting issues)
 //	springFrameworkVersion = project.findProperty("springFrameworkVersion") ?: "5.2.11.RELEASE"
-	openServiceBrokerVersion = "3.5.1"
+	openServiceBrokerVersion = "4.5.1"
 	cfJavaClientVersion = "5.14.0.RELEASE"
 	cfJavaClientForkedVersion = "0b299d2b792207b52a944d50aa459c247c564597"
 	junitPlatformLauncherVersion = "1.6.1"
