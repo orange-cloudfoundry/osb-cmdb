@@ -45,7 +45,7 @@ dependencies {
 	implementation("org.cloudfoundry:cloudfoundry-operations:${cfJavaClientVersion}")
 	implementation("org.cloudfoundry:cloudfoundry-client-reactor:${cfJavaClientVersion}")
 	implementation("org.apache.commons:commons-text:1.9")
-	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2")
+	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.21.0")
 	implementation("de.skuzzle:semantic-version:2.1.1")
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
