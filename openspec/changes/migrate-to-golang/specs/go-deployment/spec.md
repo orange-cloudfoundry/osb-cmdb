@@ -9,7 +9,7 @@ The Dockerfile SHALL use multi-stage builds to produce a minimal runtime image.
 
 #### Scenario: Build stage
 - **WHEN** the Docker image is built
-- **THEN** the build stage uses golang:1.22-alpine and compiles with CGO_ENABLED=0
+- **THEN** the build stage uses golang:1.23-alpine and compiles with CGO_ENABLED=0, matching the Go version required by go-cfclient v3.0.0-beta.1
 
 #### Scenario: Runtime stage
 - **WHEN** the Docker image is built
@@ -25,6 +25,10 @@ The Docker build SHALL inject the version into the binary.
 #### Scenario: Version from git tag
 - **WHEN** building with VERSION=v1.0.0
 - **THEN** the binary reports version v1.0.0
+
+#### Scenario: Docker build verification
+- **WHEN** CI validates the Go implementation
+- **THEN** it builds the Docker image with VERSION, COMMIT, and BUILD_DATE linker variables successfully
 
 ### Requirement: Helm chart with basic resources
 The Helm chart SHALL include Deployment, Service, ConfigMap, Secret, and ServiceAccount.

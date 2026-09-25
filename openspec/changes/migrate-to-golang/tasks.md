@@ -106,3 +106,34 @@
 - [x] 10.1 Create osb-cmdb-go/README.md with usage instructions
 - [x] 10.2 Update MIGRATION.md if any implementation details changed
 - [x] 10.3 Add configuration reference documentation
+
+## 11. Runtime Wiring and Readiness
+
+- [ ] 11.1 Construct the CF client from the loaded application configuration
+- [ ] 11.2 Resolve the configured default CF space GUID during startup
+- [ ] 11.3 Create, initially refresh, and start the dynamic catalog service
+- [ ] 11.4 Construct the metadata formatter, context parser, and OSB broker with the resolved dependencies
+- [ ] 11.5 Mount the brokerapi handler with configured broker credentials under the application HTTP server
+- [ ] 11.6 Stop the dynamic catalog cleanly during graceful shutdown
+- [ ] 11.7 Make the readiness endpoint report startup and CF dependency readiness
+- [ ] 11.8 Add an executable wiring test that verifies the mounted OSB catalog route
+
+## 12. Async Operation Correctness
+
+- [ ] 12.1 Extend operation state with the OSB instance ID for asynchronous provisioning
+- [ ] 12.2 Encode the CF create job GUID and OSB instance ID without dereferencing an unavailable backing instance during async provision
+- [ ] 12.3 Poll CF jobs for async provision, update, deprovision, bind, and unbind operations when operation data includes a job GUID
+- [ ] 12.4 Map concrete go-cfclient resource.Job states to OSB last-operation states
+- [ ] 12.5 Map concrete go-cfclient resource.LastOperation states to OSB last-operation states
+- [ ] 12.6 Add regression tests for async provision, including the nil backing-instance result
+- [ ] 12.7 Add tests for succeeded, failed, and in-progress job and instance operation states
+
+## 13. Broker Semantics and Coverage
+
+- [ ] 13.1 Compare requested plan and parameters with the backing instance for duplicate provision idempotency
+- [ ] 13.2 Return an already-exists response only for matching duplicate provisions and a conflict for incompatible requests
+- [ ] 13.3 Parse and apply X-Broker-API-Originating-Identity when building CF metadata
+- [ ] 13.4 Add real-broker tests for provision, deprovision, update, bind, unbind, get, and last-operation behavior
+- [ ] 13.5 Add real-broker tests for Cloud Foundry, Kubernetes, missing, and unknown originating identities
+- [ ] 13.6 Make dynamic catalog start and stop lifecycle operations idempotent
+- [ ] 13.7 Add a Docker image build verification to CI

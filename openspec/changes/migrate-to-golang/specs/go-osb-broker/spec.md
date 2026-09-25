@@ -24,7 +24,7 @@ The broker SHALL expose a PUT /v2/service_instances/{instance_id} endpoint that 
 
 #### Scenario: Asynchronous provision
 - **WHEN** a client sends a provision request with accepts_incomplete=true and the backing broker requires async
-- **THEN** the broker returns HTTP 202 Accepted with an operation field containing the backing service GUID
+- **THEN** the broker returns HTTP 202 Accepted with an opaque operation field encoding the CF create job GUID, the OSB instance ID, and the operation type
 
 #### Scenario: Duplicate instance with compatible parameters
 - **WHEN** a client sends a provision request for an instance_id that already exists with the same plan and parameters
@@ -86,6 +86,10 @@ The broker SHALL expose a GET /v2/service_instances/{instance_id}/last_operation
 - **WHEN** a client polls last_operation for a failed operation
 - **THEN** the broker returns state "failed" with a description
 
+#### Scenario: Poll asynchronous provision job
+- **WHEN** a client polls last_operation with operation data containing a CF job GUID
+- **THEN** the broker fetches the CF job and maps COMPLETE to "succeeded", FAILED to "failed", and PROCESSING or POLLING to "in progress"
+
 #### Scenario: Poll delete operation for deleted instance
 - **WHEN** a client polls last_operation for a delete and the backing instance no longer exists
 - **THEN** the broker returns state "succeeded"
@@ -146,7 +150,7 @@ The broker SHALL encode async operation tracking information in the operation fi
 
 #### Scenario: Instance operation state
 - **WHEN** an async instance operation is initiated
-- **THEN** the operation field contains JSON with backing_cf_service_instance_guid and operation type
+- **THEN** the operation field contains opaque encoded JSON with the operation type; asynchronous provisioning includes the CF job GUID and OSB instance ID, while operations with a known backing instance include its GUID
 
 #### Scenario: Binding operation state
 - **WHEN** an async binding operation is initiated
