@@ -41,9 +41,9 @@ OSB-CMDB is an Open Service Broker API facade that provides:
 
 | Decision | Choice |
 |----------|--------|
-| Go Version | 1.23 |
+| Go Version | 1.25 |
 | CF API | V3 only (simplifies hybrid V2/V3 approach) |
-| OSB Framework | [brokerapi](https://github.com/pivotal-cf/brokerapi) v11+ |
+| OSB Framework | [brokerapi](https://github.com/cloudfoundry/brokerapi) v13.0.25 |
 | CF Client | [go-cfclient](https://github.com/cloudfoundry/go-cfclient) v3 |
 | Logging | `log/slog` (standard library) |
 | Configuration | Environment variables via `envconfig` |
@@ -163,7 +163,7 @@ osb-cmdb-go/
 
 | Dependency | Version | Purpose | Documentation |
 |------------|---------|---------|---------------|
-| [brokerapi](https://github.com/pivotal-cf/brokerapi) | v11.0.16+ | OSB API framework | [pkg.go.dev](https://pkg.go.dev/github.com/pivotal-cf/brokerapi/v11) |
+| [brokerapi](https://github.com/cloudfoundry/brokerapi) | v13.0.25 | OSB API framework | [pkg.go.dev](https://pkg.go.dev/code.cloudfoundry.org/brokerapi/v13) |
 | [go-cfclient](https://github.com/cloudfoundry/go-cfclient) | v3.0.0-beta.1 | CF API v3 client | [pkg.go.dev](https://pkg.go.dev/github.com/cloudfoundry/go-cfclient/v3) |
 | [envconfig](https://github.com/kelseyhightower/envconfig) | v1.4.0 | Environment config | [pkg.go.dev](https://pkg.go.dev/github.com/kelseyhightower/envconfig) |
 | [testify](https://github.com/stretchr/testify) | v1.9.0 | Testing utilities | [pkg.go.dev](https://pkg.go.dev/github.com/stretchr/testify) |
@@ -174,10 +174,10 @@ osb-cmdb-go/
 ```go
 module github.com/orange-cloudfoundry/osb-cmdb-go
 
-go 1.23.0
+go 1.25.0
 
 require (
-    github.com/pivotal-cf/brokerapi/v11 v11.0.16
+    code.cloudfoundry.org/brokerapi/v13 v13.0.25
     github.com/cloudfoundry/go-cfclient/v3 v3.0.0-beta.1
     github.com/kelseyhightower/envconfig v1.4.0
     github.com/stretchr/testify v1.9.0
@@ -1046,7 +1046,7 @@ func TestBroker_Provision(t *testing.T) {
 
 ```dockerfile
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 WORKDIR /app
 ARG VERSION=dev
 COPY go.mod go.sum ./
@@ -1278,7 +1278,7 @@ return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(
 
 | Library | Documentation | Repository |
 |---------|---------------|------------|
-| brokerapi | [pkg.go.dev](https://pkg.go.dev/github.com/pivotal-cf/brokerapi/v11) | [GitHub](https://github.com/pivotal-cf/brokerapi) |
+| brokerapi | [pkg.go.dev](https://pkg.go.dev/code.cloudfoundry.org/brokerapi/v13) | [GitHub](https://github.com/cloudfoundry/brokerapi) |
 | go-cfclient | [pkg.go.dev](https://pkg.go.dev/github.com/cloudfoundry/go-cfclient/v3) | [GitHub](https://github.com/cloudfoundry/go-cfclient) |
 | envconfig | [pkg.go.dev](https://pkg.go.dev/github.com/kelseyhightower/envconfig) | [GitHub](https://github.com/kelseyhightower/envconfig) |
 | testify | [pkg.go.dev](https://pkg.go.dev/github.com/stretchr/testify) | [GitHub](https://github.com/stretchr/testify) |

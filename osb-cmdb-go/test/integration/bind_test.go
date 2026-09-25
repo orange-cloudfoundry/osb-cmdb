@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/pivotal-cf/brokerapi/v11"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
+	"code.cloudfoundry.org/brokerapi/v13"
+	"code.cloudfoundry.org/brokerapi/v13/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

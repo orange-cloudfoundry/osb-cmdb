@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"code.cloudfoundry.org/brokerapi/v13/domain"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/config"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
 	"github.com/stretchr/testify/require"
 )
 

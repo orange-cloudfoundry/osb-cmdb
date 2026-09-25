@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/pivotal-cf/brokerapi/v11/domain"
+	"code.cloudfoundry.org/brokerapi/v13/domain"
 )
 
 // mockBroker is a simple mock broker for integration tests.

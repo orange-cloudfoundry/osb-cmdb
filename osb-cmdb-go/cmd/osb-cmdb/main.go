@@ -11,14 +11,14 @@ import (
 	"syscall"
 	"time"
 
+	"code.cloudfoundry.org/brokerapi/v13"
+	"code.cloudfoundry.org/brokerapi/v13/domain"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/broker"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/catalog"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/cfclient"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/config"
 	osbcontext "github.com/orange-cloudfoundry/osb-cmdb-go/internal/context"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/metadata"
-	"github.com/pivotal-cf/brokerapi/v11"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
 )
 
 // Version is set at build time via -ldflags.

@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/pivotal-cf/brokerapi/v11/domain"
+	"code.cloudfoundry.org/brokerapi/v13/domain"
 	"github.com/stretchr/testify/mock"
 )
 

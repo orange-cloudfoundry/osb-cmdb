@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"code.cloudfoundry.org/brokerapi/v13/domain"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/cfclient"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
 )
 
 // DynamicCatalog fetches and caches services from the CF marketplace.

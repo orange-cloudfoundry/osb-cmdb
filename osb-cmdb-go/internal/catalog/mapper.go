@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"code.cloudfoundry.org/brokerapi/v13/domain"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
 )
 
 // Mapper converts CF resources to OSB format.

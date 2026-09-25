@@ -9,13 +9,13 @@ import (
 	"strings"
 	"testing"
 
+	"code.cloudfoundry.org/brokerapi/v13/domain"
+	"code.cloudfoundry.org/brokerapi/v13/middlewares"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/catalog"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/cfclient"
 	osbcontext "github.com/orange-cloudfoundry/osb-cmdb-go/internal/context"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/metadata"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
-	"github.com/pivotal-cf/brokerapi/v11/middlewares"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -8,15 +8,15 @@ import (
 	"log/slog"
 	"reflect"
 
+	"code.cloudfoundry.org/brokerapi/v13/domain"
+	"code.cloudfoundry.org/brokerapi/v13/domain/apiresponses"
+	"code.cloudfoundry.org/brokerapi/v13/middlewares"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/catalog"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/cfclient"
 	osbcontext "github.com/orange-cloudfoundry/osb-cmdb-go/internal/context"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/errors"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/metadata"
-	"github.com/pivotal-cf/brokerapi/v11/domain"
-	"github.com/pivotal-cf/brokerapi/v11/domain/apiresponses"
-	"github.com/pivotal-cf/brokerapi/v11/middlewares"
 )
 
 // Broker implements the domain.ServiceBroker interface.
