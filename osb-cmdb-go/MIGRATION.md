@@ -78,7 +78,7 @@ OSB-CMDB is an Open Service Broker API facade that provides:
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Go Application                            │
 ├─────────────────────────────────────────────────────────────────┤
-│  brokerapi v11+ (domain.ServiceBroker interface)                │
+│  brokerapi v13 (domain.ServiceBroker interface)                 │
 │  └── internal/broker (Broker implementation)                    │
 ├─────────────────────────────────────────────────────────────────┤
 │  go-cfclient v3 (synchronous)                                   │
@@ -1246,7 +1246,7 @@ jobGUID, err := c.cf.ServiceInstances.CreateManaged(ctx, req)
 // To get the instance, poll the job or list by name after completion
 ```
 
-### brokerapi v11 Notes
+### brokerapi v13 Notes
 
 #### Error Responses
 
