@@ -37,9 +37,5 @@ USER nonroot:nonroot
 # Expose default port
 EXPOSE 8080
 
-# Health check endpoint
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD ["/osb-cmdb", "-health-check"]
-
 # Run the broker
 ENTRYPOINT ["/osb-cmdb"]

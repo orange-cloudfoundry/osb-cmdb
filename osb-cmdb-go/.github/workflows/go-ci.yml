@@ -61,6 +61,21 @@ jobs:
           version: latest
           working-directory: osb-cmdb-go
 
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: osb-cmdb-go
+          push: false
+          build-args: |
+            VERSION=ci
+            COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+
   helm-lint:
     runs-on: ubuntu-latest
     steps:

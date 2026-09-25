@@ -55,8 +55,14 @@ func New(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		return nil, fmt.Errorf("config is required")
 	}
 
-	opts := []config.Option{
-		config.UserPassword(cfg.Username, cfg.Password),
+	var opts []config.Option
+	if cfg.ClientID != "" || cfg.ClientSecret != "" {
+		if cfg.ClientID == "" || cfg.ClientSecret == "" {
+			return nil, fmt.Errorf("both client ID and client secret are required")
+		}
+		opts = append(opts, config.ClientCredentials(cfg.ClientID, cfg.ClientSecret))
+	} else {
+		opts = append(opts, config.UserPassword(cfg.Username, cfg.Password))
 	}
 	if cfg.SkipSSL {
 		opts = append(opts, config.SkipTLSValidation())

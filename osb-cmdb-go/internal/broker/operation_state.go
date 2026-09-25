@@ -23,6 +23,10 @@ type OperationState struct {
 	// Type of operation being performed
 	Type OperationType `json:"type"`
 
+	// InstanceID is the OSB instance ID. It identifies an asynchronously
+	// provisioning instance before Cloud Foundry has assigned a backing GUID.
+	InstanceID string `json:"instance_id,omitempty"`
+
 	// BackingCFServiceInstanceID is the GUID of the backing CF service instance
 	BackingCFServiceInstanceID string `json:"backing_cf_service_instance_guid,omitempty"`
 
@@ -64,10 +68,11 @@ func DecodeOperationState(encoded string) (*OperationState, error) {
 }
 
 // NewProvisionOperation creates an operation state for provisioning.
-func NewProvisionOperation(backingInstanceGUID string) *OperationState {
+func NewProvisionOperation(instanceID, jobGUID string) *OperationState {
 	return &OperationState{
-		Type:                       OperationProvision,
-		BackingCFServiceInstanceID: backingInstanceGUID,
+		Type:       OperationProvision,
+		InstanceID: instanceID,
+		JobGUID:    jobGUID,
 	}
 }
 

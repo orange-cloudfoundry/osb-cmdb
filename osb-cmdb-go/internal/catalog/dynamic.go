@@ -24,9 +24,12 @@ type DynamicCatalog struct {
 	serviceIndex map[string]*domain.Service
 	planIndex    map[string]*domain.ServicePlan
 
-	// Refresh control
-	stopCh chan struct{}
-	wg     sync.WaitGroup
+	// Refresh lifecycle. Each Start owns its channels so a stopped catalog can
+	// be started again safely.
+	lifecycleMu sync.Mutex
+	started     bool
+	stopCh      chan struct{}
+	doneCh      chan struct{}
 }
 
 // NewDynamicCatalog creates a new dynamic catalog service.
@@ -38,7 +41,6 @@ func NewDynamicCatalog(cfClient *cfclient.Client, config *Config) *DynamicCatalo
 		services:     []domain.Service{},
 		serviceIndex: make(map[string]*domain.Service),
 		planIndex:    make(map[string]*domain.ServicePlan),
-		stopCh:       make(chan struct{}),
 	}
 }
 
@@ -157,8 +159,24 @@ func (c *DynamicCatalog) Refresh(ctx context.Context) error {
 
 // Start begins periodic catalog refresh.
 func (c *DynamicCatalog) Start(ctx context.Context) {
+	c.lifecycleMu.Lock()
+	if c.started {
+		c.lifecycleMu.Unlock()
+		return
+	}
+	c.started = true
+	c.stopCh = make(chan struct{})
+	c.doneCh = make(chan struct{})
+	stopCh := c.stopCh
+	doneCh := c.doneCh
+	c.lifecycleMu.Unlock()
+
 	if c.config.RefreshInterval == "" || c.config.RefreshInterval == "0" {
 		c.logger.Info("periodic catalog refresh disabled")
+		c.lifecycleMu.Lock()
+		c.started = false
+		close(doneCh)
+		c.lifecycleMu.Unlock()
 		return
 	}
 
@@ -169,12 +187,19 @@ func (c *DynamicCatalog) Start(ctx context.Context) {
 			"default", "5m")
 		interval = 5 * time.Minute
 	}
+	if interval <= 0 {
+		c.logger.Info("periodic catalog refresh disabled")
+		c.lifecycleMu.Lock()
+		c.started = false
+		close(doneCh)
+		c.lifecycleMu.Unlock()
+		return
+	}
 
 	c.logger.Info("starting periodic catalog refresh", "interval", interval)
 
-	c.wg.Add(1)
 	go func() {
-		defer c.wg.Done()
+		defer close(doneCh)
 
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
@@ -186,7 +211,7 @@ func (c *DynamicCatalog) Start(ctx context.Context) {
 					c.logger.Error("periodic refresh failed", "error", err)
 					// Continue with existing catalog on error
 				}
-			case <-c.stopCh:
+			case <-stopCh:
 				c.logger.Info("stopping periodic catalog refresh")
 				return
 			case <-ctx.Done():
@@ -199,6 +224,16 @@ func (c *DynamicCatalog) Start(ctx context.Context) {
 
 // Stop stops periodic catalog refresh.
 func (c *DynamicCatalog) Stop() {
-	close(c.stopCh)
-	c.wg.Wait()
+	c.lifecycleMu.Lock()
+	if !c.started {
+		c.lifecycleMu.Unlock()
+		return
+	}
+	stopCh := c.stopCh
+	doneCh := c.doneCh
+	c.started = false
+	close(stopCh)
+	c.lifecycleMu.Unlock()
+
+	<-doneCh
 }

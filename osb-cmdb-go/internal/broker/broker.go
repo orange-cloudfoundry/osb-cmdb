@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"reflect"
 
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/catalog"
@@ -15,6 +16,7 @@ import (
 	"github.com/orange-cloudfoundry/osb-cmdb-go/internal/metadata"
 	"github.com/pivotal-cf/brokerapi/v11/domain"
 	"github.com/pivotal-cf/brokerapi/v11/domain/apiresponses"
+	"github.com/pivotal-cf/brokerapi/v11/middlewares"
 )
 
 // Broker implements the domain.ServiceBroker interface.
@@ -94,7 +96,11 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 
 	if existing != nil {
 		// Check if it's a compatible duplicate
-		if b.isCompatibleDuplicate(existing, details) {
+		compatible, err := b.isCompatibleDuplicate(ctx, existing, details)
+		if err != nil {
+			return domain.ProvisionedServiceSpec{}, errors.RedactError(err)
+		}
+		if compatible {
 			b.logger.Info("returning existing compatible instance", "instance_id", instanceID)
 			return domain.ProvisionedServiceSpec{
 				AlreadyExists: true,
@@ -136,15 +142,7 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 			return domain.ProvisionedServiceSpec{}, apiresponses.ErrAsyncRequired
 		}
 
-		opState := &OperationState{
-			Type:                       OperationProvision,
-			BackingCFServiceInstanceID: result.ServiceInstance.GUID,
-		}
-
-		return domain.ProvisionedServiceSpec{
-			IsAsync:       true,
-			OperationData: opState.Encode(),
-		}, nil
+		return asyncProvisionSpec(instanceID, result.JobGUID), nil
 	}
 
 	// Sync completion
@@ -157,6 +155,13 @@ func (b *Broker) Provision(ctx context.Context, instanceID string, details domai
 		IsAsync:      false,
 		DashboardURL: dashboardURL,
 	}, nil
+}
+
+func asyncProvisionSpec(instanceID, jobGUID string) domain.ProvisionedServiceSpec {
+	return domain.ProvisionedServiceSpec{
+		IsAsync:       true,
+		OperationData: NewProvisionOperation(instanceID, jobGUID).Encode(),
+	}
 }
 
 // Deprovision deletes a service instance.
@@ -337,6 +342,16 @@ func (b *Broker) LastOperation(ctx context.Context, instanceID string, details d
 		// Fall back to checking instance state directly
 		b.logger.Warn("failed to parse operation state, checking instance directly", "error", err)
 		return b.pollInstanceState(ctx, instanceID)
+	}
+
+	// CF create, update, delete, bind, and unbind requests all expose a job
+	// GUID. Poll it directly, including provisioning before an instance exists.
+	if opState.JobGUID != "" {
+		job, err := b.cfClient.GetBindingLastOperation(ctx, opState.JobGUID)
+		if err != nil {
+			return domain.LastOperation{}, errors.RedactError(err)
+		}
+		return b.mapJobToLastOperation(job), nil
 	}
 
 	// For deprovision, check if instance still exists
@@ -666,13 +681,38 @@ func (b *Broker) findExistingInstance(ctx context.Context, instanceID string) (*
 	return nil, nil
 }
 
-func (b *Broker) isCompatibleDuplicate(existing *struct {
+func (b *Broker) isCompatibleDuplicate(ctx context.Context, existing *struct {
 	GUID         string
 	DashboardURL *string
-}, details domain.ProvisionDetails) bool {
-	// For now, consider duplicates compatible if they exist
-	// More sophisticated comparison could check plan and parameters
-	return existing != nil
+}, details domain.ProvisionDetails) (bool, error) {
+	if existing == nil {
+		return false, nil
+	}
+
+	backing, err := b.cfClient.GetServiceInstance(ctx, existing.GUID)
+	if err != nil {
+		return false, err
+	}
+	if backing.Relationships.ServicePlan == nil || backing.Relationships.ServicePlan.Data == nil || backing.Relationships.ServicePlan.Data.GUID != details.PlanID {
+		return false, nil
+	}
+
+	requested := map[string]interface{}{}
+	if len(details.RawParameters) > 0 {
+		if err := json.Unmarshal(details.RawParameters, &requested); err != nil {
+			return false, apiresponses.NewFailureResponse(fmt.Errorf("invalid parameters: %w", err), 400, "invalid-parameters")
+		}
+	}
+
+	actual, err := b.cfClient.GetServiceInstanceParameters(ctx, existing.GUID)
+	if err != nil {
+		return false, err
+	}
+	if actual == nil {
+		actual = map[string]interface{}{}
+	}
+
+	return reflect.DeepEqual(requested, actual), nil
 }
 
 func (b *Broker) buildMetadata(ctx context.Context, instanceID string, rawContext json.RawMessage) (map[string]*string, map[string]*string) {
@@ -683,12 +723,19 @@ func (b *Broker) buildMetadata(ctx context.Context, instanceID string, rawContex
 	instanceGUID := instanceID
 	labels["brokered_service_instance_guid"] = &instanceGUID
 
-	// Parse and format context if metadata service is available
-	if b.metadataService != nil && b.contextParser != nil && len(rawContext) > 0 {
-		parsedCtx, err := b.contextParser.Parse(rawContext)
+	// Prefer the identity header installed by brokerapi middleware. OSB context
+	// remains the fallback for clients that do not send originating identity.
+	if b.metadataService != nil && b.contextParser != nil {
+		var parsedCtx *osbcontext.Context
+		var err error
+		if header, _ := ctx.Value(middlewares.OriginatingIdentityKey).(string); header != "" {
+			parsedCtx, err = b.contextParser.ParseOriginatingIdentityContext(header)
+		} else if len(rawContext) > 0 {
+			parsedCtx, err = b.contextParser.Parse(rawContext)
+		}
 		if err != nil {
-			b.logger.Warn("failed to parse context", "error", err)
-		} else {
+			b.logger.Warn("failed to parse metadata context", "error", err)
+		} else if parsedCtx != nil {
 			ctxLabels, ctxAnnotations := b.metadataService.Format(parsedCtx)
 			for k, v := range ctxLabels {
 				labels[k] = v
@@ -741,6 +788,13 @@ func (b *Broker) mapCFLastOperation(lastOp interface{}) domain.LastOperation {
 
 	// Handle different possible types
 	switch op := lastOp.(type) {
+	case resource.LastOperation:
+		return b.mapCFState(op.State, op.Description)
+	case *resource.LastOperation:
+		if op == nil {
+			return domain.LastOperation{State: domain.Succeeded, Description: "Operation complete"}
+		}
+		return b.mapCFState(op.State, op.Description)
 	case *cfLastOp:
 		return b.mapCFState(op.State, op.Description)
 	case map[string]interface{}:
@@ -794,6 +848,13 @@ func (b *Broker) mapJobToLastOperation(job interface{}) domain.LastOperation {
 	}
 
 	switch j := job.(type) {
+	case resource.Job:
+		return b.mapJobState(string(j.State))
+	case *resource.Job:
+		if j == nil {
+			return domain.LastOperation{State: domain.InProgress, Description: "Processing"}
+		}
+		return b.mapJobState(string(j.State))
 	case *cfJob:
 		return b.mapJobState(j.State)
 	case map[string]interface{}:

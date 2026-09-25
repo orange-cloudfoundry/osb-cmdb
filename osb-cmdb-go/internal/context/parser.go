@@ -25,11 +25,11 @@ type Context struct {
 
 // CloudFoundryContext holds CF-specific context properties.
 type CloudFoundryContext struct {
-	OrganizationGUID     string `json:"organization_guid,omitempty"`
-	OrganizationName     string `json:"organization_name,omitempty"`
-	SpaceGUID            string `json:"space_guid,omitempty"`
-	SpaceName            string `json:"space_name,omitempty"`
-	InstanceName         string `json:"instance_name,omitempty"`
+	OrganizationGUID        string            `json:"organization_guid,omitempty"`
+	OrganizationName        string            `json:"organization_name,omitempty"`
+	SpaceGUID               string            `json:"space_guid,omitempty"`
+	SpaceName               string            `json:"space_name,omitempty"`
+	InstanceName            string            `json:"instance_name,omitempty"`
 	OrganizationAnnotations map[string]string `json:"organization_annotations,omitempty"`
 	SpaceAnnotations        map[string]string `json:"space_annotations,omitempty"`
 	InstanceAnnotations     map[string]string `json:"instance_annotations,omitempty"`
@@ -37,8 +37,8 @@ type CloudFoundryContext struct {
 
 // KubernetesContext holds K8S-specific context properties.
 type KubernetesContext struct {
-	Namespace   string `json:"namespace,omitempty"`
-	ClusterID   string `json:"clusterid,omitempty"`
+	Namespace    string `json:"namespace,omitempty"`
+	ClusterID    string `json:"clusterid,omitempty"`
 	InstanceName string `json:"instance_name,omitempty"`
 }
 
@@ -82,7 +82,7 @@ func (p *Parser) ParseOriginatingIdentity(header string) (*OriginatingIdentity, 
 		return nil, nil
 	}
 
-	parts := strings.SplitN(header, " ", 2)
+	parts := strings.Fields(header)
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("invalid originating identity format")
 	}
@@ -104,6 +104,17 @@ func (p *Parser) ParseOriginatingIdentity(header string) (*OriginatingIdentity, 
 		Platform: platform,
 		Value:    value,
 	}, nil
+}
+
+// ParseOriginatingIdentityContext converts an originating identity header into
+// metadata context suitable for formatting as Cloud Foundry metadata.
+func (p *Parser) ParseOriginatingIdentityContext(header string) (*Context, error) {
+	identity, err := p.ParseOriginatingIdentity(header)
+	if err != nil || identity == nil {
+		return nil, err
+	}
+
+	return &Context{Platform: identity.Platform, Raw: identity.Value}, nil
 }
 
 // GetCloudFoundryContext extracts CF-specific context from the parsed context.

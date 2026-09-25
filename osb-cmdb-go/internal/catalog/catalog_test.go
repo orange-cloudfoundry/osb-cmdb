@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pivotal-cf/brokerapi/v11/domain"
@@ -65,6 +66,18 @@ func TestMapper_IsExcluded(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestDynamicCatalog_StartStopIsIdempotent(t *testing.T) {
+	c := NewDynamicCatalog(nil, &Config{RefreshInterval: "1h"})
+	c.Start(context.Background())
+	c.Start(context.Background())
+	c.Stop()
+	c.Stop()
+
+	// A stopped catalog can be started and stopped again.
+	c.Start(context.Background())
+	c.Stop()
 }
 
 func TestMapper_ApplySuffix(t *testing.T) {

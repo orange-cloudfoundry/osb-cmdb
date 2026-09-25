@@ -102,6 +102,17 @@ func TestParser_ParseOriginatingIdentity_Empty(t *testing.T) {
 	assert.Nil(t, result)
 }
 
+func TestParser_ParseOriginatingIdentityContext(t *testing.T) {
+	parser := NewParser()
+	identityJSON, err := json.Marshal(map[string]interface{}{"user_id": "user-123", "space_guid": "space-123"})
+	require.NoError(t, err)
+
+	ctx, err := parser.ParseOriginatingIdentityContext("cloudfoundry " + base64.StdEncoding.EncodeToString(identityJSON))
+	require.NoError(t, err)
+	assert.Equal(t, PlatformCloudFoundry, ctx.Platform)
+	assert.Equal(t, "user-123", ctx.Raw["user_id"])
+}
+
 func TestParser_ParseOriginatingIdentity_Invalid(t *testing.T) {
 	parser := NewParser()
 
