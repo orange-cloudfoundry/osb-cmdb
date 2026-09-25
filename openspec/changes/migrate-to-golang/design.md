@@ -128,7 +128,7 @@ osb-cmdb-go/
 
 ## Risks / Trade-offs
 
-**[Risk] go-cfclient v3 is still in beta** → Pin to specific version, monitor releases, contribute fixes upstream if needed. The library is actively maintained and used in production.
+**[Mitigated] go-cfclient v3 API maturity** → The first beta release, v3.0.0-beta.1, supersedes the alpha version used during initial implementation. It requires Go 1.23. The version is pinned, and its API compatibility is verified by the build and test suite.
 
 **[Risk] V3-only may miss edge cases covered by V2** → The Java codebase documents V2 usage patterns. Service keys (bindings) in V3 are well-supported. Test thoroughly against real CF before production.
 
@@ -149,6 +149,51 @@ osb-cmdb-go/
 7. **Phase 7 - Deployment**: Dockerfile, Helm chart, GitHub Actions
 
 **Rollback:** The Java implementation remains in place. If issues arise, simply don't deploy the Go version. No shared state between implementations.
+
+## Implementation Notes (Post-Build)
+
+During implementation and build verification, we discovered several API differences in go-cfclient v3 that required code adaptations. The implementation now uses v3.0.0-beta.1.
+
+### go-cfclient v3 API Adaptations
+
+| Issue | Resolution |
+|-------|------------|
+| `SkipTLSValidation()` takes no arguments | Use conditional `opts = append(opts, config.SkipTLSValidation())` |
+| List methods return 3 values (results, pager, error) | Discard pager: `results, _, err := ...` |
+| `PollingOptions.Interval` → `PollingOptions.CheckInterval` | Updated field name |
+| `CreateManaged()` returns only (jobGUID, error) | Instance fetched separately via Get if needed |
+| Parameters are `*json.RawMessage` not `map[string]interface{}` | Marshal/unmarshal JSON as needed |
+| Struct types are values not pointers (e.g., `BrokerCatalog`, `Schemas`) | Direct field access, no nil checks needed |
+| `LabelSelector` is `map[string]ExclusionFilter` | Use `LabelSel.EqualTo(key, value)` method |
+| `ServiceInstanceManagedRelationships` undefined | Use `ServiceInstanceRelationships` instead |
+| Use constructors for create operations | `resource.NewServiceInstanceCreateManaged()`, `resource.NewServiceCredentialBindingCreateKey()` |
+
+### brokerapi v11 API Notes
+
+| Issue | Resolution |
+|-------|------------|
+| No `ErrInvalidServiceID` / `ErrInvalidPlanID` | Use `apiresponses.NewFailureResponse(err, 400, "invalid-service-id")` |
+| MaintenanceInfo type mismatch | Use `resource.ServiceInstanceMaintenanceInfo` from go-cfclient |
+
+### Build & Test Results
+
+- **Build**: All packages compile with Go 1.23 (`go build ./...`)
+- **Unit Tests**: 7/7 internal packages pass
+- **Integration Tests**: Created but require local network for httptest.NewServer()
+
+### Tooling
+
+- **Devbox**: `devbox.json` added at repo root with Go and `golangci-lint`
+
+## Lessons Learned
+
+1. **Pre-release library APIs require verification** - go-cfclient v3 documentation doesn't always match the actual API. Always verify with `go doc` and build early.
+
+2. **Pin exact versions** - Use `v3.0.0-beta.1` specifically. Even pre-release version bumps can break builds.
+
+3. **Test environment limitations** - Some CI/sandbox environments restrict localhost networking, causing `httptest.NewServer()` to fail with "connection refused". Unit tests with mocks are more portable.
+
+4. **Spec-to-implementation gap** - Original specs assumed certain go-cfclient APIs that don't exist. The iterative build-fix cycle caught these.
 
 ## Open Questions
 

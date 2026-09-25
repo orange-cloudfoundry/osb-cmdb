@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "osb-cmdb-go.fullname" . }}
+  labels:
+    {{- include "osb-cmdb-go.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "osb-cmdb-go.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "osb-cmdb-go.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "osb-cmdb-go.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: PORT
+              value: "8080"
+            - name: LOG_LEVEL
+              value: {{ .Values.logging.level | quote }}
+            # Broker credentials
+            - name: BROKER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osb-cmdb-go.secretName" . }}
+                  key: broker-username
+            - name: BROKER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osb-cmdb-go.secretName" . }}
+                  key: broker-password
+            # CF configuration
+            - name: CF_API_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "osb-cmdb-go.fullname" . }}
+                  key: cf-api-host
+            - name: CF_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osb-cmdb-go.secretName" . }}
+                  key: cf-username
+            - name: CF_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osb-cmdb-go.secretName" . }}
+                  key: cf-password
+            {{- if .Values.cf.clientId }}
+            - name: CF_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osb-cmdb-go.secretName" . }}
+                  key: cf-client-id
+            {{- end }}
+            {{- if .Values.cf.clientSecret }}
+            - name: CF_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osb-cmdb-go.secretName" . }}
+                  key: cf-client-secret
+            {{- end }}
+            - name: CF_DEFAULT_ORG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "osb-cmdb-go.fullname" . }}
+                  key: cf-default-org
+            - name: CF_DEFAULT_SPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "osb-cmdb-go.fullname" . }}
+                  key: cf-default-space
+            - name: CF_SKIP_SSL_VALIDATION
+              value: {{ .Values.cf.skipSslValidation | quote }}
+            # Catalog configuration
+            - name: CATALOG_REFRESH_INTERVAL
+              value: {{ .Values.catalog.refreshInterval | quote }}
+            {{- if .Values.catalog.serviceSuffix }}
+            - name: SERVICE_SUFFIX
+              value: {{ .Values.catalog.serviceSuffix | quote }}
+            {{- end }}
+            {{- if .Values.catalog.excludedServices }}
+            - name: EXCLUDED_SERVICES
+              value: {{ join "," .Values.catalog.excludedServices | quote }}
+            {{- end }}
+            # Feature flags
+            - name: PROPAGATE_METADATA
+              value: {{ .Values.features.propagateMetadata | quote }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -48,12 +48,16 @@ func run() error {
 	// Health endpoints
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			slog.Error("writing health response", "error", err)
+		}
 	})
 	mux.HandleFunc("GET /ready", func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Check CF client connectivity
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			slog.Error("writing readiness response", "error", err)
+		}
 	})
 
 	// TODO: Mount broker API with brokerapi.New()

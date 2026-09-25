@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "osb-cmdb-go.fullname" . }}
+  labels:
+    {{- include "osb-cmdb-go.labels" . | nindent 4 }}
+data:
+  cf-api-host: {{ .Values.cf.apiHost | quote }}
+  cf-default-org: {{ .Values.cf.defaultOrg | quote }}
+  cf-default-space: {{ .Values.cf.defaultSpace | quote }}

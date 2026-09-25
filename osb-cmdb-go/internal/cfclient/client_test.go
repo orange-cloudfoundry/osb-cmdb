@@ -1,6 +1,7 @@
 package cfclient
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,7 @@ func TestClientConfig_Validation(t *testing.T) {
 			// We can't actually create a client without a real CF endpoint,
 			// but we can test the config validation in New()
 			if tt.config == nil {
-				_, err := New(nil, tt.config)
+				_, err := New(context.Background(), tt.config)
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "config is required")
 			}

@@ -41,7 +41,7 @@ OSB-CMDB is an Open Service Broker API facade that provides:
 
 | Decision | Choice |
 |----------|--------|
-| Go Version | 1.22 |
+| Go Version | 1.23 |
 | CF API | V3 only (simplifies hybrid V2/V3 approach) |
 | OSB Framework | [brokerapi](https://github.com/pivotal-cf/brokerapi) v11+ |
 | CF Client | [go-cfclient](https://github.com/cloudfoundry/go-cfclient) v3 |
@@ -174,7 +174,7 @@ osb-cmdb-go/
 ```go
 module github.com/orange-cloudfoundry/osb-cmdb-go
 
-go 1.22
+go 1.23.0
 
 require (
     github.com/pivotal-cf/brokerapi/v11 v11.0.16
@@ -1046,7 +1046,7 @@ func TestBroker_Provision(t *testing.T) {
 
 ```dockerfile
 # Build stage
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
 ARG VERSION=dev
 COPY go.mod go.sum ./
@@ -1120,6 +1120,148 @@ jobs:
           context: osb-cmdb-go
           push: true
           tags: ghcr.io/orange-cloudfoundry/osb-cmdb-go:${{ github.ref_name }}
+```
+
+---
+
+## go-cfclient v3 API Reference (Implementation Notes)
+
+During implementation, several API differences were discovered between expected behavior and actual go-cfclient v3 APIs. This section documents the actual patterns used with go-cfclient v3.0.0-beta.1.
+
+### Key API Patterns
+
+#### 1. List Methods Return 3 Values
+
+All list methods return `(results, pager, error)`. The pager is typically discarded:
+
+```go
+// Correct usage
+orgs, _, err := c.cf.Organizations.List(ctx, &client.OrganizationListOptions{
+    Names: client.Filter{Values: []string{orgName}},
+})
+
+// NOT: orgs, err := ... (will not compile)
+```
+
+#### 2. Use Constructors for Create Operations
+
+Don't construct request structs directly; use the provided constructors:
+
+```go
+// Service Instance - use constructor
+req := resource.NewServiceInstanceCreateManaged(name, spaceGUID, planGUID)
+req.WithParameters(paramsJSON)  // json.RawMessage
+req.WithTags(tags)
+
+// Service Binding (key) - use constructor
+req := resource.NewServiceCredentialBindingCreateKey(serviceInstanceGUID, bindingName)
+req.WithJSONParameters(string(paramsJSON))
+
+// Service Instance Update - use constructor with fluent methods
+req := resource.NewServiceInstanceManagedUpdate()
+req.WithName(newName)
+req.WithServicePlan(newPlanGUID)
+req.WithMaintenanceInfo(version, description)
+```
+
+#### 3. Parameters Are json.RawMessage
+
+Parameters must be marshaled to `json.RawMessage`:
+
+```go
+// Convert map to json.RawMessage for API calls
+paramsJSON, err := json.Marshal(params)
+if err != nil {
+    return err
+}
+req.WithParameters(paramsJSON)
+
+// Convert json.RawMessage back to map when reading
+var params map[string]interface{}
+if err := json.Unmarshal(*rawParams, &params); err != nil {
+    return err
+}
+```
+
+#### 4. LabelSelector Usage
+
+The `LabelSelector` is a map with methods, not a struct with an `Expression` field:
+
+```go
+// Correct usage
+opts := client.NewServiceInstanceListOptions()
+opts.SpaceGUIDs = client.Filter{Values: []string{spaceGUID}}
+opts.LabelSel = make(client.LabelSelector)
+opts.LabelSel.EqualTo("brokered_service_instance_guid", instanceID)
+
+// NOT: opts.LabelSelector = client.LabelSelector{Expression: "key=value"}
+```
+
+#### 5. PollingOptions Field Names
+
+```go
+// Correct
+opts := &client.PollingOptions{
+    Timeout:       5 * time.Minute,
+    CheckInterval: 2 * time.Second,  // NOT "Interval"
+}
+```
+
+#### 6. Config Options Pattern
+
+```go
+// SkipTLSValidation takes no arguments - use conditionally
+opts := []config.Option{
+    config.UserPassword(username, password),
+}
+if skipSSL {
+    opts = append(opts, config.SkipTLSValidation())
+}
+cfg, err := config.New(apiHost, opts...)
+```
+
+#### 7. Struct Types Are Values, Not Pointers
+
+Many nested structs are values, not pointers. Don't check for nil:
+
+```go
+// BrokerCatalog is a value type
+features := offering.BrokerCatalog.Features  // Direct access
+bindable := features.Bindable
+
+// Schemas is a value type
+if plan.Schemas.ServiceInstance.Create.Parameters != nil {
+    // Parameters is *json.RawMessage (pointer), so nil check is valid here
+}
+```
+
+#### 8. CreateManaged Returns Only JobGUID
+
+Instance creation is always async; you get a job GUID, not the instance:
+
+```go
+jobGUID, err := c.cf.ServiceInstances.CreateManaged(ctx, req)
+// NOT: jobGUID, instance, err := ...
+
+// To get the instance, poll the job or list by name after completion
+```
+
+### brokerapi v11 Notes
+
+#### Error Responses
+
+```go
+// No predefined ErrInvalidServiceID - create your own
+return domain.ProvisionedServiceSpec{}, apiresponses.NewFailureResponse(
+    fmt.Errorf("service %s not found", serviceID),
+    400, "invalid-service-id")
+
+// Available predefined errors:
+// - apiresponses.ErrInstanceAlreadyExists
+// - apiresponses.ErrInstanceDoesNotExist
+// - apiresponses.ErrBindingAlreadyExists
+// - apiresponses.ErrBindingDoesNotExist
+// - apiresponses.ErrAsyncRequired
 ```
 
 ---

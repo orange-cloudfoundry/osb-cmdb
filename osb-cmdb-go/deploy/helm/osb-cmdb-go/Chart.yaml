@@ -1,0 +1,17 @@
+apiVersion: v2
+name: osb-cmdb-go
+description: OSB-CMDB Service Broker - Go implementation
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+keywords:
+  - osb
+  - service-broker
+  - cloudfoundry
+
+home: https://github.com/orange-cloudfoundry/osb-cmdb-go
+
+maintainers:
+  - name: Orange Cloud Foundry Team
+    url: https://github.com/orange-cloudfoundry
