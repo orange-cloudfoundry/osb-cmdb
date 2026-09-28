@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Build artifacts
+bin/
+coverage.out
+coverage.html
+
+# Test cache
+.cache
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in image)
+*.md
+!README.md
+
+# Local development
+.env
+.envrc
+
+# Helm chart (built separately)
+deploy/
+
+# Test files
+*_test.go
+test/
